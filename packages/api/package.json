@@ -1,0 +1,22 @@
+{
+  "name": "@simce/api",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/verificar-build.mjs",
+    "dev": "node --watch src/servidor.js",
+    "start": "node src/servidor.js",
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "@simce/dominio": "*",
+    "express": "5.2.1",
+    "knex": "3.3.0",
+    "mysql2": "3.24.3"
+  },
+  "devDependencies": {
+    "supertest": "7.2.2"
+  }
+}

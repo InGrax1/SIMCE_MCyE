@@ -1,0 +1,33 @@
+{
+  "name": "simce-mcye",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run format:check && npm run test",
+    "dev:api": "npm run dev --workspace @simce/api",
+    "dev:panel": "npm run dev --workspace @simce/panel",
+    "dev:portal": "npm run dev --workspace @simce/portal"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@vitest/coverage-v8": "5.0.0",
+    "eslint": "10.10.0",
+    "globals": "17.4.0",
+    "prettier": "3.9.0",
+    "vitest": "5.0.0"
+  }
+}

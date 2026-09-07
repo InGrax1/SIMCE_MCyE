@@ -1,0 +1,11 @@
+{
+  "name": "@simce/dominio",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.js",
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
+  }
+}

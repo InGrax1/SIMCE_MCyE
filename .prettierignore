@@ -1,0 +1,9 @@
+coverage/
+dist/
+dist-ssr/
+node_modules/
+*.docx
+*.pdf
+package-lock.json
+AGENTS.md
+Revision_especificacion_SIMCE_v0.1.md
