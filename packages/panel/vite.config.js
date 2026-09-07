@@ -10,6 +10,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       manifest: {
         name: 'SIMCE Panel de control',
         short_name: 'SIMCE',
@@ -20,4 +23,9 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/api': 'http://127.0.0.1:3000',
+    },
+  },
 });
