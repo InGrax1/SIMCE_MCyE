@@ -10,7 +10,7 @@ services:
     volumes:
       - simce_mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent']
       interval: 5s
       timeout: 5s
       retries: 20
@@ -37,9 +37,9 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
+          'CMD',
+          'node',
+          '-e',
           "fetch('http://127.0.0.1:3000/api/v1/salud/listo').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
         ]
       interval: 10s
@@ -52,7 +52,7 @@ services:
       dockerfile: deploy/Dockerfile.web
     restart: unless-stopped
     ports:
-      - "${HTTP_PORT:-8080}:80"
+      - '${HTTP_PORT:-8080}:80'
     depends_on:
       api:
         condition: service_healthy
