@@ -64,4 +64,10 @@ export class RepositorioSincronizacionMemoria {
     const documento = this.#documentos.get(agregadoId);
     return documento ? structuredClone(documento) : null;
   }
+
+  verificarConexion() {
+    return true;
+  }
+
+  cerrar() {}
 }

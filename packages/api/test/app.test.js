@@ -31,7 +31,7 @@ describe('API de fase cero', () => {
     });
     await request(aplicacion).get('/api/v1/salud/listo').expect(200, {
       estado: 'listo',
-      almacenamiento: 'memoria-fase-cero',
+      almacenamiento: 'RepositorioSincronizacionMemoria',
     });
   });
 

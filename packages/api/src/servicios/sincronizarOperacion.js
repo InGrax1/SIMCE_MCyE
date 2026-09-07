@@ -45,10 +45,10 @@ export function crearServicioSincronizacion({
   reloj = () => new Date().toISOString(),
 }) {
   return {
-    procesar(operacion) {
+    async procesar(operacion) {
       validarOperacion(operacion);
       const huella = createHash('sha256').update(serializarEstable(operacion)).digest('hex');
-      return repositorio.aplicarUnaVez({ operacion, huella, fechaServidor: reloj() });
+      return await repositorio.aplicarUnaVez({ operacion, huella, fechaServidor: reloj() });
     },
   };
 }

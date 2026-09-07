@@ -12,8 +12,13 @@ export function crearAplicacion({ repositorio = new RepositorioSincronizacionMem
   app.get('/api/v1/salud', (_solicitud, respuesta) => {
     respuesta.json({ estado: 'ok', servicio: 'simce-api' });
   });
-  app.get('/api/v1/salud/listo', (_solicitud, respuesta) => {
-    respuesta.json({ estado: 'listo', almacenamiento: 'memoria-fase-cero' });
+  app.get('/api/v1/salud/listo', async (_solicitud, respuesta, siguiente) => {
+    try {
+      await repositorio.verificarConexion();
+      respuesta.json({ estado: 'listo', almacenamiento: repositorio.constructor.name });
+    } catch (error) {
+      siguiente(error);
+    }
   });
   app.use('/api/v1/sync', crearRutasSincronizacion(sincronizacion));
 
