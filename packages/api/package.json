@@ -7,6 +7,9 @@
     "build": "node scripts/verificar-build.mjs",
     "dev": "node --watch src/servidor.js",
     "start": "node src/servidor.js",
+    "migrate": "knex --knexfile knexfile.js migrate:latest",
+    "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
+    "seed": "knex --knexfile knexfile.js seed:run",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
