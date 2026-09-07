@@ -1,0 +1,46 @@
+# Dependencias y compilados
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+.vite/
+
+# Variables locales y credenciales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Registros y temporales
+*.log
+*.tmp
+*.temp
+tmp/
+.cache/
+artifacts/
+playwright-report/
+test-results/
+
+# Editores y sistemas operativos
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Archivos temporales de Microsoft Office
+~$*.doc
+~$*.docx
+~$*.xls
+~$*.xlsx
+~$*.ppt
+~$*.pptx
+
+# Datos locales de servicios
+.mysql/
+.local/
+
