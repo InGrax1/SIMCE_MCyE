@@ -1,0 +1,19 @@
+FROM node:24-alpine
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/api/package.json packages/api/package.json
+COPY packages/dominio/package.json packages/dominio/package.json
+COPY packages/panel/package.json packages/panel/package.json
+COPY packages/portal/package.json packages/portal/package.json
+RUN npm ci --omit=dev
+
+COPY packages/api packages/api
+COPY packages/dominio packages/dominio
+
+USER node
+EXPOSE 3000
+
+CMD ["sh", "-c", "npm run migrate --workspace @simce/api && npm run start --workspace @simce/api"]
