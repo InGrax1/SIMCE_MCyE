@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "check": "npm run check:repo && npm run lint && npm run format:check && npm run test",
     "check:repo": "node scripts/verificar-repositorio.mjs",
+    "db:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/crear-base-datos-local.ps1",
     "prototype": "node scripts/prototipo-fase-cero.mjs",
     "dev:api": "npm run dev --workspace @simce/api",
     "dev:panel": "npm run dev --workspace @simce/panel",

@@ -21,6 +21,14 @@ npm run prototype
 
 ## Desarrollo local
 
+Antes del primer inicio, cree MySQL 8, aplique las migraciones y cargue los datos semilla:
+
+```powershell
+npm run db:local
+```
+
+El comando usa Docker Compose, conserva los datos en el volumen `simce_mysql` y puede ejecutarse nuevamente sin duplicar el esquema. Si `.env` no existe, lo crea desde `.env.example`; los marcadores de secretos se sustituyen por valores locales aleatorios y el archivo permanece fuera de Git. Para aplicar únicamente las migraciones use `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/crear-base-datos-local.ps1 -OmitirSemillas`.
+
 En terminales separadas:
 
 ```bash

@@ -2,6 +2,8 @@
 
 El entorno es neutral al proveedor y reúne MySQL 8, la API y Nginx para servir el portal y el panel bajo un solo origen.
 
+Para crear solamente la base local de desarrollo, aplicar las migraciones y cargar su semilla, ejecute `npm run db:local` desde la raíz. Este comando es idempotente y utiliza el mismo MySQL y las mismas migraciones que staging.
+
 ## Preparación
 
 1. Instale Docker con Compose.
