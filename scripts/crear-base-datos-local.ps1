@@ -89,7 +89,7 @@ try {
   }
 
   Write-Host 'Verificando las tablas creadas...'
-  Invocar-Compose exec -T db sh -c 'mysql --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" "$MYSQL_DATABASE" --execute="SHOW TABLES;"'
+  Invocar-Compose run --rm --no-deps api npm run db:verify --workspace '@simce/api'
 
   Write-Host 'Base de datos local creada y verificada.'
 }
