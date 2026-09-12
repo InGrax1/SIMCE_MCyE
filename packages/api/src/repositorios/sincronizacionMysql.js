@@ -12,6 +12,7 @@ export class RepositorioSincronizacionMysql {
   async aplicarUnaVez({ operacion, huella, fechaServidor }) {
     try {
       return await this.baseDatos.transaction(async (transaccion) => {
+        const fechaBaseDatos = new Date(fechaServidor);
         const anterior = await transaccion('operaciones_sincronizacion')
           .where({ operacion_uuid: operacion.operacionUuid })
           .forUpdate()
@@ -35,7 +36,7 @@ export class RepositorioSincronizacionMysql {
         const anio = new Date(fechaServidor).getUTCFullYear();
         const serie = `REM-${anio}`;
         await transaccion('consecutivos_folio')
-          .insert({ serie, valor: 0, actualizado_en: fechaServidor })
+          .insert({ serie, valor: 0, actualizado_en: fechaBaseDatos })
           .onConflict('serie')
           .ignore();
         const consecutivo = await transaccion('consecutivos_folio')
@@ -45,7 +46,7 @@ export class RepositorioSincronizacionMysql {
         const siguiente = Number(consecutivo.valor) + 1;
         await transaccion('consecutivos_folio')
           .where({ serie })
-          .update({ valor: siguiente, actualizado_en: fechaServidor });
+          .update({ valor: siguiente, actualizado_en: fechaBaseDatos });
 
         const resultado = {
           operacionUuid: operacion.operacionUuid,
@@ -66,11 +67,11 @@ export class RepositorioSincronizacionMysql {
           total_centavos: remision.totalCentavos,
           total_gramos: remision.totalGramos,
           documento: JSON.stringify(remision),
-          actualizado_en: fechaServidor,
+          actualizado_en: fechaBaseDatos,
         };
 
         await transaccion('remisiones')
-          .insert({ ...registroRemision, creado_en: fechaServidor })
+          .insert({ ...registroRemision, creado_en: fechaBaseDatos })
           .onConflict('remision_uuid')
           .merge(registroRemision);
         await transaccion('operaciones_sincronizacion').insert({
@@ -80,7 +81,7 @@ export class RepositorioSincronizacionMysql {
           huella,
           version_base: operacion.versionBase,
           resultado: JSON.stringify(resultado),
-          procesado_en: fechaServidor,
+          procesado_en: fechaBaseDatos,
         });
 
         return resultado;
