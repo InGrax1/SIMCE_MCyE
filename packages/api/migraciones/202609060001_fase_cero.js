@@ -3,11 +3,11 @@ export async function up(knex) {
     tabla.increments('id').primary();
     tabla.string('nombre', 100).notNullable();
     tabla.string('prefijo', 4).notNullable();
-    tabla.unsignedInteger('inicio_plu').notNullable();
-    tabla.unsignedInteger('longitud_plu').notNullable();
-    tabla.unsignedInteger('inicio_importe').notNullable();
-    tabla.unsignedInteger('longitud_importe').notNullable();
-    tabla.unsignedInteger('resolucion_gramos').notNullable();
+    tabla.integer('inicio_plu').unsigned().notNullable();
+    tabla.integer('longitud_plu').unsigned().notNullable();
+    tabla.integer('inicio_importe').unsigned().notNullable();
+    tabla.integer('longitud_importe').unsigned().notNullable();
+    tabla.integer('resolucion_gramos').unsigned().notNullable();
     tabla.boolean('activo').notNullable().defaultTo(true);
     tabla.timestamp('creado_en').notNullable().defaultTo(knex.fn.now());
   });
@@ -16,7 +16,7 @@ export async function up(knex) {
     tabla.string('remision_uuid', 36).primary();
     tabla.string('centro_id', 100).notNullable();
     tabla.string('estado', 30).notNullable();
-    tabla.unsignedInteger('version_servidor').notNullable();
+    tabla.integer('version_servidor').unsigned().notNullable();
     tabla.string('folio_final', 40).notNullable().unique();
     tabla.bigInteger('total_centavos').unsigned().notNullable();
     tabla.bigInteger('total_gramos').unsigned().notNullable();
@@ -30,14 +30,14 @@ export async function up(knex) {
     tabla.string('agregado_id', 36).notNullable().index();
     tabla.string('tipo', 50).notNullable();
     tabla.string('huella', 64).notNullable();
-    tabla.unsignedInteger('version_base').notNullable();
+    tabla.integer('version_base').unsigned().notNullable();
     tabla.json('resultado').notNullable();
     tabla.timestamp('procesado_en').notNullable().defaultTo(knex.fn.now());
   });
 
   await knex.schema.createTable('consecutivos_folio', (tabla) => {
     tabla.string('serie', 20).primary();
-    tabla.unsignedBigInteger('valor').notNullable().defaultTo(0);
+    tabla.bigInteger('valor').unsigned().notNullable().defaultTo(0);
     tabla.timestamp('actualizado_en').notNullable().defaultTo(knex.fn.now());
   });
 }
