@@ -33,6 +33,7 @@ export function Prototipo() {
         productoId: 'PRODUCTO-DEMO',
       });
       setRemision(actualizada);
+      setCodigo('');
       setMensaje('Etiqueta validada y añadida a la remisión local.');
     } catch (error) {
       setMensaje(error.message);
@@ -90,6 +91,7 @@ export function Prototipo() {
   }
 
   const cerrada = remision.estado !== 'BORRADOR';
+  const codigoDuplicado = remision.partidas.some((partida) => partida.codigo === codigo.trim());
 
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-5 py-10">
@@ -117,9 +119,20 @@ export function Prototipo() {
               onChange={(evento) => setCodigo(evento.target.value)}
               disabled={cerrada}
               inputMode="numeric"
+              aria-invalid={codigoDuplicado}
+              aria-describedby={codigoDuplicado ? 'aviso-etiqueta-duplicada' : undefined}
               className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-lg focus:border-cyan-700 focus:outline-none"
             />
           </label>
+          {codigoDuplicado && (
+            <p
+              id="aviso-etiqueta-duplicada"
+              role="alert"
+              className="mt-2 text-sm font-medium text-red-700"
+            >
+              Esta etiqueta ya está incluida en la remisión y no se sumará nuevamente.
+            </p>
+          )}
           <label className="mt-4 block text-sm font-medium text-slate-700">
             Precio verificado por kg
             <input
@@ -142,7 +155,7 @@ export function Prototipo() {
           </label>
           <button
             type="submit"
-            disabled={cerrada}
+            disabled={cerrada || ocupado || codigoDuplicado}
             className="mt-6 w-full rounded-xl bg-cyan-800 px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             Validar y añadir
