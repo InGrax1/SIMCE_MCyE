@@ -39,6 +39,12 @@ export function agregarEtiqueta(
   exigir(Boolean(productoId), 'PRODUCTO_REQUERIDO', 'La etiqueta requiere un producto verificado.');
 
   const etiqueta = decodificarEtiqueta(codigo, perfil);
+  exigir(
+    !remision.partidas.some((partida) => partida.codigo === etiqueta.codigo),
+    'ETIQUETA_DUPLICADA',
+    'La etiqueta ya fue capturada en esta remisión.',
+    { codigo: etiqueta.codigo },
+  );
   const gramos = calcularPesoDesdeImporte({
     importeCentavos: etiqueta.importeCentavos,
     precioKgCentavos,

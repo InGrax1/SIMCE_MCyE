@@ -48,6 +48,27 @@ describe('remisión local', () => {
     expect(() => cerrarRemisionLocal(borrador)).toThrowError(/sin partidas/);
   });
 
+  it('impide capturar dos veces la misma etiqueta', () => {
+    const borrador = crearRemision({ centroId: 'centro-01', remisionUuid });
+    const capturada = agregarEtiqueta(borrador, {
+      codigo: '2010101086955',
+      productoId: 'producto-01',
+      precioKgCentavos: 18_500,
+    });
+
+    expect(() =>
+      agregarEtiqueta(capturada, {
+        codigo: '2010101086955',
+        productoId: 'producto-01',
+        precioKgCentavos: 18_500,
+      }),
+    ).toThrowError(/ya fue capturada/);
+    expect(capturada).toMatchObject({
+      totalCentavos: 8695,
+      totalGramos: 470,
+    });
+  });
+
   it('acepta el folio definitivo del servidor', () => {
     const borrador = crearRemision({ centroId: 'centro-01', remisionUuid });
     const cerrada = cerrarRemisionLocal(
