@@ -25,11 +25,14 @@ Texto final enviado a la herramienta:
 
 La dependencia `animejs` se fija en 4.5.0 en el paquete del portal y el lockfile. Los hooks en `packages/portal/src/animaciones.js` implementan:
 
-- Entrada escalonada de título, descripción y botones de portada.
-- Aparición de tarjetas de cronología, áreas, procesos, prácticas, servicio social y galería cuando entran en pantalla.
-- Transiciones de las fichas de actividades y productos al cambiar la selección.
+- Entrada coordinada de título, descripción, botones e imagen de portada mediante una línea de tiempo.
+- Aparición de títulos de sección y tarjetas de cronología, áreas, procesos, prácticas, servicio social, galería y contacto cuando entran en pantalla. Las tarjetas añaden una escala leve y escalonado limitado; en móvil se reduce la distancia de desplazamiento.
+- Acercamiento suave de las imágenes de áreas y galería; transiciones de texto e imagen en las fichas de actividades y productos al cambiar la selección.
+- Microinteracciones de flechas al pasar el cursor con un puntero preciso o enfocar el botón mediante teclado. Se reutilizan instancias de `createAnimatable` y se eliminan los eventos al limpiar el ámbito.
 
 La integración utiliza `createScope`, `animate` y `stagger` según la documentación oficial de [Anime.js con React](https://animejs.com/documentation/getting-started/using-with-react/) y [Scope](https://animejs.com/documentation/scope/). Las animaciones se registran dentro de cada ámbito; `revert()` limpia los efectos y los estilos al desmontar React o cambiar de selección. El observador se desconecta mediante la limpieza del ámbito.
+
+El refinamiento usa [Timeline](https://animejs.com/documentation/timeline/) para coordinar la portada y [Animatable](https://animejs.com/documentation/animatable/) para las flechas. Las curvas `outCubic`, los zooms de 2,5–3,5% y los recorridos cortos dan mayor presencia a las animaciones sin modificar la composición. Los valores de duración y amplitud se detallan en [diseno-ui.md](diseno-ui.md); no se usan parallax, rebotes ni movimientos continuos.
 
 `prefers-reduced-motion: reduce` se observa durante toda la sesión. Al activarlo se cancelan los efectos, se desconecta la aparición por desplazamiento y se restauran los estilos. Al desactivarlo se crea un solo observador. Las imágenes y los textos no se ocultan por defecto: siguen disponibles en el HTML prerenderizado y cuando JavaScript está desactivado.
 
@@ -37,6 +40,6 @@ La integración utiliza `createScope`, `animate` y `stagger` según la documenta
 
 Compilación cliente/SSR y prerenderizado, ESLint, Prettier, comprobación del repositorio y suite existente de 22 pruebas aprobadas. La prueba de integración MySQL se omite sin `TEST_MYSQL=1`.
 
-Chromium verifica los trece cambios de ficha, la carga de los 103 elementos de imagen, los nueve títulos distintos de prácticas, las ocho leyendas de galería, entradas de portada/tarjetas, cambios rápidos de selección y cambios de preferencia de movimiento. También se comprueba el contenido inicial con JavaScript desactivado.
+Chromium verifica los trece cambios de ficha, la carga de los 103 elementos de imagen, los nueve títulos distintos de prácticas, las ocho leyendas de galería, entradas de portada/títulos/tarjetas, zoom de fotografías, flechas con cursor y teclado, cambios rápidos de selección y cambios de preferencia de movimiento. También se comprueba el contenido inicial con JavaScript desactivado.
 
 La revisión responsiva cubre 320–1920 px y texto al 200% sin desbordamientos ni recortes detectados. axe-core no detecta infracciones en los estados comprobados; se revisan capturas de prácticas, galería, actividades y productos a 390, 768 y 1440 px. Los informes y capturas quedan en `artifacts/`, excluido de Git.
