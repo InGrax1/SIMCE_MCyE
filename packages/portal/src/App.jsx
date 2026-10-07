@@ -3,7 +3,9 @@ import {
   actividades,
   areas,
   correo,
+  galeria,
   mapa,
+  practicas,
   procesos,
   productos,
   programas,
@@ -295,32 +297,27 @@ function Practicas() {
         <h2 id="titulo-practicas">
           Prácticas académicas <em>que se atienden.</em>
         </h2>
+        <p className="practicas-introduccion">
+          Temas de formación vinculados con la docencia y la investigación del módulo. Consulta con
+          la responsable cómo coordinar una práctica, asesoría o taller para tu grupo.
+        </p>
         <div className="practicas-grid">
-          {Array.from({ length: 9 }, (_, i) => (
+          {practicas.map((practica, i) => (
             <article
               className={i === 0 || i === 5 ? 'practica practica-ancha' : 'practica'}
-              key={i}
+              key={practica.nombre}
             >
-              {i === 0 || i === 5 ? (
-                <>
-                  <div
-                    className="foto-pendiente"
-                    role="img"
-                    aria-label="Fotografía de práctica pendiente"
-                  />
-                  <h3>TMIA de Procesos tecnológicos de productos cárnicos</h3>
-                </>
-              ) : (
-                <>
-                  <span className="practica-carrera">MVZ</span>
-                  <h3>Anatomía veterinaria aplicada</h3>
-                  <div
-                    className="foto-pendiente"
-                    role="img"
-                    aria-label="Fotografía de práctica pendiente"
-                  />
-                </>
-              )}
+              <div className="practica-texto">
+                <span className="practica-carrera">{practica.carrera}</span>
+                <h3>{practica.nombre}</h3>
+                <p>{practica.descripcion}</p>
+              </div>
+              <Imagen
+                className="practica-foto"
+                archivo={practica.foto}
+                alt={practica.alt}
+                loading="lazy"
+              />
             </article>
           ))}
           <a className="practica practica-explorar" href="#contacto">
@@ -331,6 +328,9 @@ function Practicas() {
             <span>Opciones</span>
           </a>
         </div>
+        <p className="nota-referencia">
+          Temas e imágenes de referencia; la programación se acuerda con el módulo.
+        </p>
       </div>
     </section>
   );
@@ -376,47 +376,26 @@ function Actividades() {
           <article id="actividad-detalle" className="actividad-detalle" aria-live="polite">
             <p className="sobretitulo">Detalle de la Actividad</p>
             <h3>{actividad.nombre}</h3>
-            {actividad.descripcion ? (
-              <>
-                <p className="actividad-descripcion">{actividad.descripcion}</p>
-                <p className="actividad-donde">Dónde se realiza</p>
-                <div className="chips">
-                  {areas.map((area) => (
-                    <a
-                      key={area.nombre}
-                      href="#areas"
-                      className={area.nombre === actividad.area ? 'chip elegida' : 'chip'}
-                    >
-                      {area.nombre}
-                    </a>
-                  ))}
-                </div>
-                <div className="actividad-especies">
-                  <small>Especies</small>
-                  <p>{actividad.especies}</p>
-                </div>
-                <div className="actividad-foto">
-                  <Imagen
-                    archivo={actividad.foto}
-                    alt="Trabajo de matanza y faenado en el área de rastro"
-                    nodo="47:406"
-                    loading="lazy"
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="actividad-descripcion">
-                  Solicita a la responsable del módulo información sobre esta actividad.
-                </p>
+            <p className="actividad-descripcion">{actividad.descripcion}</p>
+            <p className="actividad-donde">Dónde se realiza</p>
+            <div className="chips">
+              {areas.map((area) => (
                 <a
-                  className="boton boton-pequeno"
-                  href={`mailto:${correo}?subject=${encodeURIComponent(actividad.nombre)}`}
+                  key={area.nombre}
+                  href="#areas"
+                  className={actividad.areas.includes(area.nombre) ? 'chip elegida' : 'chip'}
                 >
-                  Solicitar información <Flecha correo />
+                  {area.nombre}
                 </a>
-              </>
-            )}
+              ))}
+            </div>
+            <div className="actividad-especies">
+              <small>{actividad.especies ? 'Especies' : 'Enfoque académico'}</small>
+              <p>{actividad.especies ?? actividad.enfoque}</p>
+            </div>
+            <div className="actividad-foto">
+              <Imagen archivo={actividad.foto} alt={actividad.alt} loading="lazy" />
+            </div>
           </article>
         </div>
       </div>
@@ -441,22 +420,23 @@ function Productos() {
           Productos cárnicos y <em>embutidos.</em>
         </h2>
         <p className="introduccion">
-          Ocho líneas de producto elaboradas en el área de embutidos, cada una disponible en
-          distintas especies.
+          Conoce ocho líneas de productos cárnicos y su relación con los procesos de elaboración.
+          Consulta con el módulo las especies, presentaciones y disponibilidad.
         </p>
         <div className="producto-destacado">
           <figure>
             <Imagen
               archivo={producto.foto}
-              alt={producto.nombre}
+              alt={`Imagen de referencia de ${producto.nombre.toLowerCase()}`}
               nodo={seleccion === 0 ? '47:366' : undefined}
               loading="lazy"
             />
-            <figcaption>Foto - {producto.nombre.toLowerCase()}</figcaption>
+            <figcaption>{producto.nombre} · imagen de referencia</figcaption>
           </figure>
           <article id="producto-detalle" aria-live="polite">
             <p className="sobretitulo">Producto Cárnico</p>
             <h3>{producto.nombre}</h3>
+            <p className="producto-descripcion">{producto.descripcion}</p>
             {producto.especies ? (
               <>
                 <p className="producto-variantes">
@@ -473,13 +453,17 @@ function Productos() {
                 </div>
               </>
             ) : (
-              <a
-                className="consulta-producto"
-                href={`mailto:${correo}?subject=${encodeURIComponent(`Información sobre ${producto.nombre}`)}`}
-              >
-                Consultar especies y presentaciones disponibles
-              </a>
+              <div className="producto-enfoque">
+                <p className="sobretitulo">Proceso relacionado</p>
+                <p>{producto.enfoque}</p>
+              </div>
             )}
+            <a
+              className="consulta-producto"
+              href={`mailto:${correo}?subject=${encodeURIComponent(`Información sobre ${producto.nombre}`)}`}
+            >
+              Consultar especies y presentaciones disponibles
+            </a>
             <div className="producto-nota">
               <Imagen archivo="Line3.svg" nodo="47:337" />
               <small>
@@ -565,17 +549,18 @@ function Galeria() {
       <h2 id="titulo-galeria">
         El módulo <em>por dentro</em>
       </h2>
-      <p>Instalaciones, prácticas y productos del Módulo de Carnes y Embutidos.</p>
+      <p>Un recorrido visual por el espacio académico y los procesos cárnicos.</p>
       <div className="galeria-grid">
-        {Array.from({ length: 8 }, (_, i) => (
-          <div
-            key={i}
-            className={`galeria-espacio galeria-espacio-${i + 1}`}
-            role="img"
-            aria-label={`Fotografía ${i + 1} de la galería pendiente de contenido institucional`}
-          />
+        {galeria.map((foto, i) => (
+          <figure key={foto.titulo} className={`galeria-espacio galeria-espacio-${i + 1}`}>
+            <Imagen archivo={foto.foto} alt={foto.alt} loading="lazy" />
+            <figcaption>{foto.titulo}</figcaption>
+          </figure>
         ))}
       </div>
+      <p className="nota-referencia">
+        Imágenes de referencia del diseño para ilustrar instalaciones, procesos y productos.
+      </p>
     </section>
   );
 }

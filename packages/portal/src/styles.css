@@ -836,11 +836,13 @@ em {
   font-size: 0.625rem;
   border-radius: 5px;
 }
-.foto-pendiente {
+.practica-foto {
   background: #d9d9d9;
   border-radius: 20px;
   height: 155px;
   flex-shrink: 0;
+  width: 100%;
+  object-fit: cover;
 }
 .practica-ancha {
   grid-column: span 2;
@@ -850,7 +852,7 @@ em {
   align-items: center;
   gap: 21px;
 }
-.practica-ancha .foto-pendiente {
+.practica-ancha .practica-foto {
   width: 235px;
   height: 218px;
 }
@@ -1349,6 +1351,25 @@ em {
 .galeria-espacio {
   background: var(--gris);
   border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  min-width: 0;
+}
+.galeria-espacio > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.galeria-espacio figcaption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 32px 16px 16px;
+  background: linear-gradient(transparent, rgba(26, 10, 10, 0.96) 48%);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 500;
 }
 .galeria-espacio-1 {
   grid-row: span 2;
@@ -1861,7 +1882,7 @@ em {
     flex-direction: column-reverse;
     gap: 15px;
   }
-  .practica-ancha .foto-pendiente {
+  .practica-ancha .practica-foto {
     width: 100%;
     height: 155px;
   }
@@ -2249,7 +2270,7 @@ em {
     grid-column: auto;
     border-radius: 35px;
   }
-  .practica-ancha .foto-pendiente {
+  .practica-ancha .practica-foto {
     width: 42%;
     height: 218px;
   }
@@ -2671,7 +2692,52 @@ button:active,
   font-size: 1rem;
   line-height: 1.5;
   text-align: left;
-  margin: 16px 8px;
+  margin: 16px 0 8px;
+}
+.practica-texto {
+  min-width: 0;
+  padding: 0 8px 16px;
+}
+.practica-texto p {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.practicas-introduccion {
+  max-width: 72ch;
+  margin: 16px auto 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.nota-referencia {
+  max-width: 72ch;
+  margin: 24px auto 0;
+  padding-inline: 24px;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+  color: #ded6d6;
+}
+.practica-ancha .practica-texto {
+  padding: 0;
+}
+.practica-ancha .practica-foto {
+  order: -1;
+}
+.practica-ancha .practica-carrera {
+  display: inline-block;
+  margin: 0 0 16px;
+}
+.producto-descripcion {
+  margin: 16px 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.producto-enfoque {
+  margin-block: 24px;
+}
+.producto-enfoque .sobretitulo {
+  margin-bottom: 8px;
 }
 .practica-carrera {
   font-size: 0.875rem;
@@ -2685,11 +2751,11 @@ button:active,
 .practica-ancha h3 {
   margin: 0;
 }
-.practica-ancha .foto-pendiente {
+.practica-ancha .practica-foto {
   width: 44%;
   flex: 0 0 44%;
 }
-.practica:not(.practica-ancha) .foto-pendiente {
+.practica:not(.practica-ancha) .practica-foto {
   margin-top: auto;
 }
 .practica-explorar {
@@ -3016,7 +3082,7 @@ a.chip:hover {
   .practica-ancha {
     flex-direction: column-reverse;
   }
-  .practica-ancha .foto-pendiente {
+  .practica-ancha .practica-foto {
     width: 100%;
     flex: 0 0 auto;
   }
@@ -3330,11 +3396,13 @@ a.chip:hover {
     font-size: 1rem;
   }
   .practica-ancha {
-    flex-direction: column-reverse;
+    flex-direction: column;
   }
-  .practica-ancha .foto-pendiente {
+  .practica-ancha .practica-foto {
     width: 100%;
     height: 184px;
+    order: 0;
+    flex-basis: auto;
   }
   .actividad-selector button {
     font-size: 1rem;
