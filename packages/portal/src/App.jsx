@@ -12,6 +12,7 @@ import {
   secciones,
 } from './contenido.js';
 import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
+import { useAnimacionesPortal, useTransicionFicha } from './animaciones.js';
 
 function Encabezado() {
   const [abierto, cambiarMenu] = useState(false);
@@ -338,6 +339,8 @@ function Practicas() {
 
 function Actividades() {
   const [seleccion, seleccionar] = useState(1);
+  const ficha = useRef(null);
+  useTransicionFicha(ficha, seleccion);
   const actividad = actividades[seleccion];
   return (
     <section
@@ -373,7 +376,12 @@ function Actividades() {
               </button>
             ))}
           </div>
-          <article id="actividad-detalle" className="actividad-detalle" aria-live="polite">
+          <article
+            id="actividad-detalle"
+            className="actividad-detalle"
+            aria-live="polite"
+            ref={ficha}
+          >
             <p className="sobretitulo">Detalle de la Actividad</p>
             <h3>{actividad.nombre}</h3>
             <p className="actividad-descripcion">{actividad.descripcion}</p>
@@ -405,6 +413,8 @@ function Actividades() {
 
 function Productos() {
   const [seleccion, seleccionar] = useState(0);
+  const ficha = useRef(null);
+  useTransicionFicha(ficha, seleccion);
   const producto = productos[seleccion];
   return (
     <section
@@ -433,7 +443,7 @@ function Productos() {
             />
             <figcaption>{producto.nombre} · imagen de referencia</figcaption>
           </figure>
-          <article id="producto-detalle" aria-live="polite">
+          <article id="producto-detalle" aria-live="polite" ref={ficha}>
             <p className="sobretitulo">Producto Cárnico</p>
             <h3>{producto.nombre}</h3>
             <p className="producto-descripcion">{producto.descripcion}</p>
@@ -680,13 +690,15 @@ function Pie() {
 }
 
 export function App() {
+  const contenido = useRef(null);
+  useAnimacionesPortal(contenido);
   return (
     <>
       <a className="saltar-contenido" href="#contenido-principal">
         Saltar al contenido
       </a>
       <Encabezado />
-      <main id="contenido-principal" tabIndex={-1}>
+      <main id="contenido-principal" tabIndex={-1} ref={contenido}>
         <Inicio />
         <Separador
           archivo="PapelRasgadoHorizontalFigma1.svg"
