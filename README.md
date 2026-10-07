@@ -57,3 +57,5 @@ Para usar MySQL, configure `STORAGE=mysql` y las variables `DATABASE_*`. El desp
 ## Estado
 
 El alcance técnico de Fase 0 está construido y probado. El cierre institucional permanece condicionado a la confirmación del alojamiento y a la validación física de la báscula. El detalle y los responsables funcionales están en [docs/fase-0/estado.md](docs/fase-0/estado.md).
+
+La Fase 1 está iniciada con la vista principal del portal público basada en el diseño de Figma proporcionado. Para verla ejecute `npm run dev:portal`; incluye navegación adaptable, actividades y catálogo interactivos, contacto y salida prerenderizada. La gestión de contenido y la validación institucional de la fase siguen pendientes. Consulte [docs/fase-1/estado.md](docs/fase-1/estado.md).

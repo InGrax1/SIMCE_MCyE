@@ -53,7 +53,7 @@ Sobre la aceptación del PDF y las reglas de folio, y sobre SU-01, SU-04, SU-08 
 
 La Fase 1 corresponde al portal público y la gestión de contenido (RF-1 y RF-2). Conforme a §15.4 de la especificación, su esqueleto técnico puede desarrollarse sin proveedor definitivo, conservando explícitos los pendientes institucionales. La aceptación de esa fase requiere contenido validado, identidad institucional, publicación autónoma por la responsable, verificaciones Lighthouse y axe y disponibilidad en staging (§15.1 y §15.2).
 
-La Fase 1 no se registra como iniciada en esta actualización. La instrucción previa condicionaba su inicio al cierre de Fase 0; queda por aclarar si el usuario desea avanzar con el desarrollo técnico mientras se mantienen abiertas las validaciones institucionales.
+Después de revisar el alcance de Fase 1, el usuario proporcionó el diseño de Figma de la vista principal para su implementación. Se inicia ese avance técnico del portal manteniendo abiertas las validaciones institucionales; el alcance y las comprobaciones se registran en [el estado de Fase 1](../fase-1/estado.md).
 
 ## Resultado del hito
 
