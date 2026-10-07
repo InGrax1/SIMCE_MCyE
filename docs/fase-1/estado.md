@@ -1,6 +1,6 @@
 # Estado de Fase 1
 
-- Fecha de corte: 2026-10-06.
+- Fecha de corte: 2026-10-07.
 - Estado: desarrollo técnico iniciado; fase sin cerrar.
 - Alcance de este avance: vista principal del portal público, dentro de RF-1.
 - Referencia visual: [CEA, frame 1:3](https://www.figma.com/design/Rw9Bb37khwyJnL2wUEjK89/CEA?node-id=1-3), facilitado por el usuario para su implementación.
@@ -13,13 +13,15 @@ La navegación interna lleva a cada sección; el menú móvil se cierra al elegi
 
 Las imágenes y SVG del diseño están en `packages/portal/public/figma/`; las fuentes Poppins y su licencia OFL están en `packages/portal/public/fonts/`. No se depende de enlaces temporales de Figma. La decoración estática de la portada con efecto de refracción se exportó desde su capa original `47:577` a PNG con escala 2; el efecto está incorporado en la imagen y no requiere un runtime WebGPU en el portal.
 
-Se recupera la composición inicial de Figma después de que el usuario indicara que el rediseño había cambiado demasiado su apariencia. Se mantienen portada, colores, decoraciones, separadores, mosaicos y estilos de tarjetas, con mejoras limitadas de legibilidad, espaciado, contraste e interacción. El ancho máximo sigue siendo 1440 px; las secciones crecen para evitar recortes y las cuadrículas se adaptan al espacio disponible. El criterio completo está en [diseno-ui.md](diseno-ui.md).
+Se recupera la composición inicial de Figma después de que el usuario indicara que el rediseño había cambiado demasiado su apariencia. Se mantienen portada, colores, decoraciones, separadores, mosaicos y estilos de tarjetas, con mejoras limitadas de legibilidad, espaciado, contraste e interacción. La composición conserva su ancho de referencia de 1440 px y los fondos se extienden a toda la pantalla; las secciones crecen para evitar recortes y las cuadrículas se adaptan al espacio disponible. El criterio completo está en [diseno-ui.md](diseno-ui.md).
 
 La paleta conserva el vino de la marca, separa colores semánticos y corrige contrastes. Se incluye navegación por teclado, foco visible, enlace para saltar al contenido, nombres accesibles y respeto por la preferencia de movimiento reducido. Las fuentes en `rem` y el flujo flexible permiten ampliar el texto.
 
 Se completan los nueve temas de prácticas con descripciones e imágenes, las cinco actividades con detalle, áreas relacionadas y enfoque académico, y los ocho productos con descripciones de su proceso. La galería conserva sus ocho espacios y ahora muestra imágenes con leyendas. Este contenido orientativo se apoya en el propósito académico del módulo; requiere revisión institucional y no constituye una programación de cursos, confirmación de existencias ni ficha comercial definitiva.
 
 Anime.js 4.5.0 añade entradas breves en portada, aparición de tarjetas al desplazarse y transiciones al cambiar actividades y productos. Los efectos se registran en ámbitos de Anime.js y se limpian al desmontar React o cambiar de selección. La preferencia `prefers-reduced-motion` desactiva los efectos y restaura el contenido incluso si cambia durante la sesión. El HTML prerenderizado permanece visible sin JavaScript; no se ocultan secciones mediante CSS para preparar las animaciones.
+
+El ajuste del 2026-10-07 evita cambios de altura entre las ocho fichas de productos: las fotos tienen un marco independiente de su proporción y el espacio de detalle se adapta al contenido más largo. Los indicadores de áreas en actividades son etiquetas estáticas con las áreas correspondientes resaltadas. La tarjeta «Explora más opciones» conserva su ubicación con una jerarquía de título, descripción y contacto. Los fondos, encabezado y separadores ahora cubren también pantallas mayores de 1440 px.
 
 ## Validación de este avance
 
@@ -30,8 +32,9 @@ Anime.js 4.5.0 añade entradas breves en portada, aparición de tarjetas al desp
 - Revisión de tamaños táctiles, texto y desbordamiento a 320, 360, 390, 640, 768, 896, 1024, 1120, 1280, 1440 y 1920 px.
 - axe-core 4.14.0: comprobación automática WCAG 2 A/AA, 2.1 AA y 2.2 AA en móvil, tableta y escritorio, además de menú abierto, catálogo y actividades, sin infracciones detectadas. Esto no equivale a una auditoría manual completa ni a la integración de axe en el pipeline.
 - Revisión visual en móvil, tableta y escritorio y ampliación independiente del texto al 200%. Las capturas y los informes se guardan en `artifacts/`, excluido de Git.
-- Verificación adicional del portal compilado: las trece fichas de actividades/productos tienen descripción e imagen cargada; las nueve prácticas tienen títulos distintos y la galería tiene ocho imágenes con leyenda. Los 103 elementos de imagen de la página cargan sin errores.
+- Verificación adicional del portal compilado: las trece fichas de actividades/productos tienen descripción e imagen cargada; las nueve prácticas tienen títulos distintos y la galería tiene ocho imágenes con leyenda. Los 110 elementos de imagen de la página cargan sin errores.
 - Anime.js: entrada de portada y tarjetas, cambios rápidos de ficha, restauración al activar movimiento reducido y un solo observador de aparición después del montaje de React StrictMode. El contenido inicial, prácticas y galería también se revisan con JavaScript desactivado.
+- Ajustes de tarjetas: los ocho productos conservan la misma altura y la posición del selector en once anchos de 320–1920 px, con texto normal y al 200%. Solo la ficha seleccionada queda accesible; las etiquetas de áreas no tienen enlaces ni controles y resaltan las áreas correctas de las cinco actividades. axe y la suite existente siguen aprobadas.
 
 ## Contenido por validar
 

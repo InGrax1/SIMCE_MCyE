@@ -15,7 +15,7 @@ Las imágenes y SVG originales permanecen como recursos locales. La decoración 
 
 ## Mejoras limitadas
 
-El ancho máximo sigue siendo 1440 px. Las cuadrículas de áreas y prácticas usan doce columnas, agrupadas para conservar las tres tarjetas de áreas y las cuatro columnas del mosaico en escritorio. El espaciado entre controles y bloques relacionados se normaliza a 8, 16, 24, 32, 48 o 64 px donde no altera la composición.
+La composición del contenido conserva un ancho máximo de 1440 px; los fondos, separadores y encabezado cubren toda la pantalla para evitar franjas laterales blancas en monitores grandes. Los márgenes adicionales centran las áreas de lectura, tarjetas y elementos de portada. Las luces ambientales se extienden hasta los bordes sin cortes en el límite del contenido. Las cuadrículas de áreas y prácticas usan doce columnas, agrupadas para conservar las tres tarjetas de áreas y las cuatro columnas del mosaico en escritorio. El espaciado entre controles y bloques relacionados se normaliza a 8, 16, 24, 32, 48 o 64 px donde no altera la composición.
 
 Se mantienen los tamaños expresivos de portada y títulos. El texto de lectura usa al menos 16 px con interlineado de 150%; las notas y etiquetas cortas usan al menos 14 px. Las fuentes están en `rem`. Los párrafos dejan de justificarse para evitar espacios irregulares, y las tarjetas crecen cuando aumenta el texto. Las sombras del catálogo y contacto usan vino oscuro con baja opacidad.
 
@@ -23,13 +23,19 @@ Las áreas conservan el texto sobre la imagen, con un degradado oscuro detrás p
 
 Los botones y enlaces accionables tienen áreas de al menos 48 × 48 px. Se definen hover, active, foco y selección sin mover el layout, además del estilo de controles nativamente deshabilitados. La selección se expone con `aria-pressed`, borde reforzado y color. Las transiciones de 180 ms se desactivan con movimiento reducido.
 
+Las áreas de cada actividad son indicadores estáticos en una lista, sin enlaces ni foco de teclado. Se resaltan únicamente las áreas asociadas a la actividad seleccionada mediante color, peso tipográfico y una marca de verificación; el texto para lectores de pantalla identifica «Se realiza en». La decoración lateral se aparta de los textos de actividades en escritorio.
+
+Las fichas de productos comparten una cuadrícula que reserva el espacio del contenido más alto, incluyendo el efecto de ancho disponible y tamaño de fuente. Solo la ficha seleccionada es visible y accesible; las otras permanecen con `visibility: hidden`, `aria-hidden` e `inert` para conservar la medida sin exponer enlaces al teclado. La imagen ocupa un marco independiente de su proporción natural, con `object-fit: cover`. Cambiar de producto mantiene estables la altura de la tarjeta y la posición del selector, sin recortar textos ni usar scroll interno. En móvil el marco fotográfico se adapta entre 192 y 320 px y el detalle crece con el texto.
+
+«Explora más opciones» conserva su tarjeta del mosaico, con un título de 24 px, una descripción de 16 px y una línea de contacto con flecha de 32 px. El texto se lee como una frase, con alineación a la izquierda y espaciado uniforme; toda la tarjeta sigue enlazando a contacto.
+
 El menú móvil se cierra al navegar, pulsar Escape, tocar fuera o volver a escritorio; Escape devuelve el foco al botón. El encabezado persistente publica su altura real para que las anclas y el foco no queden detrás de él. El enlace para saltar al contenido aparece al navegar con teclado.
 
 ## Adaptación de pantallas pequeñas
 
 Hasta 1100 px se compacta el menú y se reorganizan las cuadrículas. Hasta 800 px la portada pone el texto, ilustración, enlaces y bloque institucional en filas independientes; esto evita que el crecimiento del texto se solape con la imagen. Áreas, actividades, programas y contacto se apilan cuando falta espacio. En teléfonos, las prácticas se presentan en una columna y el catálogo en dos, conservando sus estilos.
 
-Las pruebas cubren 320–1920 px y texto ampliado al 200% en móvil, tableta y escritorio. El informe y las capturas están en `artifacts/`, excluido de Git. No se considera una auditoría manual completa de accesibilidad.
+Las pruebas cubren 320–1920 px y texto ampliado al 200% en móvil, tableta y escritorio. La revisión del 2026-10-07 comprueba los ocho productos en once anchos y ambos tamaños de texto: la tarjeta y el selector mantienen sus medidas y posiciones al cambiar de producto, sin desbordamiento. También se verifica que solo una ficha sea visible/accesible y que los indicadores de áreas no contengan controles. El informe y las capturas están en `artifacts/`, excluido de Git. No se considera una auditoría manual completa de accesibilidad.
 
 Los espacios vacíos de prácticas y galería se completan con imágenes de referencia y leyendas; las nueve prácticas tienen temas y descripciones diferentes, conservando el mosaico. Los selectores de actividades y productos presentan fichas completas con contenido orientativo para revisión institucional. La ficha de hamburguesa cuenta las cuatro especies listadas; el total de cinco variantes de la referencia queda pendiente de aclaración.
 

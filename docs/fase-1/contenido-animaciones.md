@@ -40,6 +40,6 @@ El refinamiento usa [Timeline](https://animejs.com/documentation/timeline/) para
 
 Compilación cliente/SSR y prerenderizado, ESLint, Prettier, comprobación del repositorio y suite existente de 22 pruebas aprobadas. La prueba de integración MySQL se omite sin `TEST_MYSQL=1`.
 
-Chromium verifica los trece cambios de ficha, la carga de los 103 elementos de imagen, los nueve títulos distintos de prácticas, las ocho leyendas de galería, entradas de portada/títulos/tarjetas, zoom de fotografías, flechas con cursor y teclado, cambios rápidos de selección y cambios de preferencia de movimiento. También se comprueba el contenido inicial con JavaScript desactivado.
+Chromium verifica los trece cambios de ficha, la carga de los 110 elementos de imagen, los nueve títulos distintos de prácticas, las ocho leyendas de galería, entradas de portada/títulos/tarjetas, zoom de fotografías, flechas con cursor y teclado, cambios rápidos de selección y cambios de preferencia de movimiento. También se comprueba el contenido inicial con JavaScript desactivado.
 
 La revisión responsiva cubre 320–1920 px y texto al 200% sin desbordamientos ni recortes detectados. axe-core no detecta infracciones en los estados comprobados; se revisan capturas de prácticas, galería, actividades y productos a 390, 768 y 1440 px. Los informes y capturas quedan en `artifacts/`, excluido de Git.
