@@ -861,27 +861,39 @@ em {
 }
 .practica-explorar {
   border: 1px solid #caffbb;
-  font-size: 2.25rem;
-  font-weight: 500;
   color: #0a3909;
-  justify-content: space-between;
-  padding: 20px 25px;
+  justify-content: center;
+  gap: 16px;
+  text-align: left;
 }
-.practica-explorar > span:first-child {
-  align-self: flex-start;
+.practica-explorar-titulo {
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.25;
+  max-width: 12ch;
 }
-.practica-explorar > span:nth-child(2) {
+.practica-explorar p {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #415139;
+}
+.practica-explorar-enlace {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 3px;
-}
-.practica-explorar > span:last-child {
-  align-self: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 1rem;
+  font-weight: 500;
 }
 .practica-explorar img {
-  width: 85px;
-  height: 85px;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.practica-explorar:hover {
+  background: #f4faef;
 }
 .practicas-luz-1 {
   width: 1324.47px;
@@ -1024,6 +1036,28 @@ em {
   color: #920703;
   background: #ffb4a847;
 }
+.areas-indicadores {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.areas-indicadores .chip {
+  padding: 4px 8px;
+  gap: 8px;
+}
+.areas-indicadores .elegida {
+  font-weight: 500;
+}
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .actividad-especies {
   font-size: 0.75rem;
   line-height: 18px;
@@ -1099,11 +1133,33 @@ em {
 .producto-destacado figure {
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 .producto-destacado figure > img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 325px;
+  height: 100%;
   object-fit: cover;
+}
+.producto-fichas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+.producto-ficha {
+  grid-area: 1 / 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.producto-ficha:not(.es-visible) {
+  visibility: hidden;
+  pointer-events: none;
+}
+.producto-ficha .consulta-producto {
+  margin-top: auto;
+  padding-top: 24px;
 }
 .producto-destacado figcaption {
   position: absolute;
@@ -2815,17 +2871,8 @@ button:active,
 .chips {
   gap: 8px;
 }
-a.chip {
-  min-width: 48px;
-  min-height: 48px;
-  padding: 8px;
-}
 .chip {
   color: #595b5d;
-}
-a.chip:hover {
-  border-color: var(--rojo);
-  background: #ffb4a847;
 }
 .actividad-especies {
   font-size: 1rem;
@@ -2847,7 +2894,7 @@ a.chip:hover {
 }
 .producto-destacado figure > img {
   height: 100%;
-  min-height: 352px;
+  min-height: 0;
 }
 .producto-destacado article {
   font-size: 1rem;
@@ -3287,8 +3334,11 @@ a.chip:hover {
     grid-template-columns: minmax(0, 1fr);
   }
   .producto-destacado figure > img {
-    height: 320px;
+    height: 100%;
     min-height: 0;
+  }
+  .producto-destacado figure {
+    height: clamp(192px, 48vw, 320px);
   }
   .programas-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -3414,7 +3464,7 @@ a.chip:hover {
     min-height: 0;
   }
   .producto-destacado figure > img {
-    height: 264px;
+    height: 100%;
   }
   .productos-selector {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3457,5 +3507,89 @@ a.chip:hover {
   a,
   button {
     transition: none;
+  }
+}
+
+/* Fondos a todo el ancho; composición centrada de 1440 px en pantallas grandes. */
+@media (min-width: 1441px) {
+  :root {
+    --margen-pantalla: calc((100vw - 1440px) / 2);
+  }
+  .seccion,
+  .encabezado,
+  .separador {
+    max-width: none;
+  }
+  .encabezado {
+    padding-inline: calc(var(--margen-pantalla) + 8px) calc(var(--margen-pantalla) + 28px);
+  }
+  .decoraciones {
+    width: 1440px;
+    margin-inline: auto;
+  }
+  .decoraciones-hero,
+  .decoraciones-practicas,
+  .decoraciones-productos,
+  .decoraciones-social,
+  .decoraciones-pie {
+    width: 100%;
+  }
+  .hero-decoracion {
+    left: calc(var(--margen-pantalla) + 908px);
+  }
+  .hero-carne {
+    left: calc(var(--margen-pantalla) + 860px);
+  }
+  .hero-sombra {
+    left: calc(var(--margen-pantalla) - 538px);
+  }
+  .hero-cilantro-1 {
+    left: calc(var(--margen-pantalla) + 15px);
+  }
+  .hero-cilantro-2 {
+    left: calc(var(--margen-pantalla) + 1031px);
+  }
+  .hero-cilantro-3 {
+    left: calc(var(--margen-pantalla) + 459px);
+  }
+  .hero-romero {
+    left: calc(var(--margen-pantalla) + 1067px);
+  }
+  .contenido {
+    margin-inline: calc(var(--margen-pantalla) + 57px);
+  }
+  .contenido-estrecho {
+    margin-inline: calc(var(--margen-pantalla) + 91px) calc(var(--margen-pantalla) + 75px);
+  }
+  .hero-contenido {
+    margin-left: calc(var(--margen-pantalla) + 185px);
+  }
+  .hero-redes {
+    left: calc(var(--margen-pantalla) + 15px);
+  }
+  .hero-institucion {
+    left: calc(var(--margen-pantalla) + 933px);
+  }
+  .practicas-contenido {
+    margin-inline: calc(var(--margen-pantalla) + 87px) calc(var(--margen-pantalla) + 78px);
+  }
+  .productos-contenido {
+    margin-inline: calc(var(--margen-pantalla) + 170px);
+  }
+  .galeria-grid {
+    margin-inline: calc(var(--margen-pantalla) + 118px);
+  }
+  .pie {
+    padding-inline: calc(var(--margen-pantalla) + 41px);
+  }
+  .separador > img {
+    width: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (min-width: 1101px) {
+  .actividades-romero {
+    left: calc(100% - 72px);
   }
 }

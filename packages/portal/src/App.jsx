@@ -322,11 +322,11 @@ function Practicas() {
             </article>
           ))}
           <a className="practica practica-explorar" href="#contacto">
-            <span>Explora</span>
-            <span>
-              más <Imagen archivo="Frame4.svg" nodo="46:223" />
+            <span className="practica-explorar-titulo">Explora más opciones</span>
+            <p>Consulta prácticas, asesorías y talleres para tu grupo.</p>
+            <span className="practica-explorar-enlace">
+              Contacta al módulo <Imagen archivo="Frame4.svg" nodo="46:223" />
             </span>
-            <span>Opciones</span>
           </a>
         </div>
         <p className="nota-referencia">
@@ -386,17 +386,22 @@ function Actividades() {
             <h3>{actividad.nombre}</h3>
             <p className="actividad-descripcion">{actividad.descripcion}</p>
             <p className="actividad-donde">Dónde se realiza</p>
-            <div className="chips">
-              {areas.map((area) => (
-                <a
-                  key={area.nombre}
-                  href="#areas"
-                  className={actividad.areas.includes(area.nombre) ? 'chip elegida' : 'chip'}
-                >
-                  {area.nombre}
-                </a>
-              ))}
-            </div>
+            <ul className="chips areas-indicadores" aria-label="Áreas de la actividad">
+              {areas.map((area) => {
+                const relacionada = actividad.areas.includes(area.nombre);
+                return (
+                  <li key={area.nombre} className={relacionada ? 'chip elegida' : 'chip'}>
+                    {relacionada && (
+                      <>
+                        <span className="solo-lectores">Se realiza en: </span>
+                        <span aria-hidden="true">✓</span>
+                      </>
+                    )}
+                    {area.nombre}
+                  </li>
+                );
+              })}
+            </ul>
             <div className="actividad-especies">
               <small>{actividad.especies ? 'Especies' : 'Enfoque académico'}</small>
               <p>{actividad.especies ?? actividad.enfoque}</p>
@@ -408,6 +413,55 @@ function Actividades() {
         </div>
       </div>
     </section>
+  );
+}
+
+function FichaProducto({ producto, activa, referencia }) {
+  return (
+    <article
+      id={activa ? 'producto-detalle' : undefined}
+      className={activa ? 'producto-ficha es-visible' : 'producto-ficha'}
+      aria-hidden={!activa}
+      inert={!activa}
+      ref={activa ? referencia : undefined}
+    >
+      <p className="sobretitulo">Producto Cárnico</p>
+      <h3>{producto.nombre}</h3>
+      <p className="producto-descripcion">{producto.descripcion}</p>
+      {producto.especies ? (
+        <>
+          <p className="producto-variantes">
+            <strong>{producto.especies.length}</strong> especies en esta ficha
+          </p>
+          <p>Se elabora con:</p>
+          <div className="chips">
+            {producto.especies.map((especie) => (
+              <span className="chip" key={especie}>
+                <Imagen archivo="Frame7.svg" />
+                {especie}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="producto-enfoque">
+          <p className="sobretitulo">Proceso relacionado</p>
+          <p>{producto.enfoque}</p>
+        </div>
+      )}
+      <a
+        className="consulta-producto"
+        href={`mailto:${correo}?subject=${encodeURIComponent(`Información sobre ${producto.nombre}`)}`}
+      >
+        Consultar especies y presentaciones disponibles
+      </a>
+      <div className="producto-nota">
+        <Imagen archivo="Line3.svg" nodo="47:337" />
+        <small>
+          Elaborado con buenas prácticas de higiene, empacado y etiquetado en el módulo.
+        </small>
+      </div>
+    </article>
   );
 }
 
@@ -443,44 +497,16 @@ function Productos() {
             />
             <figcaption>{producto.nombre} · imagen de referencia</figcaption>
           </figure>
-          <article id="producto-detalle" aria-live="polite" ref={ficha}>
-            <p className="sobretitulo">Producto Cárnico</p>
-            <h3>{producto.nombre}</h3>
-            <p className="producto-descripcion">{producto.descripcion}</p>
-            {producto.especies ? (
-              <>
-                <p className="producto-variantes">
-                  <strong>{producto.especies.length}</strong> especies en esta ficha
-                </p>
-                <p>Se elabora con:</p>
-                <div className="chips">
-                  {producto.especies.map((especie) => (
-                    <span className="chip" key={especie}>
-                      <Imagen archivo="Frame7.svg" />
-                      {especie}
-                    </span>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="producto-enfoque">
-                <p className="sobretitulo">Proceso relacionado</p>
-                <p>{producto.enfoque}</p>
-              </div>
-            )}
-            <a
-              className="consulta-producto"
-              href={`mailto:${correo}?subject=${encodeURIComponent(`Información sobre ${producto.nombre}`)}`}
-            >
-              Consultar especies y presentaciones disponibles
-            </a>
-            <div className="producto-nota">
-              <Imagen archivo="Line3.svg" nodo="47:337" />
-              <small>
-                Elaborado con buenas prácticas de higiene, empacado y etiquetado en el módulo.
-              </small>
-            </div>
-          </article>
+          <div className="producto-fichas" aria-live="polite" aria-atomic="true">
+            {productos.map((item, i) => (
+              <FichaProducto
+                producto={item}
+                activa={seleccion === i}
+                referencia={ficha}
+                key={item.nombre}
+              />
+            ))}
+          </div>
         </div>
         <div className="productos-selector" aria-label="Seleccionar producto">
           {productos.map((item, i) => (
