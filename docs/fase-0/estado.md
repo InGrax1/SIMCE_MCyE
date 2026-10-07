@@ -1,6 +1,6 @@
 # Estado de Fase 0
 
-- Fecha de corte: 2026-09-11
+- Fecha de corte: 2026-10-06
 - Referencia: `Especificacion_SIMCE_MCyE_v0.2.docx`
 - Estado técnico: completo y verificado
 - Estado institucional: condicionado a validaciones externas
@@ -44,6 +44,16 @@
 | Aprobación de SU-01, SU-04, SU-08 y SU-10                                         | Propietarios institucionales de cada proceso          | Antes de iniciar trabajo dependiente de Fase 1 | Historias firmadas o registradas como aprobadas       |
 
 El prototipo permanece utilizable con datos sintéticos y perfil configurable. Los valores reales de alojamiento y báscula se incorporarán cuando la institución los confirme; no están codificados como supuestos definitivos.
+
+## Seguimiento del 6 de octubre de 2026
+
+El usuario confirma que el trámite de alojamiento, subdominio y TLS y la validación física de la báscula siguen pendientes de respuesta de la institución. No se han comunicado responsables ni fechas compromiso para esas confirmaciones.
+
+Sobre la aceptación del PDF y las reglas de folio, y sobre SU-01, SU-04, SU-08 y SU-10, el usuario indica que los puntos son correctos «al parecer». Se registra como revisión preliminar favorable; no equivale a una aprobación institucional ni aporta evidencia física de la báscula. Las condiciones de cierre de la tabla anterior permanecen abiertas hasta registrar la evidencia correspondiente.
+
+La Fase 1 corresponde al portal público y la gestión de contenido (RF-1 y RF-2). Conforme a §15.4 de la especificación, su esqueleto técnico puede desarrollarse sin proveedor definitivo, conservando explícitos los pendientes institucionales. La aceptación de esa fase requiere contenido validado, identidad institucional, publicación autónoma por la responsable, verificaciones Lighthouse y axe y disponibilidad en staging (§15.1 y §15.2).
+
+La Fase 1 no se registra como iniciada en esta actualización. La instrucción previa condicionaba su inicio al cierre de Fase 0; queda por aclarar si el usuario desea avanzar con el desarrollo técnico mientras se mantienen abiertas las validaciones institucionales.
 
 ## Resultado del hito
 
