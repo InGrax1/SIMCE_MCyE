@@ -31,4 +31,8 @@ Hasta 1100 px se compacta el menú y se reorganizan las cuadrículas. Hasta 800 
 
 Las pruebas cubren 320–1920 px y texto ampliado al 200% en móvil, tableta y escritorio. El informe y las capturas están en `artifacts/`, excluido de Git. No se considera una auditoría manual completa de accesibilidad.
 
-Las repeticiones y fotografías pendientes del frame siguen visibles hasta recibir contenidos institucionales. La ficha de hamburguesa cuenta las cuatro especies listadas; el total de cinco variantes de la referencia queda pendiente de aclaración. Los demás pendientes funcionales se detallan en [estado.md](estado.md).
+Los espacios vacíos de prácticas y galería se completan con imágenes de referencia y leyendas; las nueve prácticas tienen temas y descripciones diferentes, conservando el mosaico. Los selectores de actividades y productos presentan fichas completas con contenido orientativo para revisión institucional. La ficha de hamburguesa cuenta las cuatro especies listadas; el total de cinco variantes de la referencia queda pendiente de aclaración.
+
+Las animaciones de Anime.js 4.5.0 añaden desplazamientos suaves de 8–24 px y cambios de opacidad durante 300–600 ms, con entradas escalonadas breves. Las tarjetas aparecen una vez al entrar en pantalla. No hay bucles decorativos. React limpia los efectos al desmontar o cambiar de ficha; activar movimiento reducido durante la sesión cancela los efectos y restaura sus estilos. El contenido sigue visible sin JavaScript.
+
+El detalle del contenido y la imagen generada está en [contenido-animaciones.md](contenido-animaciones.md). Los demás pendientes funcionales se detallan en [estado.md](estado.md).

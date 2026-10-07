@@ -17,6 +17,10 @@ Se recupera la composición inicial de Figma después de que el usuario indicara
 
 La paleta conserva el vino de la marca, separa colores semánticos y corrige contrastes. Se incluye navegación por teclado, foco visible, enlace para saltar al contenido, nombres accesibles y respeto por la preferencia de movimiento reducido. Las fuentes en `rem` y el flujo flexible permiten ampliar el texto.
 
+Se completan los nueve temas de prácticas con descripciones e imágenes, las cinco actividades con detalle, áreas relacionadas y enfoque académico, y los ocho productos con descripciones de su proceso. La galería conserva sus ocho espacios y ahora muestra imágenes con leyendas. Este contenido orientativo se apoya en el propósito académico del módulo; requiere revisión institucional y no constituye una programación de cursos, confirmación de existencias ni ficha comercial definitiva.
+
+Anime.js 4.5.0 añade entradas breves en portada, aparición de tarjetas al desplazarse y transiciones al cambiar actividades y productos. Los efectos se registran en ámbitos de Anime.js y se limpian al desmontar React o cambiar de selección. La preferencia `prefers-reduced-motion` desactiva los efectos y restaura el contenido incluso si cambia durante la sesión. El HTML prerenderizado permanece visible sin JavaScript; no se ocultan secciones mediante CSS para preparar las animaciones.
+
 ## Validación de este avance
 
 - Comprobación del repositorio, ESLint y Prettier.
@@ -24,14 +28,16 @@ La paleta conserva el vino de la marca, separa colores semánticos y corrige con
 - Compilación de API, panel PWA y portal prerenderizado.
 - Navegador Chromium: imágenes cargadas, enlaces internos válidos, ausencia de errores de página/HTTP y funcionamiento de todos los selectores y el menú móvil.
 - Revisión de tamaños táctiles, texto y desbordamiento a 320, 360, 390, 640, 768, 896, 1024, 1120, 1280, 1440 y 1920 px.
-- axe-core 4.14.0: comprobación automática WCAG 2 A/AA, 2.1 AA y 2.2 AA en móvil, tableta y escritorio, además de menú abierto, catálogo y actividad sin detalle, sin infracciones detectadas. Esto no equivale a una auditoría manual completa ni a la integración de axe en el pipeline.
+- axe-core 4.14.0: comprobación automática WCAG 2 A/AA, 2.1 AA y 2.2 AA en móvil, tableta y escritorio, además de menú abierto, catálogo y actividades, sin infracciones detectadas. Esto no equivale a una auditoría manual completa ni a la integración de axe en el pipeline.
 - Revisión visual en móvil, tableta y escritorio y ampliación independiente del texto al 200%. Las capturas y los informes se guardan en `artifacts/`, excluido de Git.
+- Verificación adicional del portal compilado: las trece fichas de actividades/productos tienen descripción e imagen cargada; las nueve prácticas tienen títulos distintos y la galería tiene ocho imágenes con leyenda. Los 103 elementos de imagen de la página cargan sin errores.
+- Anime.js: entrada de portada y tarjetas, cambios rápidos de ficha, restauración al activar movimiento reducido y un solo observador de aparición después del montaje de React StrictMode. El contenido inicial, prácticas y galería también se revisan con JavaScript desactivado.
 
 ## Contenido por validar
 
-La galería y las fotografías de prácticas mantienen los espacios grises del diseño y sus nombres accesibles indican que el contenido está pendiente. Las tarjetas repetidas de prácticas se conservan como parte del mosaico de referencia y necesitan sus contenidos definitivos. Las imágenes de producto se mantienen tal como aparecen en Figma, incluida la imagen compartida de jamón y salchicha.
+La galería y las prácticas utilizan imágenes de referencia disponibles en el diseño; sus textos alternativos y notas aclaran su carácter ilustrativo. La ficha de salchicha sustituye la imagen repetida de jamón por una imagen generada de referencia. Su procedencia y el texto de generación se documentan en [contenido-animaciones.md](contenido-animaciones.md). Estas imágenes no acreditan instalaciones, sesiones ni productos reales adicionales del módulo.
 
-El frame indica cinco variantes de hamburguesa, pero nombra cuatro especies. La interfaz cuenta las cuatro especies de la ficha, mientras el total de variantes queda por aclarar; no se inventa la quinta especie. Los demás productos y las actividades sin descripción en el frame ofrecen consulta a la responsable en lugar de afirmar datos no proporcionados. No se muestran precios ni disponibilidad operativa.
+El frame indica cinco variantes de hamburguesa, pero nombra cuatro especies. La interfaz cuenta las cuatro especies de la ficha, mientras el total de variantes queda por aclarar; no se inventa la quinta especie. Los textos añadidos explican temas y procesos relacionados, y el catálogo ofrece consulta a la responsable para confirmar especies, presentaciones y disponibilidad. No se muestran precios ni disponibilidad operativa.
 
 Las redes sociales aún no tienen una URL institucional proporcionada; el icono de la portada dirige al contacto del módulo con un nombre accesible que indica ese destino. Los códigos de servicio social, fotografías, textos e identidad visual requieren validación institucional antes de publicación oficial.
 
