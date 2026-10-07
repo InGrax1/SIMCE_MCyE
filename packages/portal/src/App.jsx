@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   actividades,
   areas,
@@ -9,36 +9,84 @@ import {
   programas,
   secciones,
 } from './contenido.js';
-import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
+import { Decoraciones, Etiqueta, Flecha, IconoFoto, Imagen, Marca } from './componentes.jsx';
 
 function Encabezado() {
   const [abierto, cambiarMenu] = useState(false);
+  const cabecera = useRef(null);
+  const botonMenu = useRef(null);
+
+  useEffect(() => {
+    const raiz = document.documentElement;
+    const observador = new ResizeObserver(() => {
+      raiz.style.setProperty(
+        '--altura-cabecera',
+        `${Math.ceil(cabecera.current.getBoundingClientRect().height)}px`,
+      );
+    });
+    observador.observe(cabecera.current);
+    return () => {
+      observador.disconnect();
+      raiz.style.removeProperty('--altura-cabecera');
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (evento) => {
+      if (!cabecera.current.contains(evento.target)) cambiarMenu(false);
+    };
+    const escritorio = window.matchMedia('(min-width: 1120px)');
+    const cerrarAlAmpliar = (evento) => {
+      if (evento.matches) cambiarMenu(false);
+    };
+    document.addEventListener('pointerdown', cerrarFuera);
+    escritorio.addEventListener('change', cerrarAlAmpliar);
+    return () => {
+      document.removeEventListener('pointerdown', cerrarFuera);
+      escritorio.removeEventListener('change', cerrarAlAmpliar);
+    };
+  }, [abierto]);
+
   return (
-    <header className="encabezado" data-node-id="3:44">
-      <Marca />
-      <button
-        type="button"
-        className="boton-menu"
-        aria-expanded={abierto}
-        aria-controls="navegacion"
-        onClick={() => cambiarMenu(!abierto)}
-      >
-        {abierto ? 'Cerrar' : 'Menú'}
-      </button>
-      <nav
-        id="navegacion"
-        className={abierto ? 'navegacion abierta' : 'navegacion'}
-        aria-label="Navegación principal"
-      >
-        {secciones.map(([id, nombre]) => (
-          <a key={id} href={`#${id}`} onClick={() => cambiarMenu(false)}>
-            {nombre}
+    <header
+      className="encabezado"
+      data-node-id="3:44"
+      ref={cabecera}
+      onKeyDown={(evento) => {
+        if (evento.key === 'Escape' && abierto) {
+          cambiarMenu(false);
+          botonMenu.current.focus();
+        }
+      }}
+    >
+      <div className="encabezado-contenido">
+        <Marca />
+        <button
+          ref={botonMenu}
+          type="button"
+          className="boton-menu"
+          aria-expanded={abierto}
+          aria-controls="navegacion"
+          onClick={() => cambiarMenu(!abierto)}
+        >
+          {abierto ? 'Cerrar' : 'Menú'}
+        </button>
+        <nav
+          id="navegacion"
+          className={abierto ? 'navegacion abierta' : 'navegacion'}
+          aria-label="Navegación principal"
+        >
+          {secciones.map(([id, nombre]) => (
+            <a key={id} href={`#${id}`} onClick={() => cambiarMenu(false)}>
+              {nombre}
+            </a>
+          ))}
+          <a className="boton boton-contacto" href="#contacto" onClick={() => cambiarMenu(false)}>
+            Contáctanos <Flecha />
           </a>
-        ))}
-        <a className="boton boton-contacto" href="#contacto" onClick={() => cambiarMenu(false)}>
-          Contáctanos <Flecha />
-        </a>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 }
@@ -51,45 +99,42 @@ function Inicio() {
       aria-labelledby="titulo-inicio"
       data-node-id="47:496"
     >
-      <Decoraciones grupo="hero" />
-      <div className="hero-contenido">
-        <h1 id="titulo-inicio">
-          Módulo de
-          <br />
-          <span className="color-carnes">Carnes</span> y<br />
-          <span className="color-embutidos">Embutidos</span>
-        </h1>
-        <p className="hero-descripcion">
-          Encargado de la obtención, manejo y procesamiento de carne de diferentes especies de
-          abasto, como apoyo a la docencia y la investigación de la UNAM.
-        </p>
-        <div className="hero-botones">
-          <a className="boton boton-areas" href="#areas">
-            Conoce las áreas <Flecha />
-          </a>
-          <a className="boton boton-borde" href="#servicio-social">
-            Servicio Social
-          </a>
+      <div className="hero-grid">
+        <div className="hero-contenido">
+          <p className="hero-sobretitulo">CEA · FES Cuautitlán</p>
+          <h1 id="titulo-inicio">
+            Módulo de <span className="hero-nombre">Carnes y Embutidos</span>
+          </h1>
+          <p className="hero-descripcion">
+            Encargado de la obtención, manejo y procesamiento de carne de diferentes especies de
+            abasto, como apoyo a la docencia y la investigación de la UNAM.
+          </p>
+          <div className="hero-botones">
+            <a className="boton boton-areas" href="#areas">
+              Conoce las áreas <Flecha />
+            </a>
+            <a className="boton boton-borde" href="#servicio-social">
+              Servicio Social
+            </a>
+          </div>
+          <aside className="hero-redes" aria-label="Enlaces de contacto">
+            <a href={`mailto:${correo}`} aria-label="Enviar correo al módulo">
+              <Imagen archivo="Vector.svg" nodo="47:605" />
+            </a>
+            <a href="#contacto">Contactar al módulo</a>
+          </aside>
         </div>
-      </div>
-      <aside className="hero-redes" aria-label="Enlaces de contacto">
-        <a href={`mailto:${correo}`} aria-label="Enviar correo al módulo">
-          <Imagen archivo="Vector.svg" nodo="47:605" />
-        </a>
-        <a href="#contacto" aria-label="Consultar contacto y redes del módulo">
-          <Imagen archivo="Image1.png" nodo="47:606" />
-        </a>
-        <span>Síguenos En</span>
-      </aside>
-      <div className="hero-institucion">
-        <Imagen archivo="LogoFesc2.png" alt="Escudo de la FES Cuautitlán" nodo="47:610" />
-        <div>
-          <p>FES Cuautitlán</p>
-          <small>
-            Centro de Enseñanza
-            <br />
-            Agropecuaria
-          </small>
+        <div className="hero-visual">
+          <div className="hero-ilustracion">
+            <Decoraciones grupo="hero" />
+          </div>
+          <div className="hero-institucion">
+            <Imagen archivo="LogoFesc2.png" alt="Escudo de la FES Cuautitlán" nodo="47:610" />
+            <div>
+              <p>FES Cuautitlán</p>
+              <small>Centro de Enseñanza Agropecuaria</small>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -104,19 +149,14 @@ function Modulo() {
       aria-labelledby="titulo-modulo"
       data-node-id="5:268"
     >
-      <Decoraciones grupo="modulo" />
       <div className="contenido modulo-contenido">
         <Etiqueta>El Módulo</Etiqueta>
         <h2 id="titulo-modulo">
-          Docencia e investigación
-          <br />
-          con <em>estándares de rastro.</em>
+          Docencia e investigación con <em>estándares de rastro.</em>
         </h2>
         <div className="modulo-grid">
           <div className="cronologia">
-            <Imagen archivo="Line2.svg" className="cronologia-linea" nodo="5:249" />
             <article>
-              <Imagen archivo="Ellipse6.svg" className="cronologia-punto" nodo="5:244" />
               <p className="numero">01 - Qué es</p>
               <h3>Un módulo de la Unidad Pecuaria del CEA</h3>
               <p>
@@ -126,11 +166,9 @@ function Modulo() {
               </p>
             </article>
             <article>
-              <Imagen archivo="Ellipse6.svg" className="cronologia-punto" nodo="5:245" />
               <p className="numero">02 - Objetivo</p>
               <h3>Apoyo a la docencia y a la investigación</h3>
               <div className="objetivo">
-                <Imagen archivo="Line1.svg" className="objetivo-linea" nodo="5:201" />
                 <p>
                   Brindar servicio de apoyo a la docencia e investigación a las diferentes
                   licenciaturas de la FESC, así como a otras dependencias de la UNAM e instituciones
@@ -139,7 +177,6 @@ function Modulo() {
               </div>
             </article>
             <article>
-              <Imagen archivo="Ellipse6.svg" className="cronologia-punto" nodo="5:247" />
               <p className="numero">03 - A Quién Atiende</p>
               <h3>Comunidad universitaria e instituciones externas</h3>
               <ul className="destinatarios">
@@ -178,14 +215,11 @@ function Areas() {
       aria-labelledby="titulo-areas"
       data-node-id="5:271"
     >
-      <Decoraciones grupo="areas" />
       <div className="contenido">
         <Etiqueta>Áreas</Etiqueta>
         <div className="areas-introduccion">
           <h2 id="titulo-areas">
-            El módulo cuenta
-            <br />
-            con <em>tres áreas.</em>
+            El módulo cuenta con <em>tres áreas.</em>
           </h2>
           <p>
             Cada una cubre una etapa del proceso, desde la matanza y el faenado hasta la elaboración
@@ -244,46 +278,42 @@ function Practicas() {
       aria-labelledby="titulo-practicas"
       data-node-id="7:2"
     >
-      <Decoraciones grupo="practicas" />
       <div className="practicas-contenido">
+        <Etiqueta>Prácticas académicas</Etiqueta>
         <h2 id="titulo-practicas">
-          Prácticas académicas <em>que se atienden.</em>
+          Aprendizaje <em>en el módulo.</em>
         </h2>
+        <p className="introduccion">
+          Consulta con la responsable las prácticas y el apoyo académico del módulo.
+        </p>
         <div className="practicas-grid">
-          {Array.from({ length: 9 }, (_, i) => (
-            <article
-              className={i === 0 || i === 5 ? 'practica practica-ancha' : 'practica'}
-              key={i}
-            >
-              {i === 0 || i === 5 ? (
-                <>
-                  <div
-                    className="foto-pendiente"
-                    role="img"
-                    aria-label="Fotografía de práctica pendiente"
-                  />
-                  <h3>TMIA de Procesos tecnológicos de productos cárnicos</h3>
-                </>
-              ) : (
-                <>
-                  <span className="practica-carrera">MVZ</span>
-                  <h3>Anatomía veterinaria aplicada</h3>
-                  <div
-                    className="foto-pendiente"
-                    role="img"
-                    aria-label="Fotografía de práctica pendiente"
-                  />
-                </>
-              )}
+          {[
+            ['TMIA', 'Procesos tecnológicos de productos cárnicos'],
+            ['MVZ', 'Anatomía veterinaria aplicada'],
+          ].map(([carrera, nombre]) => (
+            <article className="practica" key={nombre}>
+              <div
+                className="foto-pendiente"
+                role="img"
+                aria-label="Fotografía de práctica pendiente"
+              >
+                <IconoFoto />
+                <span>Fotografía por incorporar</span>
+              </div>
+              <div className="practica-texto">
+                <span className="practica-carrera">{carrera}</span>
+                <h3>{nombre}</h3>
+              </div>
             </article>
           ))}
-          <a className="practica practica-explorar" href="#contacto">
-            <span>Explora</span>
-            <span>
-              más <Imagen archivo="Frame4.svg" nodo="46:223" />
-            </span>
-            <span>Opciones</span>
-          </a>
+          <article className="practica practica-explorar">
+            <p className="sobretitulo">Apoyo académico</p>
+            <h3>Encuentra la práctica que necesitas.</h3>
+            <p>Solicita información sobre otras opciones a la responsable del módulo.</p>
+            <a className="boton" href="#contacto">
+              Consultar prácticas <Flecha />
+            </a>
+          </article>
         </div>
       </div>
     </section>
@@ -300,14 +330,11 @@ function Actividades() {
       aria-labelledby="titulo-actividades"
       data-node-id="40:55"
     >
-      <Decoraciones grupo="actividades" />
       <div className="contenido contenido-estrecho">
         <Etiqueta>Actividades</Etiqueta>
         <div className="actividades-introduccion">
           <h2 id="titulo-actividades">
-            Además, se realizan
-            <br />
-            <em>actividades como.</em>
+            Actividades que <em>se realizan.</em>
           </h2>
           <p>Selecciona una actividad para conocer el detalle y ver el área donde se realiza.</p>
         </div>
@@ -326,6 +353,9 @@ function Actividades() {
                 <Imagen archivo={seleccion === i ? 'Frame6.svg' : 'Frame5.svg'} />
               </button>
             ))}
+            <a className="ver-detalle-movil" href="#actividad-detalle">
+              Ver detalle de la actividad <Flecha />
+            </a>
           </div>
           <article id="actividad-detalle" className="actividad-detalle" aria-live="polite">
             <p className="sobretitulo">Detalle de la Actividad</p>
@@ -388,15 +418,14 @@ function Productos() {
       aria-labelledby="titulo-productos"
       data-node-id="47:290"
     >
-      <Decoraciones grupo="productos" />
       <div className="productos-contenido">
         <Etiqueta centrada>Productos</Etiqueta>
         <h2 id="titulo-productos">
           Productos cárnicos y <em>embutidos.</em>
         </h2>
         <p className="introduccion">
-          Ocho líneas de producto elaboradas en el área de embutidos, cada una disponible en
-          distintas especies.
+          Conoce las líneas de producto elaboradas en el área de embutidos y consulta sus
+          presentaciones.
         </p>
         <div className="producto-destacado">
           <figure>
@@ -406,7 +435,6 @@ function Productos() {
               nodo={seleccion === 0 ? '47:366' : undefined}
               loading="lazy"
             />
-            <figcaption>Foto - {producto.nombre.toLowerCase()}</figcaption>
           </figure>
           <article id="producto-detalle" aria-live="polite">
             <p className="sobretitulo">Producto Cárnico</p>
@@ -414,7 +442,7 @@ function Productos() {
             {producto.especies ? (
               <>
                 <p className="producto-variantes">
-                  <strong>{producto.variantes}</strong> variantes por especie
+                  <strong>{producto.especies.length}</strong> especies en esta ficha
                 </p>
                 <p>Se elabora con:</p>
                 <div className="chips">
@@ -435,12 +463,17 @@ function Productos() {
               </a>
             )}
             <div className="producto-nota">
-              <Imagen archivo="Line3.svg" nodo="47:337" />
               <small>
                 Elaborado con buenas prácticas de higiene, empacado y etiquetado en el módulo.
               </small>
             </div>
           </article>
+        </div>
+        <div className="productos-navegacion">
+          <p>Selecciona un producto para conocer su detalle.</p>
+          <a className="ver-detalle-movil" href="#producto-detalle">
+            Ver detalle de {producto.nombre} <Flecha />
+          </a>
         </div>
         <div className="productos-selector" aria-label="Seleccionar producto">
           {productos.map((item, i) => (
@@ -470,7 +503,6 @@ function ServicioSocial() {
       aria-labelledby="titulo-social"
       data-node-id="47:432"
     >
-      <Decoraciones grupo="social" />
       <div className="contenido contenido-estrecho">
         <Etiqueta>Servicio Social</Etiqueta>
         <h2 id="titulo-social">
@@ -485,14 +517,14 @@ function ServicioSocial() {
                 <small>{programa.codigo}</small>
               </div>
               <h3>{programa.nombre}</h3>
-              <div className="programa-actividades">
-                <h4>Actividades para Ing. en Alimentos</h4>
+              <details className="programa-actividades">
+                <summary>Actividades para Ing. en Alimentos</summary>
                 <ul>
                   {programa.actividades.map((texto) => (
                     <li key={texto}>{texto}</li>
                   ))}
                 </ul>
-              </div>
+              </details>
               <a
                 className="boton boton-pequeno"
                 href={`mailto:${correo}?subject=${encodeURIComponent(`Servicio social ${programa.codigo}`)}`}
@@ -521,13 +553,17 @@ function Galeria() {
       </h2>
       <p>Instalaciones, prácticas y productos del Módulo de Carnes y Embutidos.</p>
       <div className="galeria-grid">
-        {Array.from({ length: 8 }, (_, i) => (
+        {['Instalaciones', 'Prácticas académicas', 'Procesos', 'Productos'].map((nombre) => (
           <div
-            key={i}
-            className={`galeria-espacio galeria-espacio-${i + 1}`}
+            key={nombre}
+            className="galeria-espacio"
             role="img"
-            aria-label={`Fotografía ${i + 1} de la galería pendiente de contenido institucional`}
-          />
+            aria-label={`Fotografía de ${nombre.toLowerCase()} pendiente de contenido institucional`}
+          >
+            <IconoFoto />
+            <span>{nombre}</span>
+            <small>Fotografía por incorporar</small>
+          </div>
         ))}
       </div>
     </section>
@@ -547,9 +583,7 @@ function Contacto() {
         <div className="contacto-grid">
           <div>
             <h2 id="titulo-contacto">
-              ¿Necesitas apoyo del
-              <br />
-              <em>módulo?</em>
+              ¿Necesitas apoyo del <em>módulo?</em>
             </h2>
             <p className="contacto-descripcion">
               Escríbenos para solicitar prácticas académicas, asesorías, talleres o información
@@ -559,7 +593,6 @@ function Contacto() {
               Enviar Correo <Flecha correo />
             </a>
             <div className="contacto-logos">
-              <Imagen archivo="Line4.svg" className="contacto-linea" nodo="47:692" />
               <Imagen archivo="LogoUnam1.png" alt="UNAM" nodo="47:693" loading="lazy" />
               <Imagen
                 archivo="LogoCea1.png"
@@ -572,7 +605,6 @@ function Contacto() {
           <address className="contacto-tarjeta">
             <div className="responsable">
               <div className="avatar">
-                <Imagen archivo="Ellipse13.svg" nodo="47:695" />
                 <span>JS</span>
               </div>
               <div>
@@ -580,7 +612,6 @@ function Contacto() {
                 <p>Responsable del Módulo de Carnes y Embutidos</p>
               </div>
             </div>
-            <Imagen archivo="Line5.svg" className="contacto-tarjeta-linea" nodo="47:703" />
             <div className="contacto-dato">
               <Imagen archivo="Frame9.svg" nodo="47:704" />
               <div>
@@ -615,34 +646,35 @@ function Contacto() {
 function Pie() {
   return (
     <footer className="pie seccion" data-node-id="47:734">
-      <Decoraciones grupo="pie" />
-      <div className="pie-marca">
-        <Marca pie />
-        <p>
-          Unidad Pecuaria del Centro de Enseñanza Agropecuaria, Facultad de Estudios Superiores
-          Cuautitlán, Universidad Nacional Autónoma de México.
-        </p>
-      </div>
-      <div>
-        <h2>Secciones</h2>
-        {secciones.slice(0, 4).map(([id, nombre]) => (
-          <a key={id} href={`#${id}`}>
-            {nombre === 'Prácticas' ? 'Prácticas Académicas' : nombre}
-          </a>
-        ))}
-        <a href="#galeria">Galería</a>
-      </div>
-      <div>
-        <h2>Contacto</h2>
-        <a href={`mailto:${correo}`}>{correo}</a>
-        <p>Campo 4, FES Cuautitlán · Unidad Pecuaria, CEA</p>
-        <p>Mtra. Janeli Solís Garfias · Responsable del módulo</p>
-      </div>
-      <div>
-        <h2>Información</h2>
-        <a href="#productos">Productos y embutidos</a>
-        <a href="#servicio-social">Servicio social</a>
-        <a href="#contacto">Contacto</a>
+      <div className="pie-contenido">
+        <div className="pie-marca">
+          <Marca pie />
+          <p>
+            Unidad Pecuaria del Centro de Enseñanza Agropecuaria, Facultad de Estudios Superiores
+            Cuautitlán, Universidad Nacional Autónoma de México.
+          </p>
+        </div>
+        <div>
+          <h2>Secciones</h2>
+          {secciones.slice(0, 4).map(([id, nombre]) => (
+            <a key={id} href={`#${id}`}>
+              {nombre === 'Prácticas' ? 'Prácticas Académicas' : nombre}
+            </a>
+          ))}
+          <a href="#galeria">Galería</a>
+        </div>
+        <div>
+          <h2>Contacto</h2>
+          <a href={`mailto:${correo}`}>{correo}</a>
+          <p>Campo 4, FES Cuautitlán · Unidad Pecuaria, CEA</p>
+          <p>Mtra. Janeli Solís Garfias · Responsable del módulo</p>
+        </div>
+        <div>
+          <h2>Información</h2>
+          <a href="#productos">Productos y embutidos</a>
+          <a href="#servicio-social">Servicio social</a>
+          <a href="#contacto">Contacto</a>
+        </div>
       </div>
     </footer>
   );
@@ -655,37 +687,15 @@ export function App() {
         Saltar al contenido
       </a>
       <Encabezado />
-      <main id="contenido-principal">
+      <main id="contenido-principal" tabIndex={-1}>
         <Inicio />
-        <Separador
-          archivo="PapelRasgadoHorizontalFigma1.svg"
-          className="separador-hero"
-          nodo="2:20"
-        />
         <Modulo />
-        <Separador className="separador-a-oscuro" nodo="5:251" />
         <Areas />
-        <Separador className="separador-a-claro" nodo="10:10" />
         <Procesos />
-        <Separador
-          archivo="PapelRasgadoHorizontalFigma3.svg"
-          className="separador-practicas"
-          nodo="23:22"
-        />
         <Practicas />
-        <Separador
-          archivo="PapelRasgadoHorizontalFigma4.svg"
-          className="separador-a-claro"
-          nodo="36:51"
-        />
         <Actividades />
         <Productos />
         <ServicioSocial />
-        <Separador
-          archivo="PapelRasgadoHorizontalFigma5.svg"
-          className="separador-a-oscuro"
-          nodo="47:650"
-        />
         <Galeria />
         <Contacto />
       </main>

@@ -11,6 +11,25 @@ export function Imagen({ archivo, alt = '', className = '', nodo, ...props }) {
   );
 }
 
+export function IconoFoto() {
+  return (
+    <svg
+      className="icono-foto"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8" cy="9" r="1.5" />
+      <path d="m3 17 5-5 4 4 4-6 5 7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Marca({ pie = false }) {
   return (
     <a
@@ -54,11 +73,6 @@ const decoraciones = {
   hero: [
     ['hero-decoration.png', 'hero-decoracion', '47:577'],
     ['PorterhouseSteakCorteResChoiceJc1.png', 'hero-carne', '47:578'],
-    ['Shadown.svg', 'hero-sombra', '47:579'],
-    ['Cilantro1.png', 'hero-cilantro-1', '47:583'],
-    ['Cilantro1.png', 'hero-cilantro-2', '47:584'],
-    ['Cilantro1.png', 'hero-cilantro-3', '47:585'],
-    ['Romero2600X6001.png', 'hero-romero', '47:608'],
   ],
   modulo: [
     ['Cilantro1.png', 'modulo-cilantro-1', '5:314'],
