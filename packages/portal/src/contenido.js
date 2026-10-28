@@ -1,4 +1,13 @@
 export const correo = 'janelisolis@cuautitlan.unam.mx';
+export const institucion = {
+  nombre: 'Módulo de Carnes y Embutidos',
+  responsable: 'Mtra. Janeli Solís Garfias',
+  ubicacion: 'Campo 4, FES Cuautitlán · Unidad Pecuaria, CEA',
+  descripcion:
+    'El Módulo de Carnes y Embutidos se ubica en Campo 4 de la FES Cuautitlán y está encargado de la obtención, manejo y procesamiento de carne de diferentes especies de abasto.',
+  objetivo:
+    'Encargado de la obtención, manejo y procesamiento de carne de diferentes especies de abasto, como apoyo a la docencia y la investigación de la UNAM.',
+};
 export const mapa =
   'https://www.google.com/maps/search/?api=1&query=FES+Cuautitl%C3%A1n+Campo+4+UNAM';
 

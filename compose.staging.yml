@@ -26,11 +26,19 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       STORAGE: mysql
+      TRUST_PROXY_HOPS: 1
       DATABASE_HOST: db
       DATABASE_PORT: 3306
       DATABASE_NAME: ${DATABASE_NAME:-simce}
       DATABASE_USER: ${DATABASE_USER:-simce}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Define DATABASE_PASSWORD en el entorno}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET aleatorio en el entorno}
+      CMS_ORIGENES: ${CMS_ORIGENES:?Define CMS_ORIGENES con la URL del panel}
+      CMS_DIR: /app/.local/cms
+      AVISO_INTERES_URL: ${AVISO_INTERES_URL:-}
+      AVISO_INTERES_VERSION: ${AVISO_INTERES_VERSION:-}
+    volumes:
+      - simce_cms:/app/.local/cms
     depends_on:
       db:
         condition: service_healthy
@@ -52,10 +60,11 @@ services:
       dockerfile: deploy/Dockerfile.web
     restart: unless-stopped
     ports:
-      - '${HTTP_PORT:-8080}:80'
+      - '${HTTP_BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:80'
     depends_on:
       api:
         condition: service_healthy
 
 volumes:
   simce_mysql:
+  simce_cms:

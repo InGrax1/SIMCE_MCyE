@@ -1,6 +1,5 @@
-FROM node:24-alpine
+FROM node:24-alpine AS construccion
 
-ENV NODE_ENV=production
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -8,10 +7,20 @@ COPY packages/api/package.json packages/api/package.json
 COPY packages/dominio/package.json packages/dominio/package.json
 COPY packages/panel/package.json packages/panel/package.json
 COPY packages/portal/package.json packages/portal/package.json
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY packages/api packages/api
 COPY packages/dominio packages/dominio
+COPY packages/panel packages/panel
+COPY packages/portal packages/portal
+COPY scripts/compilar.mjs scripts/compilar.mjs
+RUN npm run build && npm prune --omit=dev
+RUN mkdir -p /app/.local/cms
+
+FROM node:24-alpine
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=construccion --chown=node:node /app /app
 
 USER node
 EXPOSE 3000

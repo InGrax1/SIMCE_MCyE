@@ -1,7 +1,10 @@
+import { cabecerasSesion, consultarApi } from './sesion.js';
+
 export async function enviarOperacionHttp(operacion, apiUrl = '/api/v1') {
+  if (apiUrl === '/api/v1') return consultarApi('/sync/push', { metodo: 'POST', datos: operacion });
   const respuesta = await fetch(`${apiUrl}/sync/push`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...cabecerasSesion() },
     body: JSON.stringify(operacion),
   });
   const cuerpo = await respuesta.json();

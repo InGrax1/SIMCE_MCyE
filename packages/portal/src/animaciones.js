@@ -16,7 +16,6 @@ export function useAnimacionesPortal(raiz) {
           {
             opacity: [0.35, 1],
             y: [compacto() ? 16 : 24, 0],
-            scale: [0.99, 1],
             duration: 850,
           },
           0,
@@ -43,13 +42,12 @@ export function useAnimacionesPortal(raiz) {
         .add(
           '.hero-carne',
           {
-            opacity: [0.35, 1],
-            scale: [0.96, 1],
-            y: [16, 0],
-            duration: 1050,
+            opacity: [0.75, 1],
+            duration: 700,
           },
           80,
-        );
+        )
+        .add('.hero-decoracion', { opacity: [0.6, 1], scale: [0.96, 1], duration: 850 }, 80);
 
       self.add('revelar', (tarjetas) => {
         animate(tarjetas, {
@@ -127,6 +125,7 @@ export function useAnimacionesPortal(raiz) {
 
 export function useTransicionFicha(raiz, seleccion) {
   useEffect(() => {
+    if (!raiz.current) return;
     const alcance = createScope({ root: raiz.current, mediaQueries: preferencias }).add((self) => {
       if (self.matches.reducirMovimiento) return;
       animate(raiz.current, {

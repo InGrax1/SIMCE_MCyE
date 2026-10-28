@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  actividades,
-  areas,
-  correo,
-  galeria,
-  mapa,
-  practicas,
-  procesos,
-  productos,
-  programas,
-  secciones,
-} from './contenido.js';
+import { procesos, secciones } from './contenido.js';
+import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
 import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
 import { useAnimacionesPortal, useTransicionFicha } from './animaciones.js';
+
+function SeccionSinEntradas({ id, titulo }) {
+  return (
+    <section id={id} className="seccion talleres" aria-labelledby={`titulo-${id}`}>
+      <div className="contenido">
+        <h2 id={`titulo-${id}`}>{titulo}</h2>
+        <p>No hay información publicada en esta sección por el momento.</p>
+        <a href="#contacto">Consulta con el módulo</a>
+      </div>
+    </section>
+  );
+}
 
 function Encabezado() {
   const [abierto, cambiarMenu] = useState(false);
@@ -93,6 +95,7 @@ function Encabezado() {
 }
 
 function Inicio() {
+  const { correo, institucion } = useContenidoPortal();
   return (
     <section
       id="inicio"
@@ -103,15 +106,18 @@ function Inicio() {
       <Decoraciones grupo="hero" />
       <div className="hero-contenido">
         <h1 id="titulo-inicio">
-          Módulo de
-          <br />
-          <span className="color-carnes">Carnes</span> y<br />
-          <span className="color-embutidos">Embutidos</span>
+          {institucion.nombre !== 'Módulo de Carnes y Embutidos' ? (
+            institucion.nombre
+          ) : (
+            <>
+              Módulo de
+              <br />
+              <span className="color-carnes">Carnes</span> y<br />
+              <span className="color-embutidos">Embutidos</span>
+            </>
+          )}
         </h1>
-        <p className="hero-descripcion">
-          Encargado de la obtención, manejo y procesamiento de carne de diferentes especies de
-          abasto, como apoyo a la docencia y la investigación de la UNAM.
-        </p>
+        <p className="hero-descripcion">{institucion.objetivo}</p>
         <div className="hero-botones">
           <a className="boton boton-areas" href="#areas">
             Conoce las áreas <Flecha />
@@ -146,6 +152,7 @@ function Inicio() {
 }
 
 function Modulo() {
+  const { institucion } = useContenidoPortal();
   return (
     <section
       id="el-modulo"
@@ -168,11 +175,7 @@ function Modulo() {
               <Imagen archivo="Ellipse6.svg" className="cronologia-punto" nodo="5:244" />
               <p className="numero">01 - Qué es</p>
               <h3>Un módulo de la Unidad Pecuaria del CEA</h3>
-              <p>
-                El Módulo de Carnes y Embutidos se ubica en Campo 4 de la FES Cuautitlán y está
-                encargado de la obtención, manejo y procesamiento de carne de diferentes especies de
-                abasto.
-              </p>
+              <p>{institucion.descripcion}</p>
             </article>
             <article>
               <Imagen archivo="Ellipse6.svg" className="cronologia-punto" nodo="5:245" />
@@ -180,11 +183,7 @@ function Modulo() {
               <h3>Apoyo a la docencia y a la investigación</h3>
               <div className="objetivo">
                 <Imagen archivo="Line1.svg" className="objetivo-linea" nodo="5:201" />
-                <p>
-                  Brindar servicio de apoyo a la docencia e investigación a las diferentes
-                  licenciaturas de la FESC, así como a otras dependencias de la UNAM e instituciones
-                  académicas que así lo requieran.
-                </p>
+                <p>{institucion.objetivo}</p>
               </div>
             </article>
             <article>
@@ -220,6 +219,7 @@ function Modulo() {
 }
 
 function Areas() {
+  const { areas } = useContenidoPortal();
   return (
     <section
       id="areas"
@@ -234,7 +234,7 @@ function Areas() {
           <h2 id="titulo-areas">
             El módulo cuenta
             <br />
-            con <em>tres áreas.</em>
+            con <em>{areas.length === 3 ? 'tres' : areas.length} áreas.</em>
           </h2>
           <p>
             Cada una cubre una etapa del proceso, desde la matanza y el faenado hasta la elaboración
@@ -244,7 +244,12 @@ function Areas() {
         <div className="areas-grid">
           {areas.map((area, i) => (
             <article className={`area-card area-card-${i + 1}`} key={area.nombre}>
-              <Imagen archivo={area.foto} alt={area.nombre} nodo={area.nodo} loading="lazy" />
+              <Imagen
+                archivo={area.foto}
+                alt={area.alt ?? area.nombre}
+                nodo={area.nodo}
+                loading="lazy"
+              />
               <span className="area-numero">0{i + 1}</span>
               <span className="area-etiqueta">{area.etiqueta}</span>
               <div className="area-texto">
@@ -286,6 +291,16 @@ function Procesos() {
 }
 
 function Practicas() {
+  const { practicas } = useContenidoPortal();
+  const [licenciatura, filtrar] = useState('Todas');
+  const licenciaturas = [
+    ...new Set(practicas.flatMap((p) => (p.licenciaturas?.length ? p.licenciaturas : [p.carrera]))),
+  ].filter(Boolean);
+  const visibles = practicas.filter(
+    (p) =>
+      licenciatura === 'Todas' ||
+      (p.licenciaturas?.length ? p.licenciaturas : [p.carrera]).includes(licenciatura),
+  );
   return (
     <section
       id="practicas"
@@ -302,8 +317,22 @@ function Practicas() {
           Temas de formación vinculados con la docencia y la investigación del módulo. Consulta con
           la responsable cómo coordinar una práctica, asesoría o taller para tu grupo.
         </p>
+        <div className="filtro-practicas">
+          <label htmlFor="filtro-licenciatura">Filtrar por licenciatura</label>
+          <select
+            id="filtro-licenciatura"
+            value={licenciatura}
+            onChange={(e) => filtrar(e.target.value)}
+          >
+            <option>Todas</option>
+            {licenciaturas.map((nombre) => (
+              <option key={nombre}>{nombre}</option>
+            ))}
+          </select>
+          <span aria-live="polite">{visibles.length} temas</span>
+        </div>
         <div className="practicas-grid">
-          {practicas.map((practica, i) => (
+          {visibles.map((practica, i) => (
             <article
               className={i === 0 || i === 5 ? 'practica practica-ancha' : 'practica'}
               key={practica.nombre}
@@ -312,6 +341,9 @@ function Practicas() {
                 <span className="practica-carrera">{practica.carrera}</span>
                 <h3>{practica.nombre}</h3>
                 <p>{practica.descripcion}</p>
+                <p className="practica-asignatura">
+                  Asignatura: {practica.asignatura ?? 'Por confirmar con la coordinación académica'}
+                </p>
               </div>
               <Imagen
                 className="practica-foto"
@@ -338,10 +370,13 @@ function Practicas() {
 }
 
 function Actividades() {
+  const { actividades, areas } = useContenidoPortal();
   const [seleccion, seleccionar] = useState(1);
   const ficha = useRef(null);
   useTransicionFicha(ficha, seleccion);
-  const actividad = actividades[seleccion];
+  const indice = actividades[seleccion] ? seleccion : 0;
+  const actividad = actividades[indice];
+  if (!actividad) return <SeccionSinEntradas id="actividades" titulo="Actividades" />;
   return (
     <section
       id="actividades"
@@ -366,13 +401,13 @@ function Actividades() {
               <button
                 type="button"
                 key={item.nombre}
-                aria-pressed={seleccion === i}
+                aria-pressed={indice === i}
                 aria-controls="actividad-detalle"
                 onClick={() => seleccionar(i)}
               >
                 <span>0{i + 1}</span>
                 {item.nombre}
-                <Imagen archivo={seleccion === i ? 'Frame6.svg' : 'Frame5.svg'} />
+                <Imagen archivo={indice === i ? 'Frame6.svg' : 'Frame5.svg'} />
               </button>
             ))}
           </div>
@@ -388,7 +423,8 @@ function Actividades() {
             <p className="actividad-donde">Dónde se realiza</p>
             <ul className="chips areas-indicadores" aria-label="Áreas de la actividad">
               {areas.map((area) => {
-                const relacionada = actividad.areas.includes(area.nombre);
+                const relacionada =
+                  actividad.areas?.includes(area.id) || actividad.areas?.includes(area.nombre);
                 return (
                   <li key={area.nombre} className={relacionada ? 'chip elegida' : 'chip'}>
                     {relacionada && (
@@ -417,6 +453,7 @@ function Actividades() {
 }
 
 function FichaProducto({ producto, activa, referencia }) {
+  const { correo } = useContenidoPortal();
   return (
     <article
       id={activa ? 'producto-detalle' : undefined}
@@ -428,7 +465,13 @@ function FichaProducto({ producto, activa, referencia }) {
       <p className="sobretitulo">Producto Cárnico</p>
       <h3>{producto.nombre}</h3>
       <p className="producto-descripcion">{producto.descripcion}</p>
-      {producto.especies ? (
+      {producto.mostrarPrecio && producto.precio && (
+        <p>
+          {Number(producto.precio).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}{' '}
+          / kg
+        </p>
+      )}
+      {producto.especies?.length ? (
         <>
           <p className="producto-variantes">
             <strong>{producto.especies.length}</strong> especies en esta ficha
@@ -466,10 +509,12 @@ function FichaProducto({ producto, activa, referencia }) {
 }
 
 function Productos() {
+  const { productos } = useContenidoPortal();
   const [seleccion, seleccionar] = useState(0);
   const ficha = useRef(null);
   useTransicionFicha(ficha, seleccion);
-  const producto = productos[seleccion];
+  const producto = productos[seleccion] ?? productos[0];
+  if (!producto) return <SeccionSinEntradas id="productos" titulo="Productos" />;
   return (
     <section
       id="productos"
@@ -484,24 +529,27 @@ function Productos() {
           Productos cárnicos y <em>embutidos.</em>
         </h2>
         <p className="introduccion">
-          Conoce ocho líneas de productos cárnicos y su relación con los procesos de elaboración.
-          Consulta con el módulo las especies, presentaciones y disponibilidad.
+          Conoce los productos cárnicos y su relación con los procesos de elaboración. Consulta con
+          el módulo las especies, presentaciones y disponibilidad.
         </p>
         <div className="producto-destacado">
           <figure>
             <Imagen
               archivo={producto.foto}
-              alt={`Imagen de referencia de ${producto.nombre.toLowerCase()}`}
+              alt={producto.alt ?? `Imagen de referencia de ${producto.nombre.toLowerCase()}`}
               nodo={seleccion === 0 ? '47:366' : undefined}
               loading="lazy"
             />
-            <figcaption>{producto.nombre} · imagen de referencia</figcaption>
+            <figcaption>
+              {producto.nombre}
+              {!producto.foto?.startsWith('/medios/') && ' · imagen de referencia'}
+            </figcaption>
           </figure>
           <div className="producto-fichas" aria-live="polite" aria-atomic="true">
-            {productos.map((item, i) => (
+            {productos.map((item) => (
               <FichaProducto
                 producto={item}
-                activa={seleccion === i}
+                activa={producto === item}
                 referencia={ficha}
                 key={item.nombre}
               />
@@ -528,7 +576,100 @@ function Productos() {
   );
 }
 
+function InteresServicioSocial() {
+  const { programas, correo, avisoInteres } = useContenidoPortal();
+  const [estado, cambiarEstado] = useState('');
+  const [ocupado, cambiarOcupado] = useState(false);
+  const [error, cambiarError] = useState(false);
+  if (!avisoInteres)
+    return (
+      <p className="interes-consulta">
+        Para consultar los programas de servicio social,{' '}
+        <a href={`mailto:${correo}`}>escribe al módulo</a>.
+      </p>
+    );
+  return (
+    <section className="interes-social" aria-labelledby="titulo-interes">
+      <h3 id="titulo-interes">Cuéntanos qué programa te interesa</h3>
+      <form
+        method="post"
+        action="/api/v1/publico/intereses"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const formulario = e.currentTarget;
+          const valores = Object.fromEntries(new FormData(formulario));
+          cambiarOcupado(true);
+          cambiarError(false);
+          cambiarEstado('');
+          try {
+            const respuesta = await fetch(
+              `/api/v1/publico/programas/${encodeURIComponent(valores.programa)}/intereses`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...valores,
+                  aceptoAviso: valores.aceptoAviso === 'on',
+                  versionAviso: avisoInteres.version,
+                }),
+              },
+            );
+            const datos = await respuesta.json();
+            if (!respuesta.ok) throw new Error(datos.mensaje);
+            cambiarEstado('Recibimos tu interés. El módulo podrá contactarte con más información.');
+            formulario.reset();
+          } catch (err) {
+            cambiarError(true);
+            cambiarEstado(
+              err.message || 'No se pudo enviar. Inténtalo de nuevo o escribe al módulo.',
+            );
+          } finally {
+            cambiarOcupado(false);
+          }
+        }}
+      >
+        <input type="hidden" name="versionAviso" value={avisoInteres.version} />
+        <label>
+          Programa
+          <select name="programa" required>
+            {programas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Nombre
+          <input name="nombre" autoComplete="name" required maxLength={160} />
+        </label>
+        <label>
+          Correo
+          <input name="correo" type="email" autoComplete="email" required maxLength={160} />
+        </label>
+        <label>
+          Mensaje (opcional)
+          <textarea name="mensaje" maxLength={1000} rows={3} />
+        </label>
+        <label className="interes-aceptacion">
+          <input type="checkbox" name="aceptoAviso" required />
+          Leí y acepto el{' '}
+          <a href={avisoInteres.url} target="_blank" rel="noreferrer">
+            aviso de privacidad
+          </a>
+          .
+        </label>
+        <button className="boton" disabled={ocupado}>
+          {ocupado ? 'Enviando…' : 'Enviar interés'}
+        </button>
+        <p role={error ? 'alert' : 'status'}>{estado}</p>
+      </form>
+    </section>
+  );
+}
+
 function ServicioSocial() {
+  const { programas, correo } = useContenidoPortal();
   return (
     <section
       id="servicio-social"
@@ -568,12 +709,14 @@ function ServicioSocial() {
             </article>
           ))}
         </div>
+        <InteresServicioSocial />
       </div>
     </section>
   );
 }
 
 function Galeria() {
+  const { galeria } = useContenidoPortal();
   return (
     <section
       id="galeria"
@@ -588,9 +731,12 @@ function Galeria() {
       <p>Un recorrido visual por el espacio académico y los procesos cárnicos.</p>
       <div className="galeria-grid">
         {galeria.map((foto, i) => (
-          <figure key={foto.titulo} className={`galeria-espacio galeria-espacio-${i + 1}`}>
+          <figure
+            key={foto.id ?? foto.titulo ?? foto.nombre}
+            className={`galeria-espacio galeria-espacio-${i + 1}`}
+          >
             <Imagen archivo={foto.foto} alt={foto.alt} loading="lazy" />
-            <figcaption>{foto.titulo}</figcaption>
+            <figcaption>{foto.titulo ?? foto.nombre}</figcaption>
           </figure>
         ))}
       </div>
@@ -602,6 +748,7 @@ function Galeria() {
 }
 
 function Contacto() {
+  const { correo, mapa, institucion } = useContenidoPortal();
   return (
     <section
       id="contacto"
@@ -643,7 +790,7 @@ function Contacto() {
                 <span>JS</span>
               </div>
               <div>
-                <h3>Mtra. Janeli Solís Garfias</h3>
+                <h3>{institucion.responsable}</h3>
                 <p>Responsable del Módulo de Carnes y Embutidos</p>
               </div>
             </div>
@@ -659,7 +806,7 @@ function Contacto() {
               <Imagen archivo="Frame10.svg" nodo="47:711" />
               <div>
                 <p>Ubicación</p>
-                <span>Campo 4, FES Cuautitlán · Unidad Pecuaria, CEA</span>
+                <span>{institucion.ubicacion}</span>
                 <a className="enlace-mapa" href={mapa} target="_blank" rel="noreferrer">
                   Ver en el mapa <Imagen archivo="Frame12.svg" nodo="47:725" />
                 </a>
@@ -680,6 +827,7 @@ function Contacto() {
 }
 
 function Pie() {
+  const { correo, institucion } = useContenidoPortal();
   return (
     <footer className="pie seccion" data-node-id="47:734">
       <Decoraciones grupo="pie" />
@@ -698,12 +846,13 @@ function Pie() {
           </a>
         ))}
         <a href="#galeria">Galería</a>
+        <a href="#talleres">Talleres</a>
       </div>
       <div>
         <h2>Contacto</h2>
         <a href={`mailto:${correo}`}>{correo}</a>
-        <p>Campo 4, FES Cuautitlán · Unidad Pecuaria, CEA</p>
-        <p>Mtra. Janeli Solís Garfias · Responsable del módulo</p>
+        <p>{institucion.ubicacion}</p>
+        <p>{institucion.responsable} · Responsable del módulo</p>
       </div>
       <div>
         <h2>Información</h2>
@@ -715,7 +864,70 @@ function Pie() {
   );
 }
 
-export function App() {
+function Talleres() {
+  const { talleres, avisos, correo } = useContenidoPortal();
+  return (
+    <section id="talleres" className="talleres seccion" aria-labelledby="titulo-talleres">
+      <div className="contenido">
+        <Etiqueta>Talleres y avisos</Etiqueta>
+        <h2 id="titulo-talleres">
+          Aprende y participa <em>con el módulo.</em>
+        </h2>
+        <p>
+          Consulta las convocatorias y su estado. Para conocer los requisitos de participación,
+          comunícate con la responsable del módulo.
+        </p>
+        {talleres.length ? (
+          <div className="talleres-grid">
+            {talleres.map((t) => (
+              <article key={t.id}>
+                <span className="chip">
+                  {
+                    {
+                      informativo: 'Información',
+                      abierto: 'Convocatoria abierta',
+                      cerrado: 'Cerrado',
+                      concluido: 'Concluido',
+                    }[t.estadoTaller]
+                  }
+                </span>
+                <h3>{t.nombre ?? t.titulo}</h3>
+                <p>{t.descripcion}</p>
+                {t.inicio && (
+                  <p>
+                    <time dateTime={t.inicio}>{t.inicio}</time>
+                    {t.fin && ` al ${t.fin}`}
+                  </p>
+                )}
+                {t.requisitos && <p>Requisitos: {t.requisitos}</p>}
+                {t.costo && <p>Costo indicativo: {t.costo}</p>}
+                <a
+                  className="boton"
+                  href={`mailto:${correo}?subject=${encodeURIComponent(t.nombre ?? t.titulo)}`}
+                >
+                  Solicitar información
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="talleres-vacio">
+            Por ahora no hay talleres publicados. Escríbenos para consultar próximas actividades.
+          </p>
+        )}
+        {avisos.map((aviso) => (
+          <article className="aviso" key={aviso.id}>
+            <h3>{aviso.nombre ?? aviso.titulo}</h3>
+            {aviso.fecha && <time dateTime={aviso.fecha}>{aviso.fecha}</time>}
+            <p>{aviso.descripcion}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PaginaPortal() {
   const contenido = useRef(null);
   useAnimacionesPortal(contenido);
   return (
@@ -750,6 +962,7 @@ export function App() {
         <Actividades />
         <Productos />
         <ServicioSocial />
+        <Talleres />
         <Separador
           archivo="PapelRasgadoHorizontalFigma5.svg"
           className="separador-a-oscuro"
@@ -760,5 +973,13 @@ export function App() {
       </main>
       <Pie />
     </>
+  );
+}
+
+export function App({ contenido }) {
+  return (
+    <ContenidoPortal contenido={contenido}>
+      <PaginaPortal />
+    </ContenidoPortal>
   );
 }

@@ -1,0 +1,7 @@
+SIMCE Sans es un subconjunto Latin/Latin Extended de los TTF de Poppins suministrados,
+comprimido a WOFF2 y renombrado internamente. Conserva los contornos y las métricas
+de los caracteres incluidos. Las fuentes originales y OFL.txt se conservan.
+
+Copyright 2020 The Poppins Project Authors (https://github.com/itfoundry/Poppins).
+Los subconjuntos se distribuyen bajo SIL Open Font License 1.1, en OFL.txt.
+Generación reproducible: scripts/subconjuntar-fuentes.py con fonttools y brotli.

@@ -1,27 +1,150 @@
 @import 'tailwindcss';
 
+.interes-social {
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px solid #b9aaaa;
+  border-radius: 16px;
+  background: #fff;
+}
+.interes-social h3 {
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+}
+.interes-social label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.interes-social input:not([type='checkbox']),
+.interes-social textarea,
+.interes-social select {
+  font: inherit;
+  line-height: 1.5;
+  padding: 8px 16px;
+  min-height: 48px;
+  max-width: 100%;
+  width: 100%;
+  border: 1px solid #757778;
+  border-radius: 8px;
+}
+.interes-social .interes-aceptacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.interes-aceptacion input {
+  width: 24px;
+  height: 24px;
+}
+.interes-social a,
+.interes-consulta a {
+  text-decoration: underline;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+.interes-social :focus-visible,
+.filtro-practicas select:focus-visible {
+  outline: 3px solid #2463a8;
+  outline-offset: 4px;
+}
+.interes-social [role='alert'] {
+  color: #a51d3e;
+}
+.interes-consulta {
+  margin-top: 32px;
+}
+
+.filtro-practicas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+.filtro-practicas select {
+  min-height: 48px;
+  max-width: 100%;
+  padding: 8px 16px;
+  border: 1px solid #b9aaaa;
+  border-radius: 8px;
+  background: white;
+  color: #410000;
+  font: inherit;
+}
+.practica-asignatura {
+  margin-top: 16px;
+  color: #595b5d;
+}
+.talleres {
+  padding-block: 64px;
+  background: #f4f4f4;
+}
+.talleres h2 {
+  margin-block: 24px 16px;
+}
+.talleres em {
+  color: var(--rojo);
+}
+.talleres p {
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 72ch;
+}
+.talleres-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+.talleres-grid article,
+.aviso {
+  padding: 24px;
+  border: 1px solid #b9aaaa;
+  border-radius: 16px;
+  background: white;
+}
+.talleres-grid h3,
+.aviso h3 {
+  font-size: 1.5rem;
+  margin-block: 16px;
+}
+.talleres-grid p {
+  margin-block: 16px;
+}
+.talleres-grid .boton {
+  margin-top: 24px;
+}
+.talleres-vacio,
+.aviso {
+  margin-top: 32px;
+}
+
 @font-face {
-  font-family: Poppins;
+  font-family: 'SIMCE Sans';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/poppins-400.ttf') format('truetype');
+  src: url('/fonts/simce-sans-400.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: Poppins;
+  font-family: 'SIMCE Sans';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/poppins-500.ttf') format('truetype');
+  src: url('/fonts/simce-sans-500.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: Poppins;
+  font-family: 'SIMCE Sans';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/poppins-600.ttf') format('truetype');
+  src: url('/fonts/simce-sans-600.woff2') format('woff2');
 }
 
 :root {
@@ -32,7 +155,7 @@
   --gris: #686a6b;
   --claro: #f4f4f4;
   color: #000;
-  font-family: Poppins, sans-serif;
+  font-family: 'SIMCE Sans', sans-serif;
   font-synthesis: none;
   scroll-behavior: smooth;
 }
@@ -257,7 +380,8 @@ em {
   pointer-events: none;
   overflow: clip;
 }
-.decoraciones img {
+.decoraciones img,
+.decoraciones .decoracion {
   position: absolute;
   max-width: none;
 }
@@ -347,6 +471,21 @@ em {
   object-fit: cover;
 }
 .hero-sombra {
+  background:
+    radial-gradient(
+      ellipse 730px 730px at 1864px 730px,
+      rgba(139, 0, 0, 0.35),
+      rgba(139, 0, 0, 0.23) 40%,
+      rgba(139, 0, 0, 0.06) 75%,
+      transparent
+    ),
+    radial-gradient(
+      ellipse 374px 459px at 374px 1068px,
+      rgba(139, 0, 0, 0.83),
+      rgba(139, 0, 0, 0.55) 35%,
+      rgba(139, 0, 0, 0.12) 70%,
+      transparent
+    );
   width: 2595px;
   height: 1528px;
   left: -538px;

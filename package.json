@@ -11,26 +11,32 @@
     "npm": ">=10"
   },
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "build": "node scripts/compilar.mjs",
+    "test": "node scripts/verificar.mjs pruebas",
+    "test:coverage": "node scripts/verificar.mjs cobertura",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run check:repo && npm run lint && npm run format:check && npm run test",
+    "check": "node scripts/verificar.mjs",
     "check:repo": "node scripts/verificar-repositorio.mjs",
     "db:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/crear-base-datos-local.ps1",
     "prototype": "node scripts/prototipo-fase-cero.mjs",
+    "dev:fase1": "node scripts/iniciar-fase-uno.mjs",
+    "check:fase1": "node scripts/verificar-fase-uno.mjs",
     "dev:api": "npm run dev --workspace @simce/api",
     "dev:panel": "npm run dev --workspace @simce/panel",
     "dev:portal": "npm run dev --workspace @simce/portal"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "10.0.1",
-    "@vitest/coverage-v8": "5.0.0",
+    "@vitest/coverage-v8": "5.0.5",
+    "chrome-launcher": "1.2.2",
     "eslint": "10.10.0",
     "globals": "17.4.0",
+    "lighthouse": "13.6.0",
+    "playwright": "1.64.1",
     "prettier": "3.9.0",
-    "vitest": "5.0.0"
+    "vitest": "5.0.5"
   }
 }

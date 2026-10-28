@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "npm run build:client && npm run build:ssr && npm run prerender",
-    "build:client": "vite build",
+    "build:client": "node scripts/preparar-imagenes.mjs && vite build",
     "build:ssr": "vite build --ssr src/entry-server.jsx --outDir dist-ssr",
-    "dev": "vite",
+    "dev": "node scripts/preparar-imagenes.mjs && vite",
     "preview": "vite preview",
     "prerender": "node scripts/prerender.mjs"
   },
@@ -19,7 +19,8 @@
   "devDependencies": {
     "@tailwindcss/vite": "4.3.3",
     "@vitejs/plugin-react": "6.1.1",
+    "sharp": "0.35.5",
     "tailwindcss": "4.3.3",
-    "vite": "8.2.2"
+    "vite": "8.3.5"
   }
 }

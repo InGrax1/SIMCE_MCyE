@@ -1,4 +1,4 @@
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -10,5 +10,5 @@ const { render } = await import(moduloServidor);
 const html = plantilla.replace('<div id="root"></div>', `<div id="root">${render()}</div>`);
 
 await writeFile(archivoHtml, html);
-await rm(resolve(raiz, 'dist-ssr'), { recursive: true, force: true });
+await writeFile(resolve(raiz, 'dist/plantilla.html'), plantilla);
 console.log('Portal prerenderizado');

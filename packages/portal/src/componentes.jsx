@@ -1,11 +1,19 @@
 export function Imagen({ archivo, alt = '', className = '', nodo, ...props }) {
+  if (!archivo) return null;
+  const fuente =
+    /\.png$/i.test(archivo ?? '') && !archivo.startsWith('/')
+      ? `/optimizadas/${archivo.replace(/\.png$/i, '.webp')}`
+      : archivo?.startsWith('/') || archivo?.startsWith('data:image/')
+        ? archivo
+        : `/figma/${archivo}`;
   return (
     <img
-      src={`/figma/${archivo}`}
+      src={fuente}
       alt={alt}
       className={className}
       data-node-id={nodo}
       decoding="async"
+      fetchPriority={props.loading === 'lazy' ? 'low' : undefined}
       {...props}
     />
   );
@@ -90,9 +98,21 @@ const decoraciones = {
 export function Decoraciones({ grupo }) {
   return (
     <div className={`decoraciones decoraciones-${grupo}`} aria-hidden="true">
-      {decoraciones[grupo].map(([archivo, clase, nodo]) => (
-        <Imagen key={clase} archivo={archivo} className={clase} nodo={nodo} />
-      ))}
+      {decoraciones[grupo].map(([archivo, clase, nodo]) =>
+        archivo === 'Shadown.svg' ? (
+          <span key={clase} className={`decoracion ${clase}`} data-node-id={nodo} />
+        ) : (
+          <Imagen
+            key={clase}
+            archivo={archivo}
+            className={clase}
+            nodo={nodo}
+            loading={clase === 'hero-carne' ? undefined : 'lazy'}
+            fetchPriority={clase === 'hero-carne' ? 'high' : 'low'}
+            decoding={clase === 'hero-carne' ? 'sync' : 'async'}
+          />
+        ),
+      )}
     </div>
   );
 }

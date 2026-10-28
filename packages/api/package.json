@@ -11,14 +11,18 @@
     "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
     "seed": "knex --knexfile knexfile.js seed:run",
     "db:verify": "node scripts/verificar-base-datos.js",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests --no-file-parallelism",
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
     "@simce/dominio": "*",
+    "argon2": "0.45.1",
+    "compression": "1.8.2",
     "express": "5.2.1",
+    "jose": "6.2.13",
     "knex": "3.3.0",
-    "mysql2": "3.24.3"
+    "mysql2": "3.24.3",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "supertest": "7.2.2"

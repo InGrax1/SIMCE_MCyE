@@ -3,6 +3,9 @@
 artifacts
 coverage
 node_modules
+.local
+.mysql
+packages/portal/public/optimizadas
 packages/*/dist
 packages/*/dist-ssr
 *.docx

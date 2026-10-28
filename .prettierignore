@@ -2,6 +2,10 @@ coverage/
 dist/
 dist-ssr/
 node_modules/
+artifacts/
+.local/
+.mysql/
+packages/portal/public/optimizadas/
 *.docx
 *.pdf
 package-lock.json

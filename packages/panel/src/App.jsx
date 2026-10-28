@@ -1,5 +1,5 @@
-import { Prototipo } from './paginas/Prototipo.jsx';
+import { GestorContenido } from './paginas/GestorContenido.jsx';
 
 export function App() {
-  return <Prototipo />;
+  return <GestorContenido />;
 }
