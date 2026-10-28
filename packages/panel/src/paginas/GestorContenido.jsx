@@ -56,13 +56,14 @@ const etiquetas = {
 const listas = ['licenciaturas', 'especies', 'actividades'];
 const imagenTipos = ['area', 'practica', 'actividad', 'producto', 'galeria'];
 
-function Acceso({ recibir, ejecutar, ocupado }) {
+function Acceso({ recibir, ejecutar, ocupado, estado }) {
   return (
     <main className="cms-acceso">
       <section className="cms-login">
         <p className="cms-marca">SIMCE · CEA</p>
         <h1>Gestión de contenido</h1>
         <p>Actualiza la información pública del Módulo de Carnes y Embutidos.</p>
+        {estado}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -99,12 +100,13 @@ function Acceso({ recibir, ejecutar, ocupado }) {
   );
 }
 
-function CambioClave({ recibir, ejecutar, ocupado }) {
+function CambioClave({ recibir, ejecutar, ocupado, volver, estado }) {
   return (
     <main className="cms-acceso">
       <section className="cms-login">
         <h1>Cambia tu contraseña inicial</h1>
         <p>Elige una contraseña personal de al menos 10 caracteres.</p>
+        {estado}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -141,6 +143,10 @@ function CambioClave({ recibir, ejecutar, ocupado }) {
           </label>
           <button disabled={ocupado}>Actualizar contraseña</button>
         </form>
+        <button type="button" className="secundario" disabled={ocupado} onClick={volver}>
+          Volver al inicio de sesión
+        </button>
+        <a href="/">Volver al portal público</a>
       </section>
     </main>
   );
@@ -301,6 +307,16 @@ export function GestorContenido() {
   function recibir(valor) {
     establecerSesion(valor?.token, recibir);
     cambiarSesion(valor);
+    if (!valor) {
+      editado.current = false;
+      cambiarContenido(null);
+      cambiarEntrada(null);
+      cambiarDatos({});
+      cambiarPrevia('');
+      cambiarAuditoria(null);
+      cambiarIntereses(null);
+      confirmarRevision(false);
+    }
   }
   useEffect(() => {
     renovarSesion()
@@ -367,6 +383,18 @@ export function GestorContenido() {
       cambiarOcupado(false);
     }
   }
+  function cerrarSesion() {
+    return ejecutar(async () => {
+      if (editado.current && !window.confirm('¿Cerrar sesión y descartar los cambios sin guardar?'))
+        return;
+      try {
+        await consultarApi('/auth/salir', { metodo: 'POST', reintentar: false });
+        cambiarMensaje('Inicia sesión para continuar.');
+      } finally {
+        recibir(null);
+      }
+    });
+  }
   function seleccionar(item, nuevoTipo = tipo) {
     if (editado.current && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?'))
       return;
@@ -423,18 +451,16 @@ export function GestorContenido() {
       </main>
     );
   if (!sesion)
-    return (
-      <>
-        <Acceso recibir={recibir} ejecutar={ejecutar} ocupado={ocupado} />
-        <div className="cms-mensajes">{estado}</div>
-      </>
-    );
+    return <Acceso recibir={recibir} ejecutar={ejecutar} ocupado={ocupado} estado={estado} />;
   if (sesion.usuario.debeCambiar)
     return (
-      <>
-        <CambioClave recibir={recibir} ejecutar={ejecutar} ocupado={ocupado} />
-        <div className="cms-mensajes">{estado}</div>
-      </>
+      <CambioClave
+        recibir={recibir}
+        ejecutar={ejecutar}
+        ocupado={ocupado}
+        volver={cerrarSesion}
+        estado={estado}
+      />
     );
   if (location.pathname.includes('/prototipo'))
     return (
@@ -457,24 +483,7 @@ export function GestorContenido() {
           <a href="/" target="_blank" rel="noreferrer">
             Ver portal
           </a>
-          <button
-            type="button"
-            className="secundario"
-            disabled={ocupado}
-            onClick={() =>
-              ejecutar(async () => {
-                if (
-                  editado.current &&
-                  !window.confirm('¿Cerrar sesión y descartar los cambios sin guardar?')
-                )
-                  return;
-                await consultarApi('/auth/salir', { metodo: 'POST' });
-                editado.current = false;
-                cambiarContenido(null);
-                recibir(null);
-              })
-            }
-          >
+          <button type="button" className="secundario" disabled={ocupado} onClick={cerrarSesion}>
             Cerrar sesión
           </button>
         </div>

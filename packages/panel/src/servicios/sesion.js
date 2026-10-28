@@ -8,14 +8,17 @@ export function establecerSesion(valor, notificar) {
 export function cabecerasSesion() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
+function invalidarSesion() {
+  establecerSesion(null);
+  alRenovar?.(null);
+}
 async function solicitarRefresco() {
   const respuesta = await fetch('/api/v1/auth/refrescar', {
     method: 'POST',
     credentials: 'same-origin',
   });
   if (!respuesta.ok) {
-    establecerSesion(null);
-    alRenovar?.(null);
+    invalidarSesion();
     throw new Error('La sesión terminó. Vuelve a iniciar sesión.');
   }
   const sesion = await respuesta.json();
@@ -39,6 +42,7 @@ export async function consultarApi(
   ruta,
   { metodo = 'GET', datos, cuerpo, cabeceras = {}, reintentar = true } = {},
 ) {
+  const tokenEnviado = token;
   const respuesta = await fetch(`/api/v1${ruta}`, {
     method: metodo,
     credentials: 'same-origin',
@@ -49,9 +53,12 @@ export async function consultarApi(
     },
     body: datos ? JSON.stringify(datos) : cuerpo,
   });
-  if (respuesta.status === 401 && token && reintentar) {
-    await renovarSesion();
-    return consultarApi(ruta, { metodo, datos, cuerpo, cabeceras, reintentar: false });
+  if (respuesta.status === 401 && ruta !== '/auth/login') {
+    if (tokenEnviado && reintentar) {
+      if (token === tokenEnviado) await renovarSesion();
+      if (token) return consultarApi(ruta, { metodo, datos, cuerpo, cabeceras, reintentar: false });
+    }
+    if (token === tokenEnviado) invalidarSesion();
   }
   if (!respuesta.ok) {
     let mensaje;

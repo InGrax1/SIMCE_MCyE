@@ -82,13 +82,55 @@ try {
   await pagina.getByLabel('Filtrar por licenciatura').selectOption('MVZ');
   assert.ok((await pagina.locator('.practica h3').count()) > 0);
   await pagina.goto(`${origen}/panel/`);
-  await pagina.getByLabel('Correo', { exact: true }).fill('prueba@example.test');
-  await pagina.getByLabel('Contraseña', { exact: true }).fill(clave);
-  await pagina.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  async function entrar(contrasena) {
+    await pagina.getByLabel('Correo', { exact: true }).fill('prueba@example.test');
+    await pagina.getByLabel('Contraseña', { exact: true }).fill(contrasena);
+    await pagina.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  }
+  await entrar(clave);
+  await pagina.getByRole('button', { name: 'Volver al inicio de sesión', exact: true }).click();
+  await pagina.getByRole('button', { name: 'Iniciar sesión', exact: true }).waitFor();
+  await pagina.reload();
+  await pagina.getByRole('button', { name: 'Iniciar sesión', exact: true }).waitFor();
+  await entrar(clave);
+  await pagina.getByLabel('Contraseña inicial', { exact: true }).waitFor();
+  await almacen.cambiar((s) => {
+    for (const sesion of s.sesiones) sesion.ultimaActividad = Date.now() - 8 * 3600_000 - 1;
+  });
+  await pagina.getByLabel('Contraseña inicial', { exact: true }).fill(clave);
+  await pagina.getByLabel('Nueva contraseña', { exact: true }).fill(nuevaClave);
+  await pagina.getByRole('button', { name: 'Actualizar contraseña' }).click();
+  await pagina.getByRole('button', { name: 'Iniciar sesión', exact: true }).waitFor();
+  assert.equal(
+    await pagina.getByRole('heading', { name: 'Cambia tu contraseña inicial' }).count(),
+    0,
+  );
+  await entrar(clave);
+  await pagina.getByLabel('Contraseña inicial', { exact: true }).fill('Contraseña incorrecta');
+  await pagina.getByLabel('Nueva contraseña', { exact: true }).fill(nuevaClave);
+  await pagina.getByRole('button', { name: 'Actualizar contraseña' }).click();
+  await pagina
+    .getByRole('alert')
+    .filter({ hasText: 'La contraseña actual no es correcta' })
+    .waitFor();
+  await pagina.getByRole('heading', { name: 'Cambia tu contraseña inicial' }).waitFor();
+  await pagina.setViewportSize({ width: 390, height: 844 });
+  await axe('Cambio de contraseña móvil con error');
+  await pagina.screenshot({ path: join(artefactos, 'cambio-clave-movil.png'), fullPage: true });
+  await pagina.setViewportSize({ width: 1440, height: 1000 });
   await pagina.getByLabel('Contraseña inicial', { exact: true }).fill(clave);
   await pagina.getByLabel('Nueva contraseña', { exact: true }).fill(nuevaClave);
   await pagina.getByRole('button', { name: 'Actualizar contraseña' }).click();
   await pagina.getByRole('heading', { name: 'Gestión de contenido', exact: true }).waitFor();
+  await pagina.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await entrar(nuevaClave);
+  await pagina.getByLabel('Tipo de contenido').waitFor();
+  reporte.flujo.push(
+    'Volver al login desde el cambio inicial',
+    'Recuperar el login al vencer la sesión',
+    'Corregir contraseña actual errónea sin perder la sesión',
+    'Cerrar sesión y acceder con la contraseña nueva',
+  );
   await pagina.getByLabel('Tipo de contenido').selectOption('aviso');
   const titulo = `Aviso técnico ${randomUUID().slice(0, 8)}`;
   await pagina.getByLabel('Nombre o título', { exact: true }).fill(titulo);

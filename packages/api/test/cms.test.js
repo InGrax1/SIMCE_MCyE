@@ -212,6 +212,17 @@ describe('gestión de contenido y sesiones', () => {
       .auth(sesion.body.token, { type: 'bearer' })
       .expect(403);
     const nueva = randomBytes(20).toString('hex');
+    const incorrecta = await request(app)
+      .post('/api/v1/auth/clave')
+      .set('Origin', origen)
+      .auth(sesion.body.token, { type: 'bearer' })
+      .send({ anterior: 'Una clave incorrecta', nueva })
+      .expect(422);
+    expect(incorrecta.body.error).toBe('CLAVE_ACTUAL_INVALIDA');
+    await request(app)
+      .get('/api/v1/auth/yo')
+      .auth(sesion.body.token, { type: 'bearer' })
+      .expect(200);
     const cambiada = await request(app)
       .post('/api/v1/auth/clave')
       .set('Origin', origen)

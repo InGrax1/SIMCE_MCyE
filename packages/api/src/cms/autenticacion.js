@@ -225,7 +225,11 @@ export async function crearAutenticacion({ almacen, secreto, origenes, segura = 
       req.body.anterior.length > 200 ||
       !(await argon2.verify(usuario.hash, req.body.anterior))
     )
-      throw noAutenticado();
+      throw new ErrorApi(
+        422,
+        'CLAVE_ACTUAL_INVALIDA',
+        'La contraseña actual no es correcta. Revísala e inténtalo nuevamente.',
+      );
     const nuevoHash = await hashClave(req.body.nueva);
     if (req.body.nueva === req.body.anterior)
       throw new ErrorApi(422, 'CLAVE_INVALIDA', 'Elige una contraseña diferente.');

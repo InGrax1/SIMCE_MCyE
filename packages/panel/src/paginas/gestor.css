@@ -42,13 +42,19 @@
   border-color: #cfc5c3;
   cursor: not-allowed;
 }
-.cms button.secundario {
+.cms button.secundario:not(:disabled),
+.cms-acceso button.secundario:not(:disabled) {
   background: white;
   color: #64261f;
   border-color: #b5a6a3;
 }
-.cms button.secundario:hover {
+.cms button.secundario:not(:disabled):hover,
+.cms-acceso button.secundario:not(:disabled):hover {
   background: #f7eeec;
+}
+.cms button.secundario:not(:disabled):active,
+.cms-acceso button.secundario:not(:disabled):active {
+  background: #ecdbd7;
 }
 .cms button.peligro {
   background: #a51d3e;
@@ -317,6 +323,9 @@
 }
 .cms-login button {
   width: 100%;
+}
+.cms-login > button {
+  margin-top: 16px;
 }
 .cms-mensajes {
   max-width: 960px;
