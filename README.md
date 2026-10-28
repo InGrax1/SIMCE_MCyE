@@ -1,61 +1,60 @@
 # SIMCE MCyE
 
-Repositorio del Sistema Integral de Manejo, Control y Entrega. La base técnica implementa la Fase 0 descrita en `Especificacion_SIMCE_MCyE_v0.2.docx`: dominio compartido, API por capas, portal estático, panel PWA con persistencia local, sincronización idempotente y entorno de staging.
+Sistema Integral de Manejo, Control y Entrega. Incluye el prototipo operativo de Fase 0 y el portal público React con gestor de contenido de Fase 1, según `Especificacion_SIMCE_MCyE_v0.2.docx`.
 
-## Requisitos
+## Requisitos e instalación
 
-- Node.js 24 LTS
-- npm 10 o posterior
-- Docker con Compose para el entorno MySQL de staging
-
-## Instalación
+- Node.js 24 LTS y npm 10 o posterior.
+- Docker con Compose para MySQL y staging.
 
 ```bash
 npm ci
 npm run check
 npm run build
+npm run dev:fase1
+```
+
+El último comando abre un servidor local en `http://127.0.0.1:3080/`; el gestor se encuentra en `http://127.0.0.1:3080/panel/`. La cuenta sintética inicial se guarda en `.local/cms/acceso-inicial.json` y exige cambiar su contraseña al entrar. No se imprime la contraseña en consola. El estado, las imágenes subidas y la configuración privada permanecen en `.local/cms/`, fuera de Git. Reiniciar conserva el contenido; compilar requiere reiniciar el servidor para usar el nuevo módulo de renderizado.
+
+Este modo de revisión utiliza archivos y una sola instancia. La configuración de producción exige MySQL. La guía del gestor explica roles, imágenes, publicación y creación de cuentas: [docs/fase-1/gestor-contenido.md](docs/fase-1/gestor-contenido.md).
+
+## Comprobaciones
+
+```bash
+npm run check
+npm run build
+npx playwright install chromium
+npm run check:fase1
 npm run prototype
 ```
 
-`npm run prototype` ejecuta el caso sintético completo con la etiqueta `2010101086955`, precio verificado de `$185.00/kg`, importe de `$86.95` y peso reconstruido de `0.470 kg`. La ejecución simula una respuesta perdida después de que el servidor aplica el cierre y verifica que el reenvío conserva un solo folio. Los archivos de evidencia se escriben en `artifacts/`, fuera del control de versiones.
+`check:fase1` usa datos sintéticos aislados: verifica el acceso, cambio inicial de contraseña, borradores privados, vista previa, publicación en HTML sin JavaScript, despublicación y talleres. Ejecuta axe en portal y gestor, en escritorio y móvil, y Lighthouse móvil/4G con emulación directa de red y CPU. Exige LCP inferior a 2500 ms y cero infracciones graves o críticas de axe. Los informes y capturas se guardan en `artifacts/fase-1/`, excluido de Git. Requiere compilar antes de ejecutarlo; no altera el contenido de desarrollo.
 
-## Desarrollo local
+`prototype` verifica el caso sintético de Fase 0: etiqueta `2010101086955`, precio de `$185.00/kg`, importe de `$86.95`, peso reconstruido de `0.470 kg` y reenvío idempotente del cierre después de una respuesta perdida. Las evidencias permanecen en `artifacts/`.
 
-Antes del primer inicio, cree MySQL 8, aplique las migraciones y cargue los datos semilla:
+## Desarrollo y MySQL
 
 ```powershell
 npm run db:local
 ```
 
-El comando usa Docker Compose, conserva los datos en el volumen `simce_mysql` y puede ejecutarse nuevamente sin duplicar el esquema. Si `.env` no existe, lo crea desde `.env.example`; los marcadores de secretos se sustituyen por valores locales aleatorios y el archivo permanece fuera de Git. Para aplicar únicamente las migraciones use `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/crear-base-datos-local.ps1 -OmitirSemillas`.
+Crea la base MySQL local, aplica migraciones y carga las semillas sin duplicarlas. Conserva el volumen `simce_mysql`. Si falta `.env`, lo crea desde `.env.example` con secretos locales aleatorios. Para aplicar solo migraciones puede usarse `scripts/crear-base-datos-local.ps1 -OmitirSemillas`.
 
-En terminales separadas:
+Para el desarrollo independiente de las vistas existen `dev:portal` y `dev:panel`; el panel redirige `/api` a la API local. Antes de iniciar `dev:api`, compile el portal y configure `JWT_SECRET`, `CMS_ORIGENES`, `STORAGE` y, si corresponde, `DATABASE_*`. Las variables se cargan en el entorno del proceso; para un archivo local puede usarse la opción `node --env-file=.env`. El comando `dev:fase1` configura por sí mismo el entorno local integrado.
 
-```bash
-npm run dev:api
-npm run dev:panel
-npm run dev:portal
-```
+## Paquetes y configuración
 
-La API queda en `http://127.0.0.1:3000`, el panel en la dirección indicada por Vite bajo `/panel/` y el portal en la dirección indicada por Vite. El panel redirige `/api` a la API local durante el desarrollo.
+- `packages/dominio`: EAN-13, dinero, peso, remisiones e inventario.
+- `packages/api`: API Express, autenticación, gestor, publicación, sincronización y persistencia MySQL.
+- `packages/panel`: gestor React y prototipo PWA operativo con IndexedDB.
+- `packages/portal`: portal React prerenderizado, con Anime.js y recursos del diseño original.
+- `deploy`: imágenes y proxy del entorno de staging.
+- `docs`: decisiones, instrucciones y evidencias de las fases.
 
-## Paquetes
-
-- `packages/dominio`: reglas puras de EAN-13, dinero, peso, remisiones e inventario.
-- `packages/api`: API Express, sincronización, repositorios y migraciones Knex/MySQL.
-- `packages/panel`: PWA React, IndexedDB con Dexie, cola local y PDF provisional.
-- `packages/portal`: portal React prerenderizado durante la compilación.
-- `deploy`: imágenes y proxy para el entorno de staging.
-- `docs`: decisiones técnicas, validación del prototipo y estado de la fase.
-
-## Configuración
-
-`.env.example` contiene únicamente marcadores. Debe copiarse a un archivo `.env` local y sustituirse con valores propios del entorno. `.env` está excluido de Git.
-
-Para usar MySQL, configure `STORAGE=mysql` y las variables `DATABASE_*`. El despliegue con Compose se documenta en [docs/despliegue/staging.md](docs/despliegue/staging.md).
+`.env.example` contiene marcadores; `.env` y `.local/` están excluidos de Git. No utilice las cuentas sintéticas ni los secretos locales en un alojamiento institucional. El despliegue, los volúmenes y TLS se explican en [docs/despliegue/staging.md](docs/despliegue/staging.md).
 
 ## Estado
 
-El alcance técnico de Fase 0 está construido y probado. El cierre institucional permanece condicionado a la confirmación del alojamiento y a la validación física de la báscula. El detalle y los responsables funcionales están en [docs/fase-0/estado.md](docs/fase-0/estado.md).
+La Fase 1 tiene gestor, publicación conectada al HTML público, talleres y controles automáticos preparados. Conserva la composición de Figma con sus mejoras adaptables y animaciones. Continúan pendientes la validación institucional del contenido, el aviso de privacidad autorizado, la publicación sin asistencia por la responsable y la comprobación de staging con MySQL. Consulte [docs/fase-1/estado.md](docs/fase-1/estado.md).
 
-La Fase 1 está iniciada con la vista principal del portal público basada en el diseño de Figma proporcionado. Para verla ejecute `npm run dev:portal`; incluye navegación adaptable, actividades y catálogo interactivos, contacto y salida prerenderizada. La gestión de contenido y la validación institucional de la fase siguen pendientes. Consulte [docs/fase-1/estado.md](docs/fase-1/estado.md).
+El alojamiento, subdominio y TLS y la comprobación física de la báscula continúan pendientes institucionales de [Fase 0](docs/fase-0/estado.md).

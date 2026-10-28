@@ -1,55 +1,49 @@
 # Estado de Fase 1
 
-- Fecha de corte: 2026-10-07.
-- Estado: desarrollo técnico iniciado; fase sin cerrar.
-- Alcance de este avance: vista principal del portal público, dentro de RF-1.
-- Referencia visual: [CEA, frame 1:3](https://www.figma.com/design/Rw9Bb37khwyJnL2wUEjK89/CEA?node-id=1-3), facilitado por el usuario para su implementación.
+- Fecha de corte: 2026-10-27.
+- Estado: implementación técnica ampliada; fase sin cerrar.
+- Referencia visual: [CEA, frame 1:3](https://www.figma.com/design/Rw9Bb37khwyJnL2wUEjK89/CEA?node-id=1-3).
 
-## Avance entregado
+## Avance de los cinco pasos
 
-La página principal sustituye el esqueleto de Fase 0. Incluye encabezado, presentación del módulo, áreas, procesos, prácticas académicas, actividades, productos, servicio social, galería, contacto y pie. Conserva React/Vite, el prerenderizado existente y la separación entre el portal público y el panel operativo.
+| Paso                            | Implementado                                                                                                                                                                                                                           | Pendiente para aceptación                                                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Gestión de contenido, RF-2   | Acceso, cambio inicial de contraseña, roles, borradores, edición, publicación/despublicación, imágenes con recorte y compresión, orden, vista previa, últimas tres versiones y auditoría. Persistencia MySQL y modo local de revisión. | Probar la integración MySQL en un entorno disponible y dar de alta las cuentas institucionales.                                 |
+| 2. Publicación del HTML         | El servidor regenera el portal a partir de las versiones publicadas, incorpora sus datos para React y reemplaza el HTML mediante escritura atómica. Conserva borradores separados; ofrece reintento de generación.                     | Confirmar el recorrido en el alojamiento y su política de respaldo.                                                             |
+| 3. Talleres y contenido público | Talleres con información, convocatoria abierta, cerrado o concluido; fechas, requisitos y costo indicativo; avisos fechados; filtro académico; información institucional editable.                                                     | Cargar y validar convocatorias reales. La inscripción corresponde a Fase 2.                                                     |
+| 4. Validación institucional     | Inventario de contenido y guion de aceptación preparados. El gestor permite sustituir textos e imágenes de referencia. El formulario de interés requiere aviso autorizado y registra su versión y consentimiento.                      | La institución debe confirmar identidad, contacto, textos, fotografías, asignaturas, programas, talleres y aviso de privacidad. |
+| 5. Calidad y entrega            | Pruebas de permisos, sesiones, medios, publicación y privacidad; comprobación en navegador; axe y Lighthouse incorporados al pipeline; configuración de staging y guía de operación.                                                   | Ejecutar staging con MySQL y TLS, completar revisión manual y documentar que la responsable publica sin asistencia.             |
 
-La navegación interna lleva a cada sección; el menú móvil se cierra al elegir un enlace, pulsar Escape, tocar fuera o ampliar a escritorio. Los selectores de actividades y productos actualizan el detalle y exponen su selección con `aria-pressed`. Los programas conservan sus listas visibles. Los enlaces de correo abren el cliente de correo del visitante y el mapa abre la ubicación indicada por el diseño. No hay envío automático de mensajes ni inscripción en este avance.
+## Portal y gestor
 
-Las imágenes y SVG del diseño están en `packages/portal/public/figma/`; las fuentes Poppins y su licencia OFL están en `packages/portal/public/fonts/`. No se depende de enlaces temporales de Figma. La decoración estática de la portada con efecto de refracción se exportó desde su capa original `47:577` a PNG con escala 2; el efecto está incorporado en la imagen y no requiere un runtime WebGPU en el portal.
+El portal conserva React, Vite y Anime.js, la portada de Figma, colores, decoraciones, separadores, mosaicos y tarjetas. Los fondos cubren la pantalla y las cuadrículas se adaptan al espacio disponible. Las fichas de productos conservan una altura uniforme; las áreas de las actividades son indicadores sin interacción; «Explora más opciones» mantiene una jerarquía legible. El criterio visual está en [diseno-ui.md](diseno-ui.md).
 
-Se recupera la composición inicial de Figma después de que el usuario indicara que el rediseño había cambiado demasiado su apariencia. Se mantienen portada, colores, decoraciones, separadores, mosaicos y estilos de tarjetas, con mejoras limitadas de legibilidad, espaciado, contraste e interacción. La composición conserva su ancho de referencia de 1440 px y los fondos se extienden a toda la pantalla; las secciones crecen para evitar recortes y las cuadrículas se adaptan al espacio disponible. El criterio completo está en [diseno-ui.md](diseno-ui.md).
+El gestor incluye áreas, prácticas, actividades, productos, programas de servicio social, talleres, avisos, información institucional y galería. Un editor puede guardar y revisar borradores; responsable y administrador pueden publicar, despublicar y eliminar. El operador conserva el acceso al prototipo operativo, sin permisos de edición pública. El formulario usa texto plano: no admite HTML. Una publicación exige los campos necesarios según su tipo.
 
-La paleta conserva el vino de la marca, separa colores semánticos y corrige contrastes. Se incluye navegación por teclado, foco visible, enlace para saltar al contenido, nombres accesibles y respeto por la preferencia de movimiento reducido. Las fuentes en `rem` y el flujo flexible permiten ampliar el texto.
+Las imágenes subidas aceptan JPEG, PNG y WebP hasta 5 MB y 25 megapíxeles; se decodifican, recortan cuando se solicita, reducen y vuelven a codificar a WebP, eliminando metadatos. El texto alternativo es obligatorio. Las imágenes sin asociación a contenido publicado no son públicas. Los precios solo aparecen cuando se habilitan expresamente.
 
-Se completan los nueve temas de prácticas con descripciones e imágenes, las cinco actividades con detalle, áreas relacionadas y enfoque académico, y los ocho productos con descripciones de su proceso. La galería conserva sus ocho espacios y ahora muestra imágenes con leyendas. Este contenido orientativo se apoya en el propósito académico del módulo; requiere revisión institucional y no constituye una programación de cursos, confirmación de existencias ni ficha comercial definitiva.
+La publicación utiliza el renderizado React del servidor; no ejecuta una compilación completa por cada cambio. La vista previa es privada y no modifica el portal. Si falla la generación, el estado conserva el cambio y permite reintentar mediante «Regenerar portal». El despliegue inicial admite una sola instancia publicadora; el modo de archivo es exclusivamente local. Consulte [gestor-contenido.md](gestor-contenido.md).
 
-Anime.js 4.5.0 añade entradas breves en portada, aparición de tarjetas al desplazarse y transiciones al cambiar actividades y productos. Los efectos se registran en ámbitos de Anime.js y se limpian al desmontar React o cambiar de selección. La preferencia `prefers-reduced-motion` desactiva los efectos y restaura el contenido incluso si cambia durante la sesión. El HTML prerenderizado permanece visible sin JavaScript; no se ocultan secciones mediante CSS para preparar las animaciones.
+Se optimizaron las imágenes originales y se incluyeron subconjuntos WOFF2 derivados de Poppins bajo el nombre SIMCE Sans, con licencia y procedencia conservadas. La apariencia tipográfica se mantiene. Las animaciones respetan el movimiento reducido y el contenido sigue disponible sin JavaScript.
 
-El ajuste del 2026-10-07 evita cambios de altura entre las ocho fichas de productos: las fotos tienen un marco independiente de su proporción y el espacio de detalle se adapta al contenido más largo. Los indicadores de áreas en actividades son etiquetas estáticas con las áreas correspondientes resaltadas. La tarjeta «Explora más opciones» conserva su ubicación con una jerarquía de título, descripción y contacto. Los fondos, encabezado y separadores ahora cubren también pantallas mayores de 1440 px.
+## Verificación técnica
 
-## Validación de este avance
+Los controles incluyen ESLint, Prettier, compilación y 36 pruebas aprobadas de dominio, panel y API; las dos pruebas de integración MySQL se omiten localmente. La suite nueva verifica permisos, sesiones y su rotación, inactividad, versiones concurrentes, borradores privados, campos de publicación, auditoría, recorte y privacidad de imágenes, recuperación de generación y consentimiento del formulario de interés. La prueba MySQL requiere `TEST_MYSQL=1` y una base cuyo nombre termine en `_test`.
 
-- Comprobación del repositorio, ESLint y Prettier.
-- Suite existente: 22 pruebas aprobadas; la integración MySQL se omite sin `TEST_MYSQL=1`.
-- Compilación de API, panel PWA y portal prerenderizado.
-- Navegador Chromium: imágenes cargadas, enlaces internos válidos, ausencia de errores de página/HTTP y funcionamiento de todos los selectores y el menú móvil.
-- Revisión de tamaños táctiles, texto y desbordamiento a 320, 360, 390, 640, 768, 896, 1024, 1120, 1280, 1440 y 1920 px.
-- axe-core 4.14.0: comprobación automática WCAG 2 A/AA, 2.1 AA y 2.2 AA en móvil, tableta y escritorio, además de menú abierto, catálogo y actividades, sin infracciones detectadas. Esto no equivale a una auditoría manual completa ni a la integración de axe en el pipeline.
-- Revisión visual en móvil, tableta y escritorio y ampliación independiente del texto al 200%. Las capturas y los informes se guardan en `artifacts/`, excluido de Git.
-- Verificación adicional del portal compilado: las trece fichas de actividades/productos tienen descripción e imagen cargada; las nueve prácticas tienen títulos distintos y la galería tiene ocho imágenes con leyenda. Los 110 elementos de imagen de la página cargan sin errores.
-- Anime.js: entrada de portada y tarjetas, cambios rápidos de ficha, restauración al activar movimiento reducido y un solo observador de aparición después del montaje de React StrictMode. El contenido inicial, prácticas y galería también se revisan con JavaScript desactivado.
-- Ajustes de tarjetas: los ocho productos conservan la misma altura y la posición del selector en once anchos de 320–1920 px, con texto normal y al 200%. Solo la ficha seleccionada queda accesible; las etiquetas de áreas no tienen enlaces ni controles y resaltan las áreas correctas de las cinco actividades. axe y la suite existente siguen aprobadas.
+`npm run check:fase1` comprueba el recorrido completo con datos sintéticos: cambio inicial de contraseña, borrador, vista previa, publicación, HTML sin JavaScript, despublicación y publicación de un taller. Ejecuta axe en portal y gestor en escritorio y móvil, comprueba desbordamientos y registra capturas.
 
-## Contenido por validar
+Lighthouse utiliza su perfil móvil y los parámetros predeterminados de red lenta 4G y CPU, con `throttlingMethod: devtools`: emula directamente la red y CPU, sin estimación posterior de Lantern. El límite es LCP inferior a 2500 ms. La ejecución local de este corte registró LCP de 1928 ms, rendimiento 98/100 y accesibilidad 100/100; los resultados fluctúan según la máquina. axe no detectó infracciones graves o críticas en los cuatro estados comprobados. Los informes reproducibles se generan en `artifacts/fase-1/`. Estos controles automáticos no sustituyen la revisión manual ni la aceptación institucional.
 
-La galería y las prácticas utilizan imágenes de referencia disponibles en el diseño; sus textos alternativos y notas aclaran su carácter ilustrativo. La ficha de salchicha sustituye la imagen repetida de jamón por una imagen generada de referencia. Su procedencia y el texto de generación se documentan en [contenido-animaciones.md](contenido-animaciones.md). Estas imágenes no acreditan instalaciones, sesiones ni productos reales adicionales del módulo.
+La auditoría de dependencias aprueba el umbral de severidad alta/crítica. Quedan cuatro avisos bajos de la cadena de compilación PWA (`deepmerge` y dependientes); no se aplica la degradación incompatible de PWA que sugiere la herramienta.
 
-El frame indica cinco variantes de hamburguesa, pero nombra cuatro especies. La interfaz cuenta las cuatro especies de la ficha, mientras el total de variantes queda por aclarar; no se inventa la quinta especie. Los textos añadidos explican temas y procesos relacionados, y el catálogo ofrece consulta a la responsable para confirmar especies, presentaciones y disponibilidad. No se muestran precios ni disponibilidad operativa.
+El pipeline incluye navegador, recorrido de publicación, axe, Lighthouse, auditoría de dependencias y pruebas MySQL. Su configuración está versionada; una ejecución local no acredita que un pipeline remoto ya haya terminado. Docker está instalado en la máquina de desarrollo, pero su motor no estuvo disponible; no se declara comprobado el arranque de contenedores ni la prueba MySQL de este avance.
 
-Las redes sociales aún no tienen una URL institucional proporcionada; el icono de la portada dirige al contacto del módulo con un nombre accesible que indica ese destino. Los códigos de servicio social, fotografías, textos e identidad visual requieren validación institucional antes de publicación oficial.
+## Contenido por validar y cierre
 
-## Trabajo pendiente para cerrar la fase
+Los nueve temas de prácticas, cinco actividades, ocho productos y ocho espacios de galería conservan el contenido orientativo del avance anterior. Las asignaturas sin confirmación se indican expresamente. Las fotografías de referencia no acreditan instalaciones ni sesiones reales; la procedencia de la imagen ilustrativa de salchicha está en [contenido-animaciones.md](contenido-animaciones.md). No se inventan fechas de talleres, existencias, precios ni una quinta especie de hamburguesa.
 
-- Gestión de contenido (RF-2): autenticación y permisos, persistencia, borradores, publicación/despublicación, edición de secciones y gestión de imágenes con auditoría.
-- Conectar la publicación del contenido con la actualización del HTML público prerenderizado.
-- Completar y validar los contenidos institucionales, incluidas prácticas, galería y la sección de talleres de RF-1; la inscripción corresponde a Fase 2.
-- Incorporar Lighthouse y axe al pipeline con los umbrales de la especificación.
-- Validar la publicación de una entrada por la responsable sin asistencia y mostrar el portal en staging.
+La información de identidad, responsable, correo, códigos de servicio social y ubicación procede del diseño base y requiere confirmación institucional. El icono social de la portada continúa dirigiendo al contacto mientras no se entregue una URL institucional. El formulario de interés permanece deshabilitado hasta configurar la URL y versión del aviso de privacidad autorizado; entretanto se ofrece contacto por correo.
 
-El alojamiento, subdominio y TLS y la comprobación física de la báscula siguen abiertos en [Fase 0](../fase-0/estado.md). Este avance no registra aprobaciones institucionales ni cierra esos pendientes.
+El guion [aceptacion-institucional.md](aceptacion-institucional.md) permite registrar la revisión y la publicación de una entrada y un taller sin asistencia. No se ha realizado esa prueba con una persona responsable ni se registran aprobaciones en su nombre.
+
+El alojamiento, subdominio y TLS y la comprobación física de la báscula siguen abiertos en [Fase 0](../fase-0/estado.md). Este avance permite continuar la revisión local y preparar staging, pero no cierra esos pendientes.
