@@ -39,6 +39,7 @@ const campos = [
   'objetivo',
   'especies',
   'areas',
+  'areaId',
   'actividades',
   'licenciaturas',
   'inicio',
@@ -224,6 +225,7 @@ export function crearEstadoInicial() {
     entrada.publicado = structuredClone(entrada.borrador);
   }
   return {
+    versionEsquema: 2,
     usuarios: [],
     intereses: [],
     avisoInteres: null,
@@ -234,6 +236,50 @@ export function crearEstadoInicial() {
     revisionPortal: 0,
     revisionHtml: -1,
   };
+}
+
+// Adapta los datos del avance anterior sin reemplazar ediciones ni cuentas locales.
+export function actualizarEstado(estado) {
+  if ((estado.versionEsquema ?? 1) < 2) {
+    for (const entrada of estado.entradas.filter(
+      (e) => e.tipo === 'galeria' && e.validacion === 'referencia',
+    )) {
+      for (const datos of [entrada.borrador, entrada.publicado].filter(Boolean)) {
+        const referencia = inicial.galeria.find((f) => f.foto === datos.foto);
+        if (datos.areaId === undefined && referencia?.areaId)
+          datos.areaId =
+            estado.entradas.find(
+              (a) =>
+                a.tipo === 'area' &&
+                (a.borrador.nombre === referencia.areaId ||
+                  a.publicado?.nombre === referencia.areaId),
+            )?.id ?? '';
+      }
+    }
+  }
+  for (const entrada of estado.entradas.filter((e) => e.tipo === 'galeria')) {
+    for (const datos of [entrada.borrador, entrada.publicado].filter(Boolean)) {
+      const area = estado.entradas.find(
+        (a) =>
+          a.tipo === 'area' &&
+          (a.borrador.nombre === datos.areaId || a.publicado?.nombre === datos.areaId),
+      );
+      if (area) datos.areaId = area.id;
+    }
+  }
+  estado.versionEsquema = 2;
+  return estado;
+}
+
+export function validarAsociacionGaleria(estado, tipo, datos, publicar = false) {
+  if (tipo !== 'galeria' || !datos.areaId) return;
+  const area = estado.entradas.find((e) => e.id === datos.areaId && e.tipo === 'area');
+  if (!area || (publicar && !area.publicado))
+    throw new ErrorApi(
+      422,
+      'AREA_INVALIDA',
+      'Selecciona un área existente y publícala antes de publicar su galería.',
+    );
 }
 
 export function proyectarPortal(estado) {

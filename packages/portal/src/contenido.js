@@ -269,36 +269,43 @@ export const galeria = [
   },
   {
     titulo: 'Transformación de la carne',
+    areaId: 'Área de Embutidos',
     foto: 'Images5.png',
     alt: 'Imagen de referencia de equipos de molienda de carne',
   },
   {
     titulo: 'Manejo y faenado',
+    areaId: 'Área de Rastro',
     foto: 'ResiduosProcesosMatanzasFaenamiento1.png',
     alt: 'Imagen de referencia de canales y trabajo en un rastro',
   },
   {
     titulo: 'Despiece y cortes',
+    areaId: 'Sala de Cortes',
     foto: 'Saladespiec2E495X4001.png',
     alt: 'Imagen de referencia de una sala de despiece',
   },
   {
     titulo: 'Formulación de productos',
+    areaId: 'Área de Embutidos',
     foto: 'CarneDeHamburguesa1200X7092.png',
     alt: 'Imagen de referencia de carne para hamburguesas',
   },
   {
     titulo: 'Productos cocidos',
+    areaId: 'Área de Embutidos',
     foto: 'FiambreJamonCocido1.png',
     alt: 'Imagen de referencia de jamón rebanado',
   },
   {
     titulo: 'Elaboración de embutidos',
+    areaId: 'Área de Embutidos',
     foto: 'Images4.png',
     alt: 'Imagen de referencia de chorizo elaborado',
   },
   {
     titulo: 'Diversidad de preparaciones',
+    areaId: 'Área de Embutidos',
     foto: 'Images3.png',
     alt: 'Imagen de referencia de paté',
   },

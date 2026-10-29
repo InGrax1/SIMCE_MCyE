@@ -23,7 +23,7 @@ const especificos = {
   taller: ['inicio', 'fin', 'estadoTaller', 'costo', 'requisitos'],
   aviso: ['fecha'],
   institucion: ['responsable', 'correo', 'mapa', 'ubicacion', 'objetivo'],
-  galeria: [],
+  galeria: ['areaId'],
 };
 const etiquetas = {
   nombre: 'Nombre o título',
@@ -35,6 +35,7 @@ const etiquetas = {
   asignatura: 'Asignatura',
   licenciaturas: 'Licenciaturas (una por línea)',
   areas: 'Áreas donde se realiza',
+  areaId: 'Área de la galería',
   enfoque: 'Enfoque académico o proceso',
   especies: 'Especies (una por línea)',
   codigo: 'Clave del programa',
@@ -589,6 +590,22 @@ export function GestorContenido() {
                 >
                   {['nombre', 'descripcion', ...(especificos[tipo] ?? [])].map((nombre) => {
                     const valor = datos[nombre] ?? '';
+                    if (nombre === 'areaId')
+                      return (
+                        <label key={nombre}>
+                          {etiquetas[nombre]}
+                          <select value={valor} onChange={(e) => campo(nombre, e.target.value)}>
+                            <option value="">Galería general (sin área)</option>
+                            {contenido?.entradas
+                              .filter((e) => e.tipo === 'area')
+                              .map((area) => (
+                                <option key={area.id} value={area.id}>
+                                  {area.borrador.nombre}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                      );
                     if (nombre === 'mostrarPrecio')
                       return (
                         <label className="cms-check" key={nombre}>

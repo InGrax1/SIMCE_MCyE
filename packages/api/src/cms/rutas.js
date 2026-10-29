@@ -10,6 +10,7 @@ import {
   tipos,
   validarContenido,
   validarPublicacion,
+  validarAsociacionGaleria,
 } from './contenido.js';
 
 const editores = ['editor', 'responsable', 'admin'];
@@ -168,6 +169,7 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
   router.post('/cms/entradas', async (req, res) => {
     const datos = validarContenido(req.body.tipo, req.body.datos);
     const entrada = await almacen.cambiar((estado) => {
+      validarAsociacionGaleria(estado, req.body.tipo, datos);
       if (req.body.tipo === 'institucion' && estado.entradas.some((e) => e.tipo === 'institucion'))
         throw new ErrorApi(409, 'FICHA_EXISTENTE', 'Edita la ficha institucional existente.');
       if (estado.entradas.length >= 2000)
@@ -198,6 +200,7 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
       const entrada = buscar(estado, req.params.id);
       version(entrada, req.body.version);
       const datos = validarContenido(entrada.tipo, req.body.datos);
+      validarAsociacionGaleria(estado, entrada.tipo, datos);
       if (datos.foto?.startsWith('/medios/') && !estado.medios.some((m) => m.ruta === datos.foto))
         throw new ErrorApi(422, 'IMAGEN_INVALIDA', 'Selecciona una imagen del gestor.');
       entrada.historial = [
@@ -245,6 +248,7 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
       const entrada = buscar(estado, req.params.id);
       version(entrada, req.body.version);
       validarPublicacion(entrada);
+      validarAsociacionGaleria(estado, entrada.tipo, entrada.borrador, true);
       entrada.publicado = structuredClone(entrada.borrador);
       entrada.version++;
       entrada.validacion = 'revisado-por-publicador';
@@ -264,6 +268,15 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
           'La ficha institucional se actualiza publicando sus cambios.',
         );
       entrada.publicado = null;
+      if (
+        entrada.tipo === 'area' &&
+        estado.entradas.some((e) => e.publicado?.areaId === entrada.id)
+      )
+        throw new ErrorApi(
+          409,
+          'AREA_EN_USO',
+          'Despublica o reasigna primero las imágenes de la galería de esta área.',
+        );
       entrada.version++;
       estado.revisionPortal++;
       auditar(estado, req.usuario, 'DESPUBLICAR', entrada.id);
@@ -283,13 +296,17 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
       if (
         entrada.tipo === 'area' &&
         estado.entradas.some(
-          (e) => e.borrador.areas?.includes(entrada.id) || e.publicado?.areas?.includes(entrada.id),
+          (e) =>
+            e.borrador.areas?.includes(entrada.id) ||
+            e.publicado?.areas?.includes(entrada.id) ||
+            e.borrador.areaId === entrada.id ||
+            e.publicado?.areaId === entrada.id,
         )
       )
         throw new ErrorApi(
           409,
           'AREA_EN_USO',
-          'Quita primero la asociación del área en sus actividades.',
+          'Quita primero la asociación del área en sus actividades y galerías.',
         );
       estado.entradas = estado.entradas.filter((e) => e.id !== entrada.id);
       estado.revisionPortal++;
@@ -300,6 +317,7 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
   router.post('/cms/vista-previa', async (req, res) => {
     const estado = await almacen.leer();
     const datos = validarContenido(req.body.tipo, req.body.datos);
+    validarAsociacionGaleria(estado, req.body.tipo, datos);
     const entrada = req.body.id
       ? buscar(estado, req.body.id)
       : { id: randomUUID(), tipo: req.body.tipo, orden: estado.entradas.length };

@@ -218,6 +218,43 @@ function Modulo() {
   );
 }
 
+function TarjetaArea({ area, indice }) {
+  const { galeria } = useContenidoPortal();
+  const relacionadas = galeria.filter(
+    (foto) => (area.id && foto.areaId === area.id) || foto.areaId === area.nombre,
+  );
+  const fotos = [
+    { foto: area.foto, alt: area.alt ?? area.nombre, titulo: area.nombre },
+    ...relacionadas.filter((foto) => foto.foto !== area.foto),
+  ];
+  return (
+    <div className="area-conjunto">
+      <article className={`area-card area-card-${indice + 1}`}>
+        <Imagen archivo={area.foto} alt={area.alt ?? area.nombre} nodo={area.nodo} loading="lazy" />
+        <span className="area-numero">{String(indice + 1).padStart(2, '0')}</span>
+        <span className="area-etiqueta">{area.etiqueta}</span>
+        <div className="area-texto">
+          <h3>{area.nombre}</h3>
+          <p>{area.descripcion}</p>
+        </div>
+      </article>
+      {relacionadas.length > 0 && (
+        <details className="area-galeria">
+          <summary>Ver galería de {area.nombre}</summary>
+          <div className="area-galeria-fotos">
+            {fotos.map((foto) => (
+              <figure key={foto.id ?? foto.foto}>
+                <Imagen archivo={foto.foto} alt={foto.alt} loading="lazy" />
+                <figcaption>{foto.titulo ?? foto.nombre}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function Areas() {
   const { areas } = useContenidoPortal();
   return (
@@ -243,20 +280,7 @@ function Areas() {
         </div>
         <div className="areas-grid">
           {areas.map((area, i) => (
-            <article className={`area-card area-card-${i + 1}`} key={area.nombre}>
-              <Imagen
-                archivo={area.foto}
-                alt={area.alt ?? area.nombre}
-                nodo={area.nodo}
-                loading="lazy"
-              />
-              <span className="area-numero">0{i + 1}</span>
-              <span className="area-etiqueta">{area.etiqueta}</span>
-              <div className="area-texto">
-                <h3>{area.nombre}</h3>
-                <p>{area.descripcion}</p>
-              </div>
-            </article>
+            <TarjetaArea area={area} indice={i} key={area.id ?? area.nombre} />
           ))}
         </div>
       </div>

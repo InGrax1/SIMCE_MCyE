@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { crearEstadoInicial } from './contenido.js';
+import { crearEstadoInicial, actualizarEstado } from './contenido.js';
 import { renombrarAtomico } from './archivoAtomico.js';
 
 export class AlmacenCmsArchivo {
@@ -12,10 +12,10 @@ export class AlmacenCmsArchivo {
   }
   async leer() {
     try {
-      return JSON.parse(await readFile(this.archivo, 'utf8'));
+      return actualizarEstado(JSON.parse(await readFile(this.archivo, 'utf8')));
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
-      return structuredClone(this.inicial);
+      return actualizarEstado(structuredClone(this.inicial));
     }
   }
   cambiar(funcion) {
@@ -46,13 +46,16 @@ export class AlmacenCmsMysql {
   async leer() {
     const fila = await this.db('cms_estado').where({ id: 1 }).first();
     if (!fila) throw new Error('Inicializa el gestor antes de utilizarlo.');
-    return typeof fila.documento === 'string' ? JSON.parse(fila.documento) : fila.documento;
+    return actualizarEstado(
+      typeof fila.documento === 'string' ? JSON.parse(fila.documento) : fila.documento,
+    );
   }
   cambiar(funcion) {
     return this.db.transaction(async (trx) => {
       const fila = await trx('cms_estado').where({ id: 1 }).forUpdate().first();
-      const estado =
-        typeof fila.documento === 'string' ? JSON.parse(fila.documento) : fila.documento;
+      const estado = actualizarEstado(
+        typeof fila.documento === 'string' ? JSON.parse(fila.documento) : fila.documento,
+      );
       const resultado = await funcion(estado);
       await trx('cms_estado')
         .where({ id: 1 })

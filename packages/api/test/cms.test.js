@@ -404,4 +404,83 @@ describe('gestión de contenido y sesiones', () => {
       JSON.stringify((await request(app).get('/api/v1/publico/contenido')).body),
     ).not.toContain(datos.correo);
   });
+  it('mantiene privadas las galerías por área hasta publicar y protege sus asociaciones', async () => {
+    const area = await api('editor', 'post', '/cms/entradas', {
+      tipo: 'area',
+      datos: {
+        nombre: 'Área sintética',
+        descripcion: 'Prueba de asociaciones',
+        foto: 'Images4.png',
+        alt: 'Imagen de prueba',
+      },
+    });
+    expect(area.status).toBe(201);
+    const areaPublicada = await api(
+      'responsable',
+      'post',
+      `/cms/entradas/${area.body.id}/publicar`,
+      {
+        version: 1,
+        confirmarRevision: true,
+      },
+    );
+    expect(areaPublicada.status).toBe(200);
+    const imagen = {
+      nombre: 'Imagen sintética de galería',
+      foto: 'Images4.png',
+      alt: 'Imagen para prueba',
+      areaId: area.body.id,
+    };
+    const galeria = await api('editor', 'post', '/cms/entradas', {
+      tipo: 'galeria',
+      datos: imagen,
+    });
+    expect(galeria.status).toBe(201);
+    expect(
+      (await request(app).get('/api/v1/publico/contenido')).body.galeria.some(
+        (g) => g.id === galeria.body.id,
+      ),
+    ).toBe(false);
+    const imagenPublicada = await api(
+      'responsable',
+      'post',
+      `/cms/entradas/${galeria.body.id}/publicar`,
+      {
+        version: 1,
+        confirmarRevision: true,
+      },
+    );
+    expect(imagenPublicada.status).toBe(200);
+    expect(
+      (await request(app).get('/api/v1/publico/contenido')).body.galeria.find(
+        (g) => g.id === galeria.body.id,
+      ).areaId,
+    ).toBe(area.body.id);
+    await api('responsable', 'post', `/cms/entradas/${area.body.id}/despublicar`, {
+      version: 2,
+    }).then((r) => expect(r.status).toBe(409));
+    await api('responsable', 'delete', `/cms/entradas/${area.body.id}`, { version: 2 }).then((r) =>
+      expect(r.status).toBe(409),
+    );
+    await api('editor', 'post', '/cms/entradas', {
+      tipo: 'galeria',
+      datos: { ...imagen, areaId: randomUUID() },
+    }).then((r) => expect(r.status).toBe(422));
+  });
+  it('adapta las galerías anteriores sin reemplazar contraseñas ni ediciones de la institución', async () => {
+    const anterior = await almacen.leer();
+    delete anterior.versionEsquema;
+    const galerias = anterior.entradas.filter((e) => e.tipo === 'galeria');
+    for (const entrada of galerias) {
+      delete entrada.borrador.areaId;
+      delete entrada.publicado.areaId;
+    }
+    galerias[2].validacion = 'pendiente';
+    const viejo = new AlmacenCmsArchivo(join(carpeta, 'estado-anterior.json'), anterior);
+    const adaptado = await viejo.leer();
+    expect(adaptado.usuarios).toEqual(anterior.usuarios);
+    expect(adaptado.entradas.find((e) => e.id === galerias[1].id).publicado.areaId).toBeTruthy();
+    expect(adaptado.entradas.find((e) => e.id === galerias[2].id).publicado.areaId).toBeUndefined();
+    expect(adaptado.revisionPortal).toBe(anterior.revisionPortal);
+  });
 });
