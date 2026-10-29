@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesion.js';
 import { Prototipo } from './Prototipo.jsx';
+import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
 
 const nombres = {
@@ -57,7 +58,7 @@ const etiquetas = {
 const listas = ['licenciaturas', 'especies', 'actividades'];
 const imagenTipos = ['area', 'practica', 'actividad', 'producto', 'galeria'];
 
-function Acceso({ recibir, ejecutar, ocupado, estado }) {
+function Acceso({ recibir, ejecutar, ocupado, estado, recuperar }) {
   return (
     <main className="cms-acceso">
       <section className="cms-login">
@@ -95,6 +96,9 @@ function Acceso({ recibir, ejecutar, ocupado, estado }) {
           </label>
           <button disabled={ocupado}>Iniciar sesión</button>
         </form>
+        <button type="button" className="secundario" disabled={ocupado} onClick={recuperar}>
+          Olvidé mi contraseña
+        </button>
         <a href="/">Volver al portal público</a>
       </section>
     </main>
@@ -290,6 +294,10 @@ function SubirImagen({ alSubir, ejecutar, ocupado }) {
 }
 
 export function GestorContenido() {
+  const [recuperando, cambiarRecuperando] = useState(false);
+  const [tokenRecuperacion, cambiarTokenRecuperacion] = useState(
+    () => new URLSearchParams(location.hash.slice(1)).get('restablecer') ?? '',
+  );
   const [sesion, cambiarSesion] = useState(undefined);
   const [contenido, cambiarContenido] = useState(null);
   const [tipo, cambiarTipo] = useState('area');
@@ -319,6 +327,19 @@ export function GestorContenido() {
       confirmarRevision(false);
     }
   }
+  useEffect(() => {
+    const recibirEnlace = () => {
+      const parametros = new URLSearchParams(location.hash.slice(1));
+      if (!parametros.has('restablecer')) return;
+      cambiarTokenRecuperacion(parametros.get('restablecer') ?? '');
+      cambiarError('');
+      cambiarMensaje('');
+      history.replaceState(null, '', location.pathname + location.search);
+    };
+    recibirEnlace();
+    window.addEventListener('hashchange', recibirEnlace);
+    return () => window.removeEventListener('hashchange', recibirEnlace);
+  }, []);
   useEffect(() => {
     renovarSesion()
       .then(recibir)
@@ -445,6 +466,31 @@ export function GestorContenido() {
       )}
     </>
   );
+  if (tokenRecuperacion)
+    return (
+      <RestablecerAcceso
+        ocupado={ocupado}
+        estado={estado}
+        volver={async () => {
+          await cerrarSesion();
+          cambiarTokenRecuperacion('');
+        }}
+        ejecutar={(nueva, confirmacion) =>
+          ejecutar(async () => {
+            if (nueva !== confirmacion) throw new Error('Las contraseñas no coinciden.');
+            await consultarApi('/auth/restablecer', {
+              metodo: 'POST',
+              datos: { token: tokenRecuperacion, nueva },
+              reintentar: false,
+            });
+            recibir(null);
+            cambiarTokenRecuperacion('');
+            cambiarRecuperando(false);
+            cambiarMensaje('Contraseña actualizada. Inicia sesión con tu nueva contraseña.');
+          })
+        }
+      />
+    );
   if (sesion === undefined)
     return (
       <main className="cms-acceso">
@@ -452,7 +498,38 @@ export function GestorContenido() {
       </main>
     );
   if (!sesion)
-    return <Acceso recibir={recibir} ejecutar={ejecutar} ocupado={ocupado} estado={estado} />;
+    return recuperando ? (
+      <RecuperarAcceso
+        ocupado={ocupado}
+        estado={estado}
+        volver={() => {
+          cambiarRecuperando(false);
+          cambiarError('');
+          cambiarMensaje('');
+        }}
+        ejecutar={(correo) =>
+          ejecutar(async () => {
+            const respuesta = await consultarApi('/auth/recuperar', {
+              metodo: 'POST',
+              datos: { correo },
+            });
+            cambiarMensaje(respuesta.mensaje);
+          })
+        }
+      />
+    ) : (
+      <Acceso
+        recibir={recibir}
+        ejecutar={ejecutar}
+        ocupado={ocupado}
+        estado={estado}
+        recuperar={() => {
+          cambiarRecuperando(true);
+          cambiarError('');
+          cambiarMensaje('');
+        }}
+      />
+    );
   if (sesion.usuario.debeCambiar)
     return (
       <CambioClave

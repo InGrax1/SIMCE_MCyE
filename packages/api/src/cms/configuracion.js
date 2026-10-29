@@ -4,6 +4,8 @@ import { crearAutenticacion } from './autenticacion.js';
 import { crearPublicador } from './publicacion.js';
 import { crearRutasCms } from './rutas.js';
 import { crearConexionBaseDatos } from '../infra/baseDatos.js';
+import { configurarCorreo } from './correo.js';
+import { crearRecuperacion } from './recuperacion.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
@@ -47,7 +49,16 @@ export async function configurarCms() {
     carpetaMedios,
     moduloSsr: resolve(raiz, 'packages/portal/dist-ssr/entry-server.js'),
   });
-  const rutas = crearRutasCms({ almacen, auth, publicador, carpetaMedios });
+  const recuperacion = crearRecuperacion({
+    almacen,
+    enviarCorreo: configurarCorreo(carpeta),
+    origenPublico:
+      process.env.PANEL_ORIGEN_PUBLICO ||
+      (process.env.CMS_ORIGENES ?? 'http://127.0.0.1:3000').split(',')[0].trim(),
+    produccion: process.env.NODE_ENV === 'production',
+    limpiarCookie: auth.limpiarCookie,
+  });
+  const rutas = crearRutasCms({ almacen, auth, publicador, carpetaMedios, recuperacion });
   return {
     almacen,
     auth,

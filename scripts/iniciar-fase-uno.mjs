@@ -53,6 +53,8 @@ const proceso = spawn(process.execPath, ['packages/api/src/servidor.js'], {
     HOST: '127.0.0.1',
     PORT: puerto,
     CMS_DIR: carpeta,
+    CORREO_MODO: 'archivo',
+    PANEL_ORIGEN_PUBLICO: `http://127.0.0.1:${puerto}`,
     JWT_SECRET: configuracion.secreto,
     CMS_ORIGENES: `http://127.0.0.1:${puerto},http://localhost:${puerto}`,
   },

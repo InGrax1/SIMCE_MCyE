@@ -227,6 +227,7 @@ export function crearEstadoInicial() {
   return {
     versionEsquema: 2,
     usuarios: [],
+    recuperaciones: [],
     intereses: [],
     avisoInteres: null,
     sesiones: [],
@@ -240,6 +241,7 @@ export function crearEstadoInicial() {
 
 // Adapta los datos del avance anterior sin reemplazar ediciones ni cuentas locales.
 export function actualizarEstado(estado) {
+  estado.recuperaciones ??= [];
   if ((estado.versionEsquema ?? 1) < 2) {
     for (const entrada of estado.entradas.filter(
       (e) => e.tipo === 'galeria' && e.validacion === 'referencia',

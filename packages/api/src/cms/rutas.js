@@ -29,7 +29,7 @@ const version = (entrada, numero) => {
     );
 };
 
-export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
+export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recuperacion }) {
   const router = express.Router();
   const tasas = new Map();
   const tasasInteres = new Map();
@@ -124,6 +124,10 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios }) {
   router.get('/medios/:archivo', servirMedio);
   router.servirMedio = servirMedio;
   router.post('/auth/login', auth.origen, auth.login);
+  if (recuperacion) {
+    router.post('/auth/recuperar', auth.origen, recuperacion.solicitar);
+    router.post('/auth/restablecer', auth.origen, recuperacion.restablecer);
+  }
   router.post('/auth/refrescar', auth.origen, auth.refrescar);
   router.post('/auth/salir', auth.origen, auth.salir);
   router.post('/auth/clave', auth.origen, auth.identificar, auth.cambiarClave);

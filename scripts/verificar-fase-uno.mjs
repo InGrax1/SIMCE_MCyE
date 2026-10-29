@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import lighthouse from 'lighthouse';
 import { launch } from 'chrome-launcher';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, writeFile, cp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, readFile, readdir, cp, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import assert from 'node:assert/strict';
 import { crearAplicacion } from '../packages/api/src/app.js';
@@ -11,6 +11,8 @@ import { AlmacenCmsArchivo } from '../packages/api/src/cms/almacen.js';
 import { crearAutenticacion, hashClave } from '../packages/api/src/cms/autenticacion.js';
 import { crearRutasCms } from '../packages/api/src/cms/rutas.js';
 import { crearPublicador } from '../packages/api/src/cms/publicacion.js';
+import { crearRecuperacion } from '../packages/api/src/cms/recuperacion.js';
+import { configurarCorreo } from '../packages/api/src/cms/correo.js';
 
 const raiz = resolve(import.meta.dirname, '..');
 const artefactos = join(raiz, 'artifacts/fase-1');
@@ -47,7 +49,13 @@ const publicador = crearPublicador({
   moduloSsr: join(raiz, 'packages/portal/dist-ssr/entry-server.js'),
 });
 await publicador.publicar();
-const rutas = crearRutasCms({ almacen, auth, publicador, carpetaMedios });
+const recuperacion = crearRecuperacion({
+  almacen,
+  origenPublico: origen,
+  enviarCorreo: configurarCorreo(temporal, { NODE_ENV: 'test', CORREO_MODO: 'archivo' }),
+  limpiarCookie: auth.limpiarCookie,
+});
+const rutas = crearRutasCms({ almacen, auth, publicador, carpetaMedios, recuperacion });
 const app = crearAplicacion({
   cms: { auth, rutas, carpetaPortal, carpetaPanel: join(raiz, 'packages/panel/dist') },
 });
@@ -79,6 +87,28 @@ try {
   await pagina.goto(origen);
   await pagina.evaluate(() => document.fonts.ready);
   await axe('Portal escritorio');
+  assert.equal(await pagina.locator('.area-galeria summary').count(), 3);
+  for (const resumen of await pagina.locator('.area-galeria summary').all()) {
+    await resumen.focus();
+    await pagina.keyboard.press('Enter');
+  }
+  assert.equal(await pagina.locator('.area-galeria[open]').count(), 3);
+  await axe('Galerías por área abiertas');
+  for (const ancho of [320, 390, 768, 1024, 1440]) {
+    await pagina.setViewportSize({ width: ancho, height: 1000 });
+    assert.equal(
+      await pagina.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+      `Galerías a ${ancho}px`,
+    );
+  }
+  await pagina.locator('#areas').scrollIntoViewIfNeeded();
+  await pagina.screenshot({ path: join(artefactos, 'galerias-areas-escritorio.png') });
+  await pagina.setViewportSize({ width: 390, height: 844 });
+  await pagina.locator('.area-galeria summary').first().scrollIntoViewIfNeeded();
+  await pagina.screenshot({ path: join(artefactos, 'galerias-areas-movil.png') });
+  await pagina.setViewportSize({ width: 1440, height: 1000 });
+  reporte.flujo.push('Galerías por área con teclado y sin desbordamiento entre 320 y 1440 px');
   await pagina.getByLabel('Filtrar por licenciatura').selectOption('MVZ');
   assert.ok((await pagina.locator('.practica h3').count()) > 0);
   await pagina.goto(`${origen}/panel/`);
@@ -153,6 +183,8 @@ try {
   const sinJs = await browser.newPage({ javaScriptEnabled: false });
   await sinJs.goto(origen);
   assert.equal(await sinJs.getByRole('heading', { name: titulo, exact: true }).count(), 1);
+  await sinJs.locator('.area-galeria summary').first().click();
+  assert.ok((await sinJs.locator('.area-galeria[open] figure').count()) > 0);
   await sinJs.close();
   await pagina.getByRole('button', { name: 'Despublicar', exact: true }).click();
   await pagina.getByRole('status').filter({ hasText: 'ya no aparece' }).waitFor();
@@ -198,6 +230,30 @@ try {
   );
   await axe('Gestor móvil');
   await pagina.screenshot({ path: join(artefactos, 'gestor-movil.png'), fullPage: true });
+  await pagina.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await pagina.getByRole('button', { name: 'Olvidé mi contraseña', exact: true }).click();
+  await pagina.getByLabel('Correo de tu cuenta', { exact: true }).fill('prueba@example.test');
+  await pagina.getByRole('button', { name: 'Solicitar enlace', exact: true }).click();
+  await pagina.getByRole('status').filter({ hasText: 'Si el correo corresponde' }).waitFor();
+  await axe('Recuperación de acceso móvil');
+  const archivosCorreo = await readdir(join(temporal, 'correos'));
+  assert.equal(archivosCorreo.length, 1);
+  const correo = JSON.parse(await readFile(join(temporal, 'correos', archivosCorreo[0]), 'utf8'));
+  const enlace = correo.texto.match(/http:\/\/[^\s]+/)[0];
+  const claveRestablecida = randomBytes(20).toString('hex');
+  await pagina.goto(enlace);
+  await pagina.getByRole('heading', { name: 'Define tu nueva contraseña' }).waitFor();
+  assert.equal(new URL(pagina.url()).hash, '', 'El enlace secreto se retira del historial visible');
+  await pagina.getByLabel('Nueva contraseña', { exact: true }).fill(claveRestablecida);
+  await pagina.getByLabel('Confirma la nueva contraseña', { exact: true }).fill(claveRestablecida);
+  await axe('Restablecer contraseña móvil');
+  await pagina.getByRole('button', { name: 'Guardar nueva contraseña', exact: true }).click();
+  await pagina.getByRole('status').filter({ hasText: 'Contraseña actualizada' }).waitFor();
+  await entrar(claveRestablecida);
+  await pagina.getByLabel('Tipo de contenido').waitFor();
+  reporte.flujo.push(
+    'Recuperación mediante buzón local, enlace de un solo uso y acceso con contraseña restablecida',
+  );
   await pagina.goto(origen);
   await axe('Portal móvil');
   assert.equal(

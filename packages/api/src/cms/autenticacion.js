@@ -248,5 +248,14 @@ export async function crearAutenticacion({ almacen, secreto, origenes, segura = 
     });
     responder(res, resultado);
   }
-  return { origen, identificar, permitir, login, refrescar, salir, cambiarClave };
+  return {
+    origen,
+    identificar,
+    permitir,
+    login,
+    refrescar,
+    salir,
+    cambiarClave,
+    limpiarCookie: (res) => cookie(res, '', 0),
+  };
 }
