@@ -23,6 +23,8 @@
     "prototype": "node scripts/prototipo-fase-cero.mjs",
     "dev:fase1": "node scripts/iniciar-fase-uno.mjs",
     "check:fase1": "node scripts/verificar-fase-uno.mjs",
+    "check:mysql-local": "node scripts/verificar-mysql-local.mjs",
+    "backup:local": "node scripts/respaldo-mysql.mjs",
     "dev:api": "npm run dev --workspace @simce/api",
     "dev:panel": "npm run dev --workspace @simce/panel",
     "dev:portal": "npm run dev --workspace @simce/portal"
