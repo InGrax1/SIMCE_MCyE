@@ -1,6 +1,6 @@
 # Revisión y aceptación institucional de Fase 1
 
-Estado al 2026-10-27: pendiente de revisión. Este documento es un guion de trabajo; no registra autorizaciones ni resultados institucionales.
+Estado al 2026-10-28: pendiente de revisión. Este documento es un guion de trabajo; no registra autorizaciones ni resultados institucionales. La validación técnica se realiza localmente; las pruebas del alojamiento quedan diferidas hasta disponer de servidor.
 
 ## Contenido que debe confirmar la institución
 
@@ -21,7 +21,7 @@ La cuenta de revisión local y las entradas sintéticas no deben trasladarse a p
 
 ## Prueba por la responsable sin asistencia
 
-Con el entorno de staging validado, una cuenta individual y el contenido autorizado:
+El recorrido puede ensayarse en el entorno local integrado, con una cuenta individual y el contenido autorizado. Cuando exista servidor, se repite sobre su dirección HTTPS:
 
 1. Iniciar sesión, cambiar la contraseña inicial y reconocer la diferencia entre borrador y versión publicada.
 2. Crear un aviso, guardar un borrador y comprobar desde una ventana pública que todavía no aparece.
@@ -32,6 +32,8 @@ Con el entorno de staging validado, una cuenta individual y el contenido autoriz
 7. Editar una entrada publicada y comprobar que el cambio permanece privado hasta volver a publicar.
 8. Despublicar el aviso de prueba y comprobar que deja de aparecer. Revisar el registro de la acción en la bitácora.
 9. Cerrar sesión y comprobar que el gestor exige volver a entrar.
+10. Revisar la galería de cada área y asociar una fotografía autorizada desde el gestor.
+11. Solicitar la recuperación de contraseña y comprobar el enlace de un solo uso; en el ensayo local se utiliza el buzón privado, sin envío externo.
 
 La persona que observa no debe dirigir las acciones. Si necesita ayuda, registre el punto y repita la prueba tras ajustar la interfaz o la capacitación. Una prueba automatizada no sustituye este resultado.
 
@@ -48,4 +50,4 @@ La persona que observa no debe dirigir las acciones. Si necesita ayuda, registre
 | Observaciones y correcciones                                 | Pendiente |
 | Aprobación institucional del contenido y del recorrido       | Pendiente |
 
-Antes de cerrar la fase, adjuntar también evidencia de MySQL, recuperación de respaldo, origen HTTPS y cookies seguras, revisión manual de teclado/foco/texto ampliado/movimiento reducido, y los informes de calidad del pipeline de la versión entregada. Alojamiento, subdominio/TLS y la báscula mantienen sus propios pendientes de Fase 0.
+Las pruebas locales de MySQL, respaldo, accesibilidad y publicación se generan con [los comandos de validación](validacion-local.md). No sustituyen este recorrido humano. Antes de la entrega institucional se adjuntará también evidencia del origen HTTPS, cookies seguras, permisos, correo y respaldos del alojamiento y los informes del pipeline de esa versión. Alojamiento, subdominio/TLS y la báscula mantienen sus propios pendientes de Fase 0.

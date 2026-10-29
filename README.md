@@ -25,12 +25,15 @@ npm run check
 npm run build
 npx playwright install chromium
 npm run check:fase1
+npm run check:mysql-local
 npm run prototype
 ```
 
 `check:fase1` usa datos sintéticos aislados: verifica el acceso, cambio inicial de contraseña, borradores privados, vista previa, publicación en HTML sin JavaScript, despublicación y talleres. Ejecuta axe en portal y gestor, en escritorio y móvil, y Lighthouse móvil/4G con emulación directa de red y CPU. Exige LCP inferior a 2500 ms y cero infracciones graves o críticas de axe. Los informes y capturas se guardan en `artifacts/fase-1/`, excluido de Git. Requiere compilar antes de ejecutarlo; no altera el contenido de desarrollo.
 
 `prototype` verifica el caso sintético de Fase 0: etiqueta `2010101086955`, precio de `$185.00/kg`, importe de `$86.95`, peso reconstruido de `0.470 kg` y reenvío idempotente del cierre después de una respuesta perdida. Las evidencias permanecen en `artifacts/`.
+
+`check:mysql-local` inicia una instancia MySQL temporal e independiente del servicio del equipo, ejecuta la integración y comprueba un respaldo cifrado con restauración en otra base vacía. Requiere los binarios MySQL; puede configurarse `MYSQLD_BIN` y `MYSQL_BIN_DIR`. La [guía de validación local](docs/fase-1/validacion-local.md) incluye el buzón privado para recuperar contraseñas, galerías por área y el procedimiento de respaldo.
 
 ## Desarrollo y MySQL
 
@@ -55,6 +58,6 @@ Para el desarrollo independiente de las vistas existen `dev:portal` y `dev:panel
 
 ## Estado
 
-La Fase 1 tiene gestor, publicación conectada al HTML público, talleres y controles automáticos preparados. Conserva la composición de Figma con sus mejoras adaptables y animaciones. Continúan pendientes la validación institucional del contenido, el aviso de privacidad autorizado, la publicación sin asistencia por la responsable y la comprobación de staging con MySQL. Consulte [docs/fase-1/estado.md](docs/fase-1/estado.md).
+La Fase 1 tiene gestor, publicación conectada al HTML público, galerías por área, recuperación de contraseña, talleres y controles locales. Conserva la composición de Figma con sus mejoras adaptables y animaciones. MySQL nativo y el ensayo de respaldo/restauración se verifican sin Docker. Por indicación del usuario, las pruebas del alojamiento quedan pendientes hasta disponer de servidor. También requieren confirmación institucional el contenido, el aviso de privacidad y la publicación sin asistencia por la responsable. Consulte [docs/fase-1/estado.md](docs/fase-1/estado.md).
 
 El alojamiento, subdominio y TLS y la comprobación física de la báscula continúan pendientes institucionales de [Fase 0](docs/fase-0/estado.md).

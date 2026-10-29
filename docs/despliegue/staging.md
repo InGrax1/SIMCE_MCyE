@@ -9,6 +9,7 @@ MySQL 8.4, la API y Nginx comparten un origen público. La API sirve el HTML pre
 3. Configure `CMS_ORIGENES` con los orígenes exactos autorizados, separados por coma, sin rutas. Use el origen real del navegador, por ejemplo `https://staging.ejemplo.edu`.
 4. Configure la terminación TLS en el alojamiento o proxy externo. `NODE_ENV=production` activa cookies Secure: el acceso editorial debe probarse por HTTPS. El servidor local de revisión (`npm run dev:fase1`) es la alternativa de desarrollo sin TLS.
 5. Deje `AVISO_INTERES_URL` y `AVISO_INTERES_VERSION` vacíos hasta contar con el aviso autorizado. No habilite la recogida de datos personales con un aviso de ejemplo.
+6. Configure `PANEL_ORIGEN_PUBLICO` con el origen HTTPS definitivo. Compose usa `CORREO_MODO=smtp`; complete `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` y las credenciales del proveedor para habilitar la recuperación de contraseña. La entrega SMTP real queda pendiente de prueba. El buzón de archivo se limita a desarrollo y se rechaza en producción.
 
 Para crear únicamente MySQL local y aplicar migraciones/semillas existe `npm run db:local`. La API no requiere semillas operativas para cargar el contenido inicial del portal; sí requiere sus migraciones.
 
@@ -51,6 +52,6 @@ El cambio de contenido se guarda antes de generar el HTML. Un error deja un esta
 
 Compruebe `/api/v1/salud` y `/api/v1/salud/listo`, el inicio de sesión por HTTPS, el reinicio sin pérdida de datos y el recorrido de [aceptacion-institucional.md](../fase-1/aceptacion-institucional.md). Ejecute también las pruebas MySQL del pipeline y conserve su evidencia.
 
-En la máquina de desarrollo, al 2026-10-27, el motor Docker no estuvo disponible. La configuración de despliegue queda preparada; no se declara comprobado el arranque de contenedores ni la persistencia MySQL de este avance. El gestor, publicación y controles de navegador se verifican localmente con almacenamiento de archivo aislado. No se ha publicado una dirección de staging institucional.
+Por indicación del usuario, al 2026-10-28 las pruebas del alojamiento quedan diferidas porque todavía no existe servidor. Docker continúa sin motor disponible en esta máquina; no se declara comprobado el arranque de sus contenedores. Sí se verifican MySQL nativo 8.0.44, persistencia/reinicio y respaldo/restauración en instancias locales aisladas mediante [la guía local](../fase-1/validacion-local.md). El recorrido de navegador también se prueba con almacenamiento de archivo aislado. No se ha publicado una dirección de staging institucional.
 
 La selección de proveedor, subdominio, certificados, respaldos, monitoreo y responsables de operación sigue pendiente de la institución. Para producción también debe acordarse la separación de permisos de migración y operación de base, la gestión de cuentas y la conservación/eliminación de datos personales.

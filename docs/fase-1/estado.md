@@ -1,49 +1,59 @@
 # Estado de Fase 1
 
-- Fecha de corte: 2026-10-27.
-- Estado: implementación técnica ampliada; fase sin cerrar.
+- Fecha de corte: 2026-10-28, America/Mexico_City.
+- Alcance acordado: completar y verificar localmente; las comprobaciones del alojamiento quedan diferidas porque todavía no existe servidor.
+- Estado: portal y gestor implementados para revisión local; aceptación institucional y despliegue pendientes.
 - Referencia visual: [CEA, frame 1:3](https://www.figma.com/design/Rw9Bb37khwyJnL2wUEjK89/CEA?node-id=1-3).
 
-## Avance de los cinco pasos
+## Implementación local
 
-| Paso                            | Implementado                                                                                                                                                                                                                           | Pendiente para aceptación                                                                                                       |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Gestión de contenido, RF-2   | Acceso, cambio inicial de contraseña, roles, borradores, edición, publicación/despublicación, imágenes con recorte y compresión, orden, vista previa, últimas tres versiones y auditoría. Persistencia MySQL y modo local de revisión. | Probar la integración MySQL en un entorno disponible y dar de alta las cuentas institucionales.                                 |
-| 2. Publicación del HTML         | El servidor regenera el portal a partir de las versiones publicadas, incorpora sus datos para React y reemplaza el HTML mediante escritura atómica. Conserva borradores separados; ofrece reintento de generación.                     | Confirmar el recorrido en el alojamiento y su política de respaldo.                                                             |
-| 3. Talleres y contenido público | Talleres con información, convocatoria abierta, cerrado o concluido; fechas, requisitos y costo indicativo; avisos fechados; filtro académico; información institucional editable.                                                     | Cargar y validar convocatorias reales. La inscripción corresponde a Fase 2.                                                     |
-| 4. Validación institucional     | Inventario de contenido y guion de aceptación preparados. El gestor permite sustituir textos e imágenes de referencia. El formulario de interés requiere aviso autorizado y registra su versión y consentimiento.                      | La institución debe confirmar identidad, contacto, textos, fotografías, asignaturas, programas, talleres y aviso de privacidad. |
-| 5. Calidad y entrega            | Pruebas de permisos, sesiones, medios, publicación y privacidad; comprobación en navegador; axe y Lighthouse incorporados al pipeline; configuración de staging y guía de operación.                                                   | Ejecutar staging con MySQL y TLS, completar revisión manual y documentar que la responsable publica sin asistencia.             |
+| Frente                     | Resultado                                                                                                                                                                                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Portal y gestor            | React, Anime.js, diseño adaptable, roles, borradores, publicación/despublicación, vista previa, orden, versiones y auditoría. El cambio de contenido regenera el HTML público sin recompilar la aplicación.                                                 |
+| Galerías por área          | Fotografías asociables a Rastro, Sala de Cortes o Embutidos desde el gestor. Cada área tiene su galería desplegable, accesible con teclado y sin JavaScript; la galería general conserva su composición.                                                    |
+| Datos anteriores           | Adaptación de las imágenes de referencia al nuevo modelo de galerías sin sustituir cuentas, contraseñas ni borradores modificados. Las asociaciones de área se validan y se protegen contra eliminación/despublicación accidental.                          |
+| Recuperación de acceso     | Solicitud desde el login, enlace de un solo uso de 30 minutos, token guardado como hash, límites de intentos y revocación de sesiones anteriores. El enlace se retira del fragmento visible al abrirlo.                                                     |
+| Correo local               | Buzón privado de archivos en `.local/cms/correos/`, sin envío externo. Adaptador SMTP con TLS preparado para configurar después; su entrega real no se declara probada.                                                                                     |
+| MySQL local                | Instancia nativa temporal y aislada, MySQL 8.0.44, en loopback y puerto libre; se comprueban migraciones, persistencia, bloqueo de escritores y reenvío idempotente. No se modifican los servicios ni bases instalados.                                     |
+| Respaldo y restauración    | Volcado consistente de la base completa, imágenes con manifiesto SHA-256 y archivo cifrado AES-256-GCM. Ensayo en otra base `_test` y carpeta vacías; conciliación de folios, contenido e imágenes, revocación de sesiones/enlaces y regeneración del HTML. |
+| Talleres y servicio social | Talleres con estados, fechas, requisitos y costo indicativo, avisos fechados, programas y formulario de interés condicionado al aviso autorizado. Las inscripciones corresponden a Fase 2.                                                                  |
 
-## Portal y gestor
+La composición original de Figma se conserva: portada, paleta, decoraciones, separadores, tarjetas y catálogo de altura uniforme. Las áreas de las actividades siguen siendo indicadores, y la tarjeta de prácticas conserva su jerarquía legible. Las fuentes e imágenes optimizadas mantienen los recursos originales y sus licencias. Véanse [diseno-ui.md](diseno-ui.md) y [contenido-animaciones.md](contenido-animaciones.md).
 
-El portal conserva React, Vite y Anime.js, la portada de Figma, colores, decoraciones, separadores, mosaicos y tarjetas. Los fondos cubren la pantalla y las cuadrículas se adaptan al espacio disponible. Las fichas de productos conservan una altura uniforme; las áreas de las actividades son indicadores sin interacción; «Explora más opciones» mantiene una jerarquía legible. El criterio visual está en [diseno-ui.md](diseno-ui.md).
+## Comprobaciones reproducibles
 
-El gestor incluye áreas, prácticas, actividades, productos, programas de servicio social, talleres, avisos, información institucional y galería. Un editor puede guardar y revisar borradores; responsable y administrador pueden publicar, despublicar y eliminar. El operador conserva el acceso al prototipo operativo, sin permisos de edición pública. El formulario usa texto plano: no admite HTML. Una publicación exige los campos necesarios según su tipo.
+```bash
+npm run check
+npm run build
+npm run check:fase1
+npm run check:mysql-local
+npm run prototype
+```
 
-Las imágenes subidas aceptan JPEG, PNG y WebP hasta 5 MB y 25 megapíxeles; se decodifican, recortan cuando se solicita, reducen y vuelven a codificar a WebP, eliminando metadatos. El texto alternativo es obligatorio. Las imágenes sin asociación a contenido publicado no son públicas. Los precios solo aparecen cuando se habilitan expresamente.
+La guía [validacion-local.md](validacion-local.md) explica requisitos, archivos de evidencia y comandos de respaldo. La suite incluye permisos, sesiones, cambio inicial, retorno al login, recuperación, expiración y uso concurrente de enlaces, privacidad, imágenes, galerías, compatibilidad del estado anterior e integridad del respaldo. Las pruebas MySQL se ejecutan por separado con credenciales aleatorias y bases de prueba.
 
-La publicación utiliza el renderizado React del servidor; no ejecuta una compilación completa por cada cambio. La vista previa es privada y no modifica el portal. Si falla la generación, el estado conserva el cambio y permite reintentar mediante «Regenerar portal». El despliegue inicial admite una sola instancia publicadora; el modo de archivo es exclusivamente local. Consulte [gestor-contenido.md](gestor-contenido.md).
+El recorrido del navegador usa datos sintéticos aislados y comprueba publicación, HTML sin JavaScript, talleres, galerías, teclado, tamaños móviles y recuperación mediante el buzón local. Ejecuta axe sobre los estados relevantes y Lighthouse con perfil móvil, red lenta 4G y CPU emuladas directamente mediante `throttlingMethod: devtools`. El límite sigue siendo LCP inferior a 2500 ms y cero infracciones graves o críticas de axe.
 
-Se optimizaron las imágenes originales y se incluyeron subconjuntos WOFF2 derivados de Poppins bajo el nombre SIMCE Sans, con licencia y procedencia conservadas. La apariencia tipográfica se mantiene. Las animaciones respetan el movimiento reducido y el contenido sigue disponible sin JavaScript.
+Los informes y capturas se conservan en `artifacts/fase-1/`, excluido de Git. Los resultados locales no acreditan una ejecución del pipeline remoto, una aprobación humana ni un despliegue real. La configuración de CI queda preparada para repetir los controles cuando se publique la versión.
 
-## Verificación técnica
+En este corte aprobaron 50 pruebas de API, dominio y panel, más las dos pruebas de integración MySQL. El ensayo de respaldo/restauración también aprobó. El recorrido de navegador no registró errores JavaScript ni infracciones graves/críticas de axe en ocho estados; Lighthouse registró LCP de 1980 ms, rendimiento 97/100 y accesibilidad 100/100. La auditoría de dependencias supera el umbral alto/crítico; permanecen los cuatro avisos bajos de la cadena de compilación PWA documentados en el corte anterior.
 
-Los controles incluyen ESLint, Prettier, compilación y 36 pruebas aprobadas de dominio, panel y API; las dos pruebas de integración MySQL se omiten localmente. La suite nueva verifica permisos, sesiones y su rotación, inactividad, versiones concurrentes, borradores privados, campos de publicación, auditoría, recorte y privacidad de imágenes, recuperación de generación y consentimiento del formulario de interés. La prueba MySQL requiere `TEST_MYSQL=1` y una base cuyo nombre termine en `_test`.
+## Pendientes de la institución
 
-`npm run check:fase1` comprueba el recorrido completo con datos sintéticos: cambio inicial de contraseña, borrador, vista previa, publicación, HTML sin JavaScript, despublicación y publicación de un taller. Ejecuta axe en portal y gestor en escritorio y móvil, comprueba desbordamientos y registra capturas.
+- Validar identidad, responsable, contacto, ubicación, redes sociales, textos, asignaturas, claves de programas, especies, fotografías y convocatorias reales.
+- Proporcionar la URL y versión del aviso de privacidad autorizado antes de habilitar el formulario de interés. No se ha configurado un aviso ficticio en el portal local de revisión.
+- Definir las cuentas institucionales y realizar el recorrido de publicación sin asistencia. Puede ensayarse localmente con el guion de [aceptacion-institucional.md](aceptacion-institucional.md); no se registra una aprobación en nombre de la responsable.
 
-Lighthouse utiliza su perfil móvil y los parámetros predeterminados de red lenta 4G y CPU, con `throttlingMethod: devtools`: emula directamente la red y CPU, sin estimación posterior de Lantern. El límite es LCP inferior a 2500 ms. La ejecución local de este corte registró LCP de 1928 ms, rendimiento 98/100 y accesibilidad 100/100; los resultados fluctúan según la máquina. axe no detectó infracciones graves o críticas en los cuatro estados comprobados. Los informes reproducibles se generan en `artifacts/fase-1/`. Estos controles automáticos no sustituyen la revisión manual ni la aceptación institucional.
+Los textos e imágenes de referencia no acreditan sesiones, existencias ni productos reales adicionales. No se inventan fechas de talleres, precios, disponibilidad ni una quinta especie de hamburguesa. La sustitución de referencias por material aprobado se realiza desde el gestor.
 
-La auditoría de dependencias aprueba el umbral de severidad alta/crítica. Quedan cuatro avisos bajos de la cadena de compilación PWA (`deepmerge` y dependientes); no se aplica la degradación incompatible de PWA que sugiere la herramienta.
+## Diferido hasta disponer de servidor
 
-El pipeline incluye navegador, recorrido de publicación, axe, Lighthouse, auditoría de dependencias y pruebas MySQL. Su configuración está versionada; una ejecución local no acredita que un pipeline remoto ya haya terminado. Docker está instalado en la máquina de desarrollo, pero su motor no estuvo disponible; no se declara comprobado el arranque de contenedores ni la prueba MySQL de este avance.
+- Instalación y comprobación del alojamiento, subdominio, DNS y TLS con el origen definitivo.
+- Pruebas de proxy, cookies seguras, permisos de base y volúmenes en la plataforma real; repetir con la versión MySQL elegida para el servidor (Compose propone 8.4).
+- Configurar y comprobar la entrega real de correo SMTP, sin usar el buzón de archivo de desarrollo.
+- Definir respaldo externo, custodia de claves, calendario, retención, monitoreo y restauración bajo las condiciones del alojamiento.
+- Verificar publicación, imágenes y calidad en la dirección desplegada y completar la evidencia de entrega institucional.
 
-## Contenido por validar y cierre
+No se intentó publicar ni conectar a un servidor de producción. Docker continúa sin motor disponible en esta máquina; esto ya no impide verificar MySQL nativo localmente, pero la imagen y los contenedores siguen sin arranque comprobado. Las instrucciones futuras están en [staging.md](../despliegue/staging.md).
 
-Los nueve temas de prácticas, cinco actividades, ocho productos y ocho espacios de galería conservan el contenido orientativo del avance anterior. Las asignaturas sin confirmación se indican expresamente. Las fotografías de referencia no acreditan instalaciones ni sesiones reales; la procedencia de la imagen ilustrativa de salchicha está en [contenido-animaciones.md](contenido-animaciones.md). No se inventan fechas de talleres, existencias, precios ni una quinta especie de hamburguesa.
-
-La información de identidad, responsable, correo, códigos de servicio social y ubicación procede del diseño base y requiere confirmación institucional. El icono social de la portada continúa dirigiendo al contacto mientras no se entregue una URL institucional. El formulario de interés permanece deshabilitado hasta configurar la URL y versión del aviso de privacidad autorizado; entretanto se ofrece contacto por correo.
-
-El guion [aceptacion-institucional.md](aceptacion-institucional.md) permite registrar la revisión y la publicación de una entrada y un taller sin asistencia. No se ha realizado esa prueba con una persona responsable ni se registran aprobaciones en su nombre.
-
-El alojamiento, subdominio y TLS y la comprobación física de la báscula siguen abiertos en [Fase 0](../fase-0/estado.md). Este avance permite continuar la revisión local y preparar staging, pero no cierra esos pendientes.
+El alojamiento/subdominio/TLS y la validación física de la báscula mantienen sus pendientes de [Fase 0](../fase-0/estado.md).
