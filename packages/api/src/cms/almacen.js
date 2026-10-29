@@ -1,7 +1,8 @@
-import { readFile, mkdir, writeFile, rename } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { crearEstadoInicial } from './contenido.js';
+import { renombrarAtomico } from './archivoAtomico.js';
 
 export class AlmacenCmsArchivo {
   constructor(archivo, inicial = crearEstadoInicial()) {
@@ -24,7 +25,7 @@ export class AlmacenCmsArchivo {
       await mkdir(dirname(this.archivo), { recursive: true });
       const temporal = `${this.archivo}.${randomUUID()}.tmp`;
       await writeFile(temporal, JSON.stringify(estado), { mode: 0o600 });
-      await rename(temporal, this.archivo);
+      await renombrarAtomico(temporal, this.archivo);
       return resultado;
     });
     this.cola = operacion.catch(() => {});

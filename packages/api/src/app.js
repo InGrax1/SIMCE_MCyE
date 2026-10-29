@@ -74,6 +74,7 @@ export function crearAplicacion({
       });
       return;
     }
+    console.error('ERROR_INTERNO', error.code ?? error.name);
     respuesta
       .status(500)
       .json({ error: 'ERROR_INTERNO', mensaje: 'Ocurrió un error no controlado.' });

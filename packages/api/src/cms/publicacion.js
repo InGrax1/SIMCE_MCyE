@@ -1,8 +1,9 @@
-import { readFile, writeFile, rename } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { proyectarPortal } from './contenido.js';
+import { renombrarAtomico } from './archivoAtomico.js';
 
 const escapar = (texto) =>
   String(texto).replace(
@@ -44,7 +45,7 @@ export function crearPublicador({ almacen, carpetaPortal, moduloSsr, carpetaMedi
       const documento = await html(contenido);
       const temporal = join(carpetaPortal, `index-${randomUUID()}.tmp`);
       await writeFile(temporal, documento);
-      await rename(temporal, join(carpetaPortal, 'index.html'));
+      await renombrarAtomico(temporal, join(carpetaPortal, 'index.html'));
       await almacen.cambiar((actual) => {
         actual.revisionHtml = contenido.revision;
       });
