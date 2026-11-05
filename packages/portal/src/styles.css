@@ -92,7 +92,7 @@
 .talleres p {
   font-size: 1rem;
   line-height: 1.5;
-  max-width: 72ch;
+  max-width: 65ch;
 }
 .talleres-grid {
   display: grid;
@@ -430,15 +430,15 @@ em {
   color: #c6514d;
 }
 .hero-descripcion {
-  margin-top: 24.4px;
+  margin-top: 24px;
   font-size: 1rem;
   line-height: 16px;
   text-align: justify;
 }
 .hero-botones {
   display: flex;
-  gap: 30px;
-  margin-top: 53px;
+  gap: 32px;
+  margin-top: 48px;
   margin-left: 59px;
 }
 .hero-botones .boton {
@@ -2675,6 +2675,9 @@ body {
 h2 {
   line-height: 1.25;
 }
+.seccion:not(.pie) h2 {
+  letter-spacing: -0.015em;
+}
 h3 {
   line-height: 1.5;
 }
@@ -2798,7 +2801,10 @@ button:active,
 .objetivo p {
   line-height: 1.5;
   text-align: left;
-  max-width: 70ch;
+  max-width: 65ch;
+}
+.cronologia h3 {
+  margin-block: var(--espacio-1);
 }
 .cronologia article {
   min-height: 0;
@@ -2883,7 +2889,7 @@ button:active,
   line-height: 1.25;
 }
 .procesos-contenido > p {
-  max-width: 70ch;
+  max-width: 65ch;
   width: auto;
 }
 .procesos-grid {
@@ -2951,14 +2957,14 @@ button:active,
   line-height: 1.5;
 }
 .practicas-introduccion {
-  max-width: 72ch;
+  max-width: 65ch;
   margin: 16px auto 0;
   font-size: 1rem;
   line-height: 1.5;
   text-align: center;
 }
 .nota-referencia {
-  max-width: 72ch;
+  max-width: 65ch;
   margin: 24px auto 0;
   padding-inline: 24px;
   font-size: 1rem;
@@ -3055,6 +3061,7 @@ button:active,
   font-size: 1rem;
   line-height: 1.5;
   text-align: left;
+  margin-top: var(--espacio-2);
 }
 .actividad-donde {
   font-size: 1rem;
@@ -3078,6 +3085,14 @@ button:active,
 .contacto-descripcion {
   font-size: 1rem;
   line-height: 1.5;
+}
+.productos .introduccion,
+.galeria > p:not(.etiqueta) {
+  max-width: 65ch;
+  margin-inline: auto;
+}
+.galeria > p:not(.etiqueta) {
+  padding-inline: var(--espacio-3);
 }
 .producto-destacado {
   height: auto;
@@ -3165,6 +3180,10 @@ button:active,
   height: auto;
   padding: 24px;
 }
+.programas-grid h3,
+.programas-grid article:nth-child(2) h3 {
+  margin-top: var(--espacio-4);
+}
 .programa-cabecera {
   flex-wrap: wrap;
   gap: 8px;
@@ -3179,6 +3198,9 @@ button:active,
 }
 .programa-actividades li + li {
   margin-top: 8px;
+}
+.programa-actividades h4 {
+  margin-bottom: var(--espacio-1);
 }
 .programas-grid .boton {
   margin-top: 24px;

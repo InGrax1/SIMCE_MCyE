@@ -44,3 +44,22 @@ Las animaciones de Anime.js 4.5.0 coordinan la entrada de título, descripción,
 Las fichas cambian durante 450 ms y sus imágenes acompañan la transición con un zoom de 2,5% durante 700 ms. Las flechas de los botones recorren 4 px al pasar el cursor o navegar con teclado, usando Anime.js; el hover se limita a punteros precisos. Las curvas `outCubic` desaceleran de forma continua, sin rebotes. Las entradas ocurren una vez al entrar en pantalla y no hay bucles decorativos. React limpia los efectos y eventos al desmontar o cambiar de ficha; activar movimiento reducido durante la sesión cancela los efectos y restaura sus estilos. El contenido sigue visible sin JavaScript.
 
 El detalle del contenido y la imagen generada está en [contenido-animaciones.md](contenido-animaciones.md). Los demás pendientes funcionales se detallan en [estado.md](estado.md).
+
+## Refinamientos visuales con skills — 2026-11-05
+
+El experimento se realiza en `refactor/ajustes-visuales-skills`, desde `f846a13`, conservando la rama `main`. El árbol de trabajo estaba limpio al iniciar y el remoto no tenía commits pendientes de incorporar.
+
+Se consultaron `emil-design-eng` y la guía de UI de [Emil Kowalski](https://github.com/emilkowalski/skills/tree/c8a79627b59d72d764d6ab6f2c87c09a48169833), junto con `design-taste-frontend` 2.5.0 y sus referencias de sistema y tipografía de [Taste](https://github.com/Leonxlnx/taste-skill/tree/9b4bf937a1f69348126959c15d2f99a73e65699b). La conservación del diseño existente tiene prioridad frente a las reglas de esas referencias que exigen sustituir fuentes, colores, composición, componentes o animaciones.
+
+Los cambios quedan limitados al CSS del portal:
+
+- Los títulos de sección usan un espaciado entre letras de `-0.015em`, conservando sus tamaños, pesos e interlineados. La portada y los títulos del pie mantienen su tratamiento anterior.
+- La descripción de portada se separa por 24 px; sus botones usan 32 px entre sí y 48 px respecto al texto en escritorio. Se mantienen los ajustes específicos de pantallas pequeñas.
+- Los títulos de la cronología ganan 8 px arriba y abajo. La descripción de actividad se separa 16 px de su título. Ambos programas de servicio social usan 32 px entre cabecera y título, y 8 px entre subtítulos y listas.
+- Los párrafos extensos de procesos, prácticas, talleres y las introducciones centradas de productos y galería tienen un máximo de `65ch`. La galería conserva 24 px de margen interior para su descripción en móvil.
+
+Se conservan textos, imágenes, enlaces, estructura, componentes, paleta, familia tipográfica, navegación, selectores y animaciones. Las alturas de las secciones pueden crecer con los saltos de línea, como ya permite el diseño adaptable.
+
+La revisión compara la estructura y la identidad antes y después, mide diez anchos entre 320 y 1920 px con texto al 100% y 200%, y comprueba las ocho fichas de productos a 390, 768 y 1440 px. El catálogo mantiene exactamente sus alturas iniciales y el menú conserva el cierre con Escape y la devolución del foco. Las capturas de Taste se interpretan junto con la visibilidad real de las imágenes: los recursos de fichas ocultas con carga diferida no se consideran imágenes visibles rotas.
+
+La verificación general, el formato y la compilación pasan con Node 24.22.1: 50 pruebas aprobadas y dos pruebas de integración MySQL omitidas por su configuración condicional. La validación integrada de Fase 1 pasa sus flujos y ocho revisiones de accesibilidad sin incidencias graves o críticas. Lighthouse registra LCP de 1941 ms, rendimiento de 97/100 y accesibilidad de 100/100 en la simulación móvil/4G local. Estas mediciones corresponden al equipo de revisión, sin validar el alojamiento institucional.
