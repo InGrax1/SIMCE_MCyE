@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { procesos, secciones } from './contenido.js';
 import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
 import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
-import { useAnimacionesPortal, useTransicionFicha } from './animaciones.js';
+import { useGaleriaAnimada, useInteraccionesPortal, useTransicionFicha } from './animaciones.js';
+import { SelectorSuave } from './SelectorSuave.jsx';
 
 function SeccionSinEntradas({ id, titulo }) {
   return (
-    <section id={id} className="seccion talleres" aria-labelledby={`titulo-${id}`}>
+    <section id={id} tabIndex={-1} className="seccion talleres" aria-labelledby={`titulo-${id}`}>
       <div className="contenido">
         <h2 id={`titulo-${id}`}>{titulo}</h2>
         <p>No hay información publicada en esta sección por el momento.</p>
@@ -18,6 +19,7 @@ function SeccionSinEntradas({ id, titulo }) {
 
 function Encabezado() {
   const [abierto, cambiarMenu] = useState(false);
+  const [seccionActual, cambiarSeccion] = useState('inicio');
   const cabecera = useRef(null);
   const botonMenu = useRef(null);
 
@@ -33,6 +35,29 @@ function Encabezado() {
     return () => {
       observador.disconnect();
       raiz.style.removeProperty('--altura-cabecera');
+    };
+  }, []);
+
+  useEffect(() => {
+    const seccionesPagina = [...document.querySelectorAll('main > section[id]')];
+    let cuadro;
+    const actualizarSeccion = () => {
+      cancelAnimationFrame(cuadro);
+      cuadro = requestAnimationFrame(() => {
+        const limite = cabecera.current.getBoundingClientRect().bottom + 80;
+        const actual = seccionesPagina.findLast(
+          (seccion) => seccion.getBoundingClientRect().top <= limite,
+        );
+        cambiarSeccion(actual?.id ?? 'inicio');
+      });
+    };
+    actualizarSeccion();
+    window.addEventListener('scroll', actualizarSeccion, { passive: true });
+    window.addEventListener('resize', actualizarSeccion);
+    return () => {
+      cancelAnimationFrame(cuadro);
+      window.removeEventListener('scroll', actualizarSeccion);
+      window.removeEventListener('resize', actualizarSeccion);
     };
   }, []);
 
@@ -58,6 +83,13 @@ function Encabezado() {
       className="encabezado"
       data-node-id="3:44"
       ref={cabecera}
+      onClick={(evento) => {
+        if (evento.target.closest('a')) cambiarMenu(false);
+      }}
+      onBlur={(evento) => {
+        if (evento.relatedTarget && !evento.currentTarget.contains(evento.relatedTarget))
+          cambiarMenu(false);
+      }}
       onKeyDown={(evento) => {
         if (evento.key === 'Escape' && abierto) {
           cambiarMenu(false);
@@ -74,6 +106,10 @@ function Encabezado() {
         aria-controls="navegacion"
         onClick={() => cambiarMenu(!abierto)}
       >
+        <span className="icono-menu" aria-hidden="true">
+          <span />
+          <span />
+        </span>
         {abierto ? 'Cerrar' : 'Menú'}
       </button>
       <nav
@@ -82,11 +118,15 @@ function Encabezado() {
         aria-label="Navegación principal"
       >
         {secciones.map(([id, nombre]) => (
-          <a key={id} href={`#${id}`} onClick={() => cambiarMenu(false)}>
+          <a key={id} href={`#${id}`} aria-current={seccionActual === id ? 'location' : undefined}>
             {nombre}
           </a>
         ))}
-        <a className="boton boton-contacto" href="#contacto" onClick={() => cambiarMenu(false)}>
+        <a
+          className="boton boton-contacto"
+          href="#contacto"
+          aria-current={seccionActual === 'contacto' ? 'location' : undefined}
+        >
           Contáctanos <Flecha />
         </a>
       </nav>
@@ -99,12 +139,14 @@ function Inicio() {
   return (
     <section
       id="inicio"
+      tabIndex={-1}
       className="hero seccion"
       aria-labelledby="titulo-inicio"
       data-node-id="47:496"
     >
       <Decoraciones grupo="hero" />
       <div className="hero-contenido">
+        <p className="hero-sobretitulo">FES Cuautitlán · UNAM</p>
         <h1 id="titulo-inicio">
           {institucion.nombre !== 'Módulo de Carnes y Embutidos' ? (
             institucion.nombre
@@ -123,7 +165,7 @@ function Inicio() {
             Conoce las áreas <Flecha />
           </a>
           <a className="boton boton-borde" href="#servicio-social">
-            Servicio Social
+            Servicio social
           </a>
         </div>
       </div>
@@ -134,7 +176,7 @@ function Inicio() {
         <a href="#contacto" aria-label="Consultar contacto y redes del módulo">
           <Imagen archivo="Image1.png" nodo="47:606" />
         </a>
-        <span>Síguenos En</span>
+        <span>Contacto</span>
       </aside>
       <div className="hero-institucion">
         <Imagen archivo="LogoFesc2.png" alt="Escudo de la FES Cuautitlán" nodo="47:610" />
@@ -156,6 +198,7 @@ function Modulo() {
   return (
     <section
       id="el-modulo"
+      tabIndex={-1}
       className="modulo seccion"
       aria-labelledby="titulo-modulo"
       data-node-id="5:268"
@@ -219,6 +262,7 @@ function Modulo() {
 }
 
 function TarjetaArea({ area, indice }) {
+  const galeriaAnimada = useGaleriaAnimada();
   const { galeria } = useContenidoPortal();
   const relacionadas = galeria.filter(
     (foto) => (area.id && foto.areaId === area.id) || foto.areaId === area.nombre,
@@ -239,8 +283,8 @@ function TarjetaArea({ area, indice }) {
         </div>
       </article>
       {relacionadas.length > 0 && (
-        <details className="area-galeria">
-          <summary>Ver galería de {area.nombre}</summary>
+        <details className="area-galeria" ref={galeriaAnimada.raiz}>
+          <summary onClick={galeriaAnimada.alternar}>Ver galería de {area.nombre}</summary>
           <div className="area-galeria-fotos">
             {fotos.map((foto) => (
               <figure key={foto.id ?? foto.foto}>
@@ -260,6 +304,7 @@ function Areas() {
   return (
     <section
       id="areas"
+      tabIndex={-1}
       className="areas seccion oscura"
       aria-labelledby="titulo-areas"
       data-node-id="5:271"
@@ -328,6 +373,7 @@ function Practicas() {
   return (
     <section
       id="practicas"
+      tabIndex={-1}
       className="practicas seccion oscura"
       aria-labelledby="titulo-practicas"
       data-node-id="7:2"
@@ -343,38 +389,45 @@ function Practicas() {
         </p>
         <div className="filtro-practicas">
           <label htmlFor="filtro-licenciatura">Filtrar por licenciatura</label>
-          <select
+          <SelectorSuave
             id="filtro-licenciatura"
-            value={licenciatura}
-            onChange={(e) => filtrar(e.target.value)}
+            valor={licenciatura}
+            alCambiar={filtrar}
+            opciones={['Todas', ...licenciaturas].map((nombre) => ({
+              value: nombre,
+              label: nombre,
+            }))}
+          />
+          <span role="status" aria-atomic="true">
+            {visibles.length}{' '}
+            {visibles.length === 1 ? 'práctica disponible' : 'prácticas disponibles'}
+          </span>
+          <button
+            type="button"
+            className="restablecer-filtro"
+            disabled={licenciatura === 'Todas'}
+            onClick={() => filtrar('Todas')}
           >
-            <option>Todas</option>
-            {licenciaturas.map((nombre) => (
-              <option key={nombre}>{nombre}</option>
-            ))}
-          </select>
-          <span aria-live="polite">{visibles.length} temas</span>
+            Mostrar todas
+          </button>
         </div>
         <div className="practicas-grid">
-          {visibles.map((practica, i) => (
-            <article
-              className={i === 0 || i === 5 ? 'practica practica-ancha' : 'practica'}
-              key={practica.nombre}
-            >
-              <div className="practica-texto">
-                <span className="practica-carrera">{practica.carrera}</span>
-                <h3>{practica.nombre}</h3>
-                <p>{practica.descripcion}</p>
-                <p className="practica-asignatura">
-                  Asignatura: {practica.asignatura ?? 'Por confirmar con la coordinación académica'}
-                </p>
-              </div>
+          {visibles.map((practica) => (
+            <article className="practica" key={practica.nombre}>
               <Imagen
                 className="practica-foto"
                 archivo={practica.foto}
                 alt={practica.alt}
                 loading="lazy"
               />
+              <div className="practica-texto">
+                <span className="practica-carrera">{practica.carrera}</span>
+                <h3>{practica.nombre}</h3>
+                <p>{practica.descripcion}</p>
+                {practica.asignatura && (
+                  <p className="practica-asignatura">Asignatura: {practica.asignatura}</p>
+                )}
+              </div>
             </article>
           ))}
           <a className="practica practica-explorar" href="#contacto">
@@ -386,7 +439,7 @@ function Practicas() {
           </a>
         </div>
         <p className="nota-referencia">
-          Temas e imágenes de referencia; la programación se acuerda con el módulo.
+          Temas e imágenes de referencia; confirma la asignatura y la programación con el módulo.
         </p>
       </div>
     </section>
@@ -404,6 +457,7 @@ function Actividades() {
   return (
     <section
       id="actividades"
+      tabIndex={-1}
       className="actividades seccion"
       aria-labelledby="titulo-actividades"
       data-node-id="40:55"
@@ -420,7 +474,7 @@ function Actividades() {
           <p>Selecciona una actividad para conocer el detalle y ver el área donde se realiza.</p>
         </div>
         <div className="actividades-grid">
-          <div className="actividad-selector" aria-label="Seleccionar actividad">
+          <div className="actividad-selector" role="group" aria-label="Seleccionar actividad">
             {actividades.map((item, i) => (
               <button
                 type="button"
@@ -429,47 +483,56 @@ function Actividades() {
                 aria-controls="actividad-detalle"
                 onClick={() => seleccionar(i)}
               >
-                <span>0{i + 1}</span>
+                <span aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
                 {item.nombre}
                 <Imagen archivo={indice === i ? 'Frame6.svg' : 'Frame5.svg'} />
               </button>
             ))}
           </div>
-          <article
-            id="actividad-detalle"
-            className="actividad-detalle"
-            aria-live="polite"
-            ref={ficha}
-          >
-            <p className="sobretitulo">Detalle de la Actividad</p>
-            <h3>{actividad.nombre}</h3>
-            <p className="actividad-descripcion">{actividad.descripcion}</p>
-            <p className="actividad-donde">Dónde se realiza</p>
-            <ul className="chips areas-indicadores" aria-label="Áreas de la actividad">
-              {areas.map((area) => {
-                const relacionada =
-                  actividad.areas?.includes(area.id) || actividad.areas?.includes(area.nombre);
-                return (
-                  <li key={area.nombre} className={relacionada ? 'chip elegida' : 'chip'}>
-                    {relacionada && (
-                      <>
-                        <span className="solo-lectores">Se realiza en: </span>
-                        <span aria-hidden="true">✓</span>
-                      </>
-                    )}
-                    {area.nombre}
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="actividad-especies">
-              <small>{actividad.especies ? 'Especies' : 'Enfoque académico'}</small>
-              <p>{actividad.especies ?? actividad.enfoque}</p>
-            </div>
-            <div className="actividad-foto">
-              <Imagen archivo={actividad.foto} alt={actividad.alt} loading="lazy" />
-            </div>
-          </article>
+          <div className="actividades-fichas" aria-live="polite" aria-atomic="true">
+            {actividades.map((actividad, i) => (
+              <article
+                key={actividad.id ?? actividad.nombre}
+                id={indice === i ? 'actividad-detalle' : undefined}
+                className={`actividad-detalle ficha-animada${indice === i ? ' es-visible' : ''}`}
+                aria-hidden={indice !== i}
+                inert={indice !== i}
+                ref={indice === i ? ficha : undefined}
+              >
+                <p className="sobretitulo">Detalle de la Actividad</p>
+                <h3>{actividad.nombre}</h3>
+                <p className="actividad-descripcion">{actividad.descripcion}</p>
+                <p className="actividad-donde">Dónde se realiza</p>
+                <ul className="chips areas-indicadores" aria-label="Áreas de la actividad">
+                  {areas.map((area) => {
+                    const relacionada =
+                      actividad.areas?.includes(area.id) || actividad.areas?.includes(area.nombre);
+                    return (
+                      <li key={area.nombre} className={relacionada ? 'chip elegida' : 'chip'}>
+                        {relacionada && (
+                          <>
+                            <span className="solo-lectores">Se realiza en: </span>
+                            <span aria-hidden="true">✓</span>
+                          </>
+                        )}
+                        {area.nombre}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="actividad-especies">
+                  <small>{actividad.especies ? 'Especies' : 'Enfoque académico'}</small>
+                  <p>{actividad.especies ?? actividad.enfoque}</p>
+                </div>
+                <div className="actividad-foto">
+                  <Imagen archivo={actividad.foto} alt={actividad.alt} loading="lazy" />
+                </div>
+                <a className="actividad-consulta" href="#contacto">
+                  Consultar esta actividad <Flecha />
+                </a>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -481,7 +544,9 @@ function FichaProducto({ producto, activa, referencia }) {
   return (
     <article
       id={activa ? 'producto-detalle' : undefined}
-      className={activa ? 'producto-ficha es-visible' : 'producto-ficha'}
+      className={
+        activa ? 'producto-ficha ficha-animada es-visible' : 'producto-ficha ficha-animada'
+      }
       aria-hidden={!activa}
       inert={!activa}
       ref={activa ? referencia : undefined}
@@ -504,7 +569,6 @@ function FichaProducto({ producto, activa, referencia }) {
           <div className="chips">
             {producto.especies.map((especie) => (
               <span className="chip" key={especie}>
-                <Imagen archivo="Frame7.svg" />
                 {especie}
               </span>
             ))}
@@ -536,12 +600,15 @@ function Productos() {
   const { productos } = useContenidoPortal();
   const [seleccion, seleccionar] = useState(0);
   const ficha = useRef(null);
+  const foto = useRef(null);
   useTransicionFicha(ficha, seleccion);
+  useTransicionFicha(foto, seleccion);
   const producto = productos[seleccion] ?? productos[0];
   if (!producto) return <SeccionSinEntradas id="productos" titulo="Productos" />;
   return (
     <section
       id="productos"
+      tabIndex={-1}
       className="productos seccion"
       aria-labelledby="titulo-productos"
       data-node-id="47:290"
@@ -558,12 +625,22 @@ function Productos() {
         </p>
         <div className="producto-destacado">
           <figure>
-            <Imagen
-              archivo={producto.foto}
-              alt={producto.alt ?? `Imagen de referencia de ${producto.nombre.toLowerCase()}`}
-              nodo={seleccion === 0 ? '47:366' : undefined}
-              loading="lazy"
-            />
+            {productos.map((item) => (
+              <Imagen
+                key={item.id ?? item.nombre}
+                archivo={item.foto}
+                className={`producto-imagen ficha-animada${producto === item ? ' es-visible' : ''}`}
+                ref={producto === item ? foto : undefined}
+                aria-hidden={producto !== item}
+                alt={
+                  producto === item
+                    ? (item.alt ?? `Imagen de referencia de ${item.nombre.toLowerCase()}`)
+                    : ''
+                }
+                nodo={producto === item && seleccion === 0 ? '47:366' : undefined}
+                loading="lazy"
+              />
+            ))}
             <figcaption>
               {producto.nombre}
               {!producto.foto?.startsWith('/medios/') && ' · imagen de referencia'}
@@ -580,7 +657,8 @@ function Productos() {
             ))}
           </div>
         </div>
-        <div className="productos-selector" aria-label="Seleccionar producto">
+        <p className="productos-ayuda">Selecciona un producto para conocer su elaboración.</p>
+        <div className="productos-selector" role="group" aria-label="Seleccionar producto">
           {productos.map((item, i) => (
             <button
               type="button"
@@ -590,7 +668,9 @@ function Productos() {
               onClick={() => seleccionar(i)}
             >
               <Imagen archivo={item.foto} nodo={item.nodo} loading="lazy" />
-              <span className="producto-numero">0{i + 1}</span>
+              <span className="producto-seleccion" aria-hidden="true">
+                ✓
+              </span>
               <span className="producto-nombre">{item.nombre}</span>
             </button>
           ))}
@@ -653,16 +733,15 @@ function InteresServicioSocial() {
         }}
       >
         <input type="hidden" name="versionAviso" value={avisoInteres.version} />
-        <label>
-          Programa
-          <select name="programa" required>
-            {programas.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="interes-campo">
+          <label htmlFor="programa-interes">Programa</label>
+          <SelectorSuave
+            id="programa-interes"
+            nombre="programa"
+            requerido
+            opciones={programas.map((p) => ({ value: p.id, label: p.nombre }))}
+          />
+        </div>
         <label>
           Nombre
           <input name="nombre" autoComplete="name" required maxLength={160} />
@@ -697,6 +776,7 @@ function ServicioSocial() {
   return (
     <section
       id="servicio-social"
+      tabIndex={-1}
       className="social seccion"
       aria-labelledby="titulo-social"
       data-node-id="47:432"
@@ -744,6 +824,7 @@ function Galeria() {
   return (
     <section
       id="galeria"
+      tabIndex={-1}
       className="galeria seccion oscura"
       aria-labelledby="titulo-galeria"
       data-node-id="47:483"
@@ -776,6 +857,7 @@ function Contacto() {
   return (
     <section
       id="contacto"
+      tabIndex={-1}
       className="contacto seccion"
       aria-labelledby="titulo-contacto"
       data-node-id="47:679"
@@ -891,7 +973,12 @@ function Pie() {
 function Talleres() {
   const { talleres, avisos, correo } = useContenidoPortal();
   return (
-    <section id="talleres" className="talleres seccion" aria-labelledby="titulo-talleres">
+    <section
+      id="talleres"
+      tabIndex={-1}
+      className="talleres seccion"
+      aria-labelledby="titulo-talleres"
+    >
       <div className="contenido">
         <Etiqueta>Talleres y avisos</Etiqueta>
         <h2 id="titulo-talleres">
@@ -953,7 +1040,7 @@ function Talleres() {
 
 function PaginaPortal() {
   const contenido = useRef(null);
-  useAnimacionesPortal(contenido);
+  useInteraccionesPortal();
   return (
     <>
       <a className="saltar-contenido" href="#contenido-principal">

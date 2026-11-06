@@ -77,6 +77,10 @@ try {
   async function axe(nombre) {
     const auditoria = await new AxeBuilder({ page: pagina })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      // Centinelas internos que redirigen el foco, no controles del portal.
+      // Base UI documenta este aviso de axe como comportamiento esperado:
+      // https://github.com/mui/base-ui/issues/4845
+      .exclude('[data-base-ui-focus-guard]')
       .analyze();
     const problemas = auditoria.violations
       .filter((v) => ['serious', 'critical'].includes(v.impact))
@@ -109,8 +113,52 @@ try {
   await pagina.screenshot({ path: join(artefactos, 'galerias-areas-movil.png') });
   await pagina.setViewportSize({ width: 1440, height: 1000 });
   reporte.flujo.push('Galerías por área con teclado y sin desbordamiento entre 320 y 1440 px');
-  await pagina.getByLabel('Filtrar por licenciatura').selectOption('MVZ');
+  await pagina.getByRole('combobox', { name: 'Filtrar por licenciatura' }).click();
+  await axe('Selector de licenciatura abierto');
+  await pagina.getByRole('option', { name: 'MVZ', exact: true }).click();
   assert.ok((await pagina.locator('.practica h3').count()) > 0);
+  await pagina.getByRole('button', { name: 'Mostrar todas', exact: true }).click();
+  await pagina.emulateMedia({ reducedMotion: 'no-preference' });
+  for (const nombre of ['Pastor', 'Jamón', 'Hamburguesa']) {
+    await pagina.getByRole('button', { name: nombre, exact: true }).click();
+  }
+  await pagina.waitForFunction(
+    () =>
+      getComputedStyle(document.querySelector('#producto-detalle')).opacity === '1' &&
+      !document.querySelector('[data-saliendo]'),
+  );
+  assert.equal(await pagina.locator('#producto-detalle h3').textContent(), 'Hamburguesa');
+  assert.equal(await pagina.locator('.producto-ficha[aria-hidden="false"]').count(), 1);
+  for (const nombre of ['Asesorías académicas', 'Formación de estudiantes', 'Matanza y faenado']) {
+    await pagina.getByRole('button', { name: nombre, exact: true }).click();
+  }
+  await pagina.waitForFunction(
+    () =>
+      getComputedStyle(document.querySelector('#actividad-detalle')).opacity === '1' &&
+      !document.querySelector('[data-saliendo]'),
+  );
+  assert.equal(await pagina.locator('#actividad-detalle h3').textContent(), 'Matanza y faenado');
+  await pagina.getByRole('combobox', { name: 'Filtrar por licenciatura' }).click();
+  await pagina.getByRole('listbox').waitFor();
+  await pagina.keyboard.press('Escape');
+  await pagina.getByRole('listbox').waitFor({ state: 'hidden' });
+  await pagina.waitForFunction(() => document.activeElement.id === 'filtro-licenciatura');
+  assert.equal(
+    await pagina
+      .getByRole('combobox', { name: 'Filtrar por licenciatura' })
+      .evaluate((elemento) => elemento === document.activeElement),
+    true,
+  );
+  await pagina.emulateMedia({ reducedMotion: 'reduce' });
+  await pagina.getByRole('button', { name: 'Pastor', exact: true }).focus();
+  await pagina.keyboard.press('Enter');
+  assert.equal(
+    await pagina
+      .locator('#producto-detalle')
+      .evaluate((elemento) => getComputedStyle(elemento).opacity),
+    '1',
+  );
+  reporte.flujo.push('Selecciones rápidas, desplegable accesible, Escape y movimiento reducido');
   await pagina.goto(`${origen}/panel/`);
   async function entrar(contrasena) {
     await pagina.getByLabel('Correo', { exact: true }).fill('prueba@example.test');
