@@ -12,7 +12,7 @@ if (!modo)
   );
 if (modo && !['pruebas', 'cobertura'].includes(modo))
   throw new Error('Modo de verificación desconocido.');
-for (const paquete of ['api', 'dominio', 'panel'])
+for (const paquete of ['api', 'dominio', 'panel', 'portal'])
   comandos.push([
     resolve(raiz, 'packages', paquete),
     [

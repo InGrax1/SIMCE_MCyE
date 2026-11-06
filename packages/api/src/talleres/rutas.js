@@ -16,7 +16,7 @@ import {
   responderConsulta,
 } from './consultas.js';
 
-export function crearRutasTalleres({ almacen, auth, publicador }) {
+export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboConsulta }) {
   const router = express.Router();
   const cuotas = new Map();
   const cuotasConsultas = new Map();
@@ -62,11 +62,11 @@ export function crearRutasTalleres({ almacen, auth, publicador }) {
   });
   router.post('/publico/talleres/:id/consultas', auth.origen, async (req, res) => {
     limitar(cuotasConsultas, 5, req);
-    res
-      .status(201)
-      .json(
-        await almacen.cambiar((estado) => registrarConsulta(estado, req.params.id, req.body ?? {})),
-      );
+    const resultado = await almacen.cambiar((estado) =>
+      registrarConsulta(estado, req.params.id, req.body ?? {}),
+    );
+    const correo = enviarReciboConsulta ? await enviarReciboConsulta(resultado) : 'no_disponible';
+    res.status(201).json({ ...resultado, correo });
   });
   router.post('/publico/consultas-talleres/consultar', auth.origen, async (req, res) => {
     limitar(cuotasLectura, 60, req);

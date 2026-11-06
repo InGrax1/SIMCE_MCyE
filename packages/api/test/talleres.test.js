@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { mkdtemp, mkdir, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, readdir, readFile } from 'node:fs/promises';
 import { resolve, join, sep } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { crearAplicacion } from '../src/app.js';
@@ -14,6 +14,8 @@ import {
   cambiarInscripcion,
 } from '../src/talleres/servicio.js';
 import { proyectarTaller } from '../src/talleres/reglas.js';
+import { crearCorreoConsultas } from '../src/talleres/correoConsultas.js';
+import { configurarCorreo } from '../src/cms/correo.js';
 
 const origen = 'http://localhost:3000';
 const clave = randomBytes(18).toString('base64url');
@@ -57,7 +59,7 @@ beforeAll(async () => {
   hash = await hashClave(clave);
 });
 describe('talleres e inscripciones', () => {
-  let carpeta, almacen, app, auth;
+  let carpeta, almacen, app, auth, enviarReciboConsulta;
   beforeEach(async () => {
     const base = resolve('artifacts/test-talleres');
     await mkdir(base, { recursive: true });
@@ -81,12 +83,23 @@ describe('talleres e inscripciones', () => {
       origenes: [origen],
     });
     const publicador = { publicar: async () => {}, previsualizar: async () => '' };
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      enviarCorreo: null,
+      origenPublico: origen,
+    });
     app = crearAplicacion({
       cms: {
         auth,
         carpetaPortal: carpeta,
         carpetaPanel: carpeta,
-        rutas: crearRutasCms({ almacen, auth, publicador, carpetaMedios: carpeta }),
+        rutas: crearRutasCms({
+          almacen,
+          auth,
+          publicador,
+          carpetaMedios: carpeta,
+          enviarReciboConsulta: (datos) => enviarReciboConsulta(datos),
+        }),
       },
     });
   });
@@ -315,7 +328,8 @@ describe('talleres e inscripciones', () => {
     });
     const respuesta = await preguntar();
     expect(respuesta.status).toBe(201);
-    expect(Object.keys(respuesta.body).sort()).toEqual(['acceso', 'folio']);
+    expect(Object.keys(respuesta.body).sort()).toEqual(['acceso', 'correo', 'folio']);
+    expect(respuesta.body.correo).toBe('no_disponible');
     const s = await new AlmacenCmsArchivo(almacen.archivo).leer();
     expect(s.inscripciones).toHaveLength(0);
     expect(s.consultasTalleres).toHaveLength(1);
@@ -363,6 +377,93 @@ describe('talleres e inscripciones', () => {
       (await seguimiento({ ...acceso, acceso: randomBytes(32).toString('base64url') })).status,
     ).toBe(404);
     expect((await seguimiento({ ...acceso, folio: 'CT-2026-99999999' })).status).toBe(404);
+  });
+  it('envía una copia con pregunta y botón privado desde el origen configurado y escapa el HTML', async () => {
+    const correos = [];
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      origenPublico: 'https://portal.example.test',
+      produccion: true,
+      enviarCorreo: async (correo) => {
+        correos.push(correo);
+        return { modo: 'smtp' };
+      },
+    });
+    expect((await preguntar({ aceptoAviso: false })).status).toBe(422);
+    expect(correos).toHaveLength(0);
+    const resultado = await preguntar({
+      nombre: 'Ana "Luz" & José',
+      correo: ' PERSONA@EXAMPLE.TEST ',
+      mensaje: '¿Incluye material & herramientas?',
+    });
+    expect(resultado.status).toBe(201);
+    expect(resultado.body.correo).toBe('enviado');
+    expect(correos).toHaveLength(1);
+    const correo = correos[0];
+    expect(correo.para).toBe('persona@example.test');
+    expect(correo.texto).toContain('¿Incluye material & herramientas?');
+    expect(correo.html).toContain('Ana &quot;Luz&quot; &amp; José');
+    expect(correo.html).toContain('¿Incluye material &amp; herramientas?');
+    expect(correo.html).toContain('>Consulta tu estado</a>');
+    const enlace = new URL(correo.texto.split('\n').find((linea) => linea.startsWith('https://')));
+    expect(enlace.origin).toBe('https://portal.example.test');
+    const datos = new URLSearchParams(enlace.hash.slice(1));
+    expect(datos.get('acceso')).toBe(resultado.body.acceso);
+    expect(
+      (await seguimiento({ folio: datos.get('consulta-taller'), acceso: datos.get('acceso') }))
+        .status,
+    ).toBe(200);
+    const s = await new AlmacenCmsArchivo(almacen.archivo).leer();
+    expect(s.consultasTalleres[0].correoConfirmacion.estado).toBe('enviado');
+    expect(JSON.stringify(s)).not.toContain(resultado.body.acceso);
+    expect(JSON.stringify(s.auditoria)).not.toContain('persona@example');
+  });
+  it('conserva la consulta y su acceso si falla el envío, sin filtrar errores del proveedor', async () => {
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      origenPublico: origen,
+      enviarCorreo: async () => {
+        throw new Error('detalle privado del proveedor');
+      },
+    });
+    const resultado = await preguntar();
+    expect(resultado.status).toBe(201);
+    expect(resultado.body.correo).toBe('fallido');
+    expect((await seguimiento(resultado.body)).status).toBe(200);
+    const s = await almacen.leer();
+    expect(s.consultasTalleres).toHaveLength(1);
+    expect(s.consultasTalleres[0].correoConfirmacion.estado).toBe('fallido');
+    expect(JSON.stringify(s) + JSON.stringify(resultado.body)).not.toContain('detalle privado');
+  });
+  it('distingue el buzón de archivos del envío real y conserva ambas versiones del mensaje', async () => {
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      origenPublico: origen,
+      enviarCorreo: configurarCorreo(carpeta, { CORREO_MODO: 'archivo', NODE_ENV: 'test' }),
+    });
+    const resultado = await preguntar();
+    expect(resultado.status).toBe(201);
+    expect(resultado.body.correo).toBe('archivo');
+    const archivos = await readdir(join(carpeta, 'correos'));
+    expect(archivos).toHaveLength(1);
+    const copia = JSON.parse(await readFile(join(carpeta, 'correos', archivos[0]), 'utf8'));
+    expect(copia.texto).toContain(resultado.body.acceso);
+    expect(copia.html).toContain('Consulta tu estado');
+    expect(copia.para).toBe('participante@example.test');
+    expect((await almacen.leer()).consultasTalleres[0].correoConfirmacion.estado).toBe('archivo');
+  });
+  it('rechaza orígenes inseguros o con rutas para los enlaces enviados por correo', () => {
+    for (const origenPublico of [
+      'http://ajeno.example.test',
+      'https://example.test/ruta',
+      'https://usuario:clave@example.test',
+    ])
+      expect(() => crearCorreoConsultas({ almacen, origenPublico })).toThrow(
+        'PORTAL_ORIGEN_PUBLICO',
+      );
+    expect(() =>
+      crearCorreoConsultas({ almacen, origenPublico: origen, produccion: true }),
+    ).toThrow('HTTPS');
   });
   it('protege consultas y respuestas de visitantes y roles sin permiso, y rechaza cambios obsoletos', async () => {
     await preguntar();

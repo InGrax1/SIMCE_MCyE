@@ -31,7 +31,14 @@ const version = (entrada, numero) => {
     );
 };
 
-export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recuperacion }) {
+export function crearRutasCms({
+  almacen,
+  auth,
+  publicador,
+  carpetaMedios,
+  recuperacion,
+  enviarReciboConsulta,
+}) {
   const router = express.Router();
   const tasas = new Map();
   const tasasInteres = new Map();
@@ -39,7 +46,7 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recupe
     res.set('Cache-Control', 'no-store');
     next();
   });
-  router.use(crearRutasTalleres({ almacen, auth, publicador }));
+  router.use(crearRutasTalleres({ almacen, auth, publicador, enviarReciboConsulta }));
   router.get('/publico/contenido', async (_req, res) =>
     res.json(proyectarPortal(await almacen.leer())),
   );

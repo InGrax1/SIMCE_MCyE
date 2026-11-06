@@ -37,6 +37,7 @@ services:
       CMS_DIR: /app/.local/cms
       CORREO_MODO: smtp
       PANEL_ORIGEN_PUBLICO: ${PANEL_ORIGEN_PUBLICO:-}
+      PORTAL_ORIGEN_PUBLICO: ${PORTAL_ORIGEN_PUBLICO:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}

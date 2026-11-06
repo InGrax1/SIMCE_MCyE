@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useContenidoPortal } from './contextoContenido.jsx';
+import {
+  enlaceConsulta,
+  eventoConsultas,
+  guardarConsulta,
+  leerConsultasGuardadas,
+  quitarConsulta,
+} from './consultasGuardadas.js';
 
 export function ConsultaTaller({ taller }) {
   const { avisoTalleres } = useContenidoPortal();
@@ -20,12 +27,25 @@ export function ConsultaTaller({ taller }) {
             Tu folio es <strong>{recibo.folio}</strong>. La responsable podrá responderte dentro de
             este sitio.
           </p>
-          <p>Guarda este enlace privado para volver a consultar la respuesta. Es personal.</p>
+          <p>
+            {recibo.guardado
+              ? 'Guardamos el acceso en este navegador. Al volver al sitio, encontrarás tu solicitud en «Mis consultas de talleres».'
+              : 'Este navegador no permitió guardar el acceso. Conserva el enlace privado para consultar tu respuesta.'}
+          </p>
+          <p>
+            {recibo.correo === 'enviado'
+              ? 'Enviamos una copia a tu correo con un botón para consultar el estado. Si no aparece, revisa el correo no deseado.'
+              : recibo.correo === 'fallido'
+                ? 'Tu consulta quedó registrada, pero no pudimos enviar la copia por correo. Puedes revisar la respuesta aquí.'
+                : 'La copia por correo todavía no está disponible. Puedes revisar la respuesta aquí.'}
+          </p>
           <a href={recibo.enlace}>Consultar mi solicitud</a>
-          <label>
-            Enlace privado
-            <input readOnly value={recibo.enlace} onFocus={(e) => e.currentTarget.select()} />
-          </label>
+          {!recibo.guardado && (
+            <label>
+              Enlace privado
+              <input readOnly value={recibo.enlace} onFocus={(e) => e.currentTarget.select()} />
+            </label>
+          )}
         </div>
       ) : (
         <form
@@ -52,8 +72,13 @@ export function ConsultaTaller({ taller }) {
                 throw new Error(
                   resultado.mensaje ?? 'No se pudo enviar la consulta. Inténtalo de nuevo.',
                 );
-              const enlace = `${location.origin}/#consulta-taller=${encodeURIComponent(resultado.folio)}&acceso=${encodeURIComponent(resultado.acceso)}`;
-              cambiarRecibo({ folio: resultado.folio, enlace });
+              const guardado = guardarConsulta({
+                folio: resultado.folio,
+                acceso: resultado.acceso,
+                tallerNombre: taller.nombre ?? taller.titulo,
+              });
+              const enlace = `${location.origin}${enlaceConsulta(resultado)}`;
+              cambiarRecibo({ folio: resultado.folio, enlace, guardado, correo: resultado.correo });
               requestAnimationFrame(() => confirmacion.current?.focus());
             } catch (e) {
               cambiarError(e.message);
@@ -66,6 +91,10 @@ export function ConsultaTaller({ taller }) {
           <p>
             Envíanos tu pregunta sobre este taller. Para reservar un lugar, utiliza la inscripción
             del taller.
+          </p>
+          <p>
+            El acceso se guardará en este navegador para volver a tu consulta. También recibirás una
+            copia por correo cuando el envío esté disponible.
           </p>
           <fieldset disabled={ocupado}>
             <legend>Solicitud de información</legend>
@@ -151,7 +180,10 @@ export function SeguimientoConsultaTaller() {
         });
         const datos = await respuesta.json();
         if (!respuesta.ok) throw new Error(datos.mensaje ?? 'No pudimos consultar la respuesta.');
-        if (!controlador.signal.aborted) cambiarConsulta(datos);
+        if (!controlador.signal.aborted) {
+          cambiarConsulta(datos);
+          guardarConsulta({ ...acceso, tallerNombre: datos.tallerNombre });
+        }
       } catch (e) {
         if (!controlador.signal.aborted) cambiarError(e.message);
       } finally {
@@ -209,5 +241,64 @@ export function SeguimientoConsultaTaller() {
         </div>
       </div>
     </section>
+  );
+}
+
+export function MisConsultasTaller() {
+  const [consultas, cambiarConsultas] = useState([]);
+  const [error, cambiarError] = useState('');
+  useEffect(() => {
+    const actualizar = () => cambiarConsultas(leerConsultasGuardadas());
+    actualizar();
+    const eventos = [eventoConsultas, 'storage', 'focus', 'pageshow', 'hashchange'];
+    for (const evento of eventos) window.addEventListener(evento, actualizar);
+    return () => {
+      for (const evento of eventos) window.removeEventListener(evento, actualizar);
+    };
+  }, []);
+  if (!consultas.length) return null;
+  return (
+    <div className="consultas-guardadas" id="mis-consultas-talleres">
+      <h3>Mis consultas de talleres</h3>
+      <p>
+        Estas solicitudes están guardadas en este navegador. Puedes quitar su acceso en un equipo
+        compartido; tu consulta seguirá registrada en el Módulo.
+      </p>
+      {error && <p role="alert">{error}</p>}
+      <ul>
+        {consultas.map((c) => (
+          <li key={c.folio}>
+            <div>
+              <strong>{c.tallerNombre}</strong>
+              <span>Folio: {c.folio}</span>
+            </div>
+            <div className="consulta-acciones">
+              <a href={enlaceConsulta(c)} aria-label={`Consultar estado de ${c.folio}`}>
+                Consultar estado
+              </a>
+              <button
+                type="button"
+                aria-label={`Quitar ${c.folio} de este navegador`}
+                onClick={() => {
+                  if (!quitarConsulta(c.folio)) {
+                    cambiarError(
+                      'No se pudo quitar el acceso de este navegador. Inténtalo de nuevo.',
+                    );
+                    return;
+                  }
+                  cambiarError('');
+                  if (
+                    new URLSearchParams(location.hash.slice(1)).get('consulta-taller') === c.folio
+                  )
+                    location.hash = 'talleres';
+                }}
+              >
+                Quitar de este navegador
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

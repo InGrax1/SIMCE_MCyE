@@ -5,9 +5,14 @@ const primeraVersion = Object.freeze({
   url: '/privacidad/simce-2026-11-06-v1.html',
   fecha: '2026-11-06',
 });
-export const avisoPrivacidad = Object.freeze({
+const segundaVersion = Object.freeze({
   version: 'simce-2026-11-06-v2',
   url: '/privacidad/simce-2026-11-06-v2.html',
   fecha: '2026-11-06',
 });
-export const avisosPrivacidad = Object.freeze([primeraVersion, avisoPrivacidad]);
+export const avisoPrivacidad = Object.freeze({
+  version: 'simce-2026-11-06-v3',
+  url: '/privacidad/simce-2026-11-06-v3.html',
+  fecha: '2026-11-06',
+});
+export const avisosPrivacidad = Object.freeze([primeraVersion, segundaVersion, avisoPrivacidad]);

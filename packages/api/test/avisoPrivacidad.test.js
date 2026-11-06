@@ -72,9 +72,9 @@ describe('aviso autorizado y consulta pública', () => {
     expect(respuesta.text).toContain('unidaddetransparencia@unam.mx');
     expect(respuesta.text).not.toContain('Revisión y autorización');
     expect(respuesta.text).not.toMatch(/<script|JWT_SECRET|Persona y fecha que autorizan/);
-    const anterior = await request(crearAplicacion({ cms }))
-      .get(avisosPrivacidad[0].url)
-      .expect(200);
-    expect(anterior.text).toContain('simce-2026-11-06-v1');
+    for (const aviso of avisosPrivacidad.slice(0, -1)) {
+      const anterior = await request(crearAplicacion({ cms })).get(aviso.url).expect(200);
+      expect(anterior.text).toContain(aviso.version);
+    }
   });
 });

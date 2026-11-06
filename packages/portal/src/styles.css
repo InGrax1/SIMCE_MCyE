@@ -4412,3 +4412,48 @@ button:not(:disabled):active,
   align-items: center;
   margin-top: 24px;
 }
+.consultas-guardadas {
+  margin-top: 40px;
+  padding: 24px;
+  border: 1px solid #b9aaaa;
+  border-radius: 12px;
+  background: #fff8f2;
+  scroll-margin-top: 100px;
+}
+.consultas-guardadas h3 {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.consultas-guardadas ul {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+}
+.consultas-guardadas li {
+  padding-block: 20px;
+  border-top: 1px solid #b9aaaa;
+  overflow-wrap: anywhere;
+}
+.consultas-guardadas li strong,
+.consultas-guardadas li span {
+  display: block;
+}
+.consultas-guardadas .consulta-acciones {
+  margin-top: 12px;
+  gap: 8px 24px;
+}
+.consultas-guardadas button {
+  min-height: 48px;
+  padding: 8px 0;
+  color: #84271f;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.consultas-guardadas :focus-visible {
+  outline: 3px solid #2463a8;
+  outline-offset: 4px;
+}

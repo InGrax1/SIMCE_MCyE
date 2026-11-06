@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { InscripcionTaller } from './InscripcionTaller.jsx';
-import { ConsultaTaller, SeguimientoConsultaTaller } from './ConsultaTaller.jsx';
+import {
+  ConsultaTaller,
+  MisConsultasTaller,
+  SeguimientoConsultaTaller,
+} from './ConsultaTaller.jsx';
 import { avisoPrivacidad } from './avisoPrivacidad.js';
 import { procesos, secciones } from './contenido.js';
 import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
@@ -1042,6 +1046,7 @@ function Talleres() {
             Por ahora no hay talleres publicados. Escríbenos para consultar próximas actividades.
           </p>
         )}
+        <MisConsultasTaller />
         {avisos.map((aviso) => (
           <article className="aviso" key={aviso.id}>
             <h3>{aviso.nombre ?? aviso.titulo}</h3>

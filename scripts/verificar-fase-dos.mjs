@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, writeFile, readFile, cp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, readFile, readdir, cp, rm } from 'node:fs/promises';
 import { resolve, join, sep } from 'node:path';
 import assert from 'node:assert/strict';
 import { crearAplicacion } from '../packages/api/src/app.js';
@@ -10,6 +10,8 @@ import { crearAutenticacion, hashClave } from '../packages/api/src/cms/autentica
 import { crearRutasCms } from '../packages/api/src/cms/rutas.js';
 import { crearPublicador } from '../packages/api/src/cms/publicacion.js';
 import { avisoPrivacidad } from '../packages/portal/src/avisoPrivacidad.js';
+import { configurarCorreo } from '../packages/api/src/cms/correo.js';
+import { crearCorreoConsultas } from '../packages/api/src/talleres/correoConsultas.js';
 
 const raiz = resolve(import.meta.dirname, '..');
 const artefactos = join(raiz, 'artifacts/fase-2');
@@ -44,7 +46,14 @@ const publicador = crearPublicador({
   moduloSsr: join(raiz, 'packages/portal/dist-ssr/entry-server.js'),
 });
 await publicador.publicar();
-const rutas = crearRutasCms({ almacen, auth, publicador, carpetaMedios: temporal });
+let enviarReciboConsulta;
+const rutas = crearRutasCms({
+  almacen,
+  auth,
+  publicador,
+  carpetaMedios: temporal,
+  enviarReciboConsulta: (datos) => enviarReciboConsulta(datos),
+});
 const app = crearAplicacion({
   cms: { auth, rutas, carpetaPortal, carpetaPanel: join(raiz, 'packages/panel/dist') },
 });
@@ -55,6 +64,11 @@ await new Promise((ok, no) => {
 });
 const origen = `http://127.0.0.1:${servidor.address().port}`;
 origenes.push(origen);
+enviarReciboConsulta = crearCorreoConsultas({
+  almacen,
+  origenPublico: origen,
+  enviarCorreo: configurarCorreo(temporal, { NODE_ENV: 'test', CORREO_MODO: 'archivo' }),
+});
 const reporte = { flujo: [], accesibilidad: [], errores: [], fecha: new Date().toISOString() };
 let browser;
 async function axe(pagina, nombre) {
@@ -132,16 +146,46 @@ try {
   await pagina.screenshot({ path: join(artefactos, 'consulta-formulario-movil.png') });
   await formularioConsulta.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
   await pagina.getByRole('heading', { name: 'Recibimos tu consulta', exact: true }).waitFor();
-  const enlacePrivado = await pagina.getByLabel('Enlace privado', { exact: true }).inputValue();
+  await pagina.getByText(/Guardamos el acceso en este navegador/).waitFor();
+  await pagina
+    .getByText(
+      'La copia por correo todavía no está disponible. Puedes revisar la respuesta aquí.',
+      { exact: true },
+    )
+    .waitFor();
+  const enlacePrivado = await pagina
+    .getByRole('link', { name: 'Consultar mi solicitud', exact: true })
+    .getAttribute('href');
   assert.equal((await almacen.leer()).inscripciones.length, 0);
   const consultaCreada = (await almacen.leer()).consultasTalleres[0];
+  assert.equal(consultaCreada.correoConfirmacion.estado, 'archivo');
+  const copias = await readdir(join(temporal, 'correos'));
+  assert.equal(copias.length, 1);
+  const copia = JSON.parse(await readFile(join(temporal, 'correos', copias[0]), 'utf8'));
+  const enlaceCorreo = copia.html
+    .match(/href="([^"]+)"[^>]*>Consulta tu estado<\/a>/)[1]
+    .replaceAll('&amp;', '&');
+  assert.equal(enlaceCorreo, enlacePrivado);
+  assert.ok(copia.texto.includes('¿Qué materiales debo llevar al taller?'));
+  await pagina.goto(`${origen}/#talleres`);
+  await pagina.getByRole('heading', { name: 'Mis consultas de talleres', exact: true }).waitFor();
+  await pagina
+    .getByRole('link', { name: `Consultar estado de ${consultaCreada.folio}`, exact: true })
+    .click();
+  await pagina.getByText('Tu consulta está pendiente de respuesta.', { exact: true }).waitFor();
+  await pagina.getByRole('link', { name: 'Volver a talleres', exact: true }).click();
+  reporte.flujo.push(
+    'Volver al sitio recupera el acceso guardado sin conservar un enlace manualmente',
+  );
   const contextoSeguimiento = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
     reducedMotion: 'reduce',
   });
   const seguimiento = await contextoSeguimiento.newPage();
   seguimiento.on('pageerror', (e) => reporte.errores.push(e.message));
-  await seguimiento.goto(enlacePrivado);
+  await seguimiento.goto(`${origen}/#talleres`);
+  assert.equal(await seguimiento.locator('.consultas-guardadas').count(), 0);
+  await seguimiento.goto(enlaceCorreo);
   await seguimiento
     .getByText('Tu consulta está pendiente de respuesta.', { exact: true })
     .waitFor();
@@ -173,9 +217,85 @@ try {
   }
   await seguimiento.getByRole('link', { name: 'Volver a talleres', exact: true }).click();
   await seguimiento.locator('#consultar-solicitud').waitFor({ state: 'detached' });
+  await seguimiento.reload();
+  await seguimiento
+    .getByRole('link', { name: `Consultar estado de ${consultaCreada.folio}`, exact: true })
+    .waitFor();
+  for (const ancho of [1440, 390, 320]) {
+    await seguimiento.setViewportSize({ width: ancho, height: 900 });
+    assert.equal(
+      await seguimiento.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+    if (ancho !== 320) await axe(seguimiento, `Mis consultas guardadas ${ancho}px`);
+    await seguimiento.locator('.consultas-guardadas').scrollIntoViewIfNeeded();
+    await seguimiento.screenshot({ path: join(artefactos, `consultas-guardadas-${ancho}.png`) });
+  }
+  await seguimiento
+    .getByRole('button', { name: `Quitar ${consultaCreada.folio} de este navegador`, exact: true })
+    .click();
+  await seguimiento.locator('.consultas-guardadas').waitFor({ state: 'detached' });
+  await seguimiento.reload();
+  assert.equal(await seguimiento.locator('.consultas-guardadas').count(), 0);
+  await seguimiento.goto(enlaceCorreo);
+  await seguimiento
+    .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
+    .waitFor();
+  await seguimiento.evaluate(() => localStorage.clear());
+  await seguimiento.goto(`${origen}/#talleres`);
+  await seguimiento.locator('.consultas-guardadas').waitFor({ state: 'detached' });
+  assert.equal(await seguimiento.locator('.consultas-guardadas').count(), 0);
+  await seguimiento.goto(enlaceCorreo);
+  await seguimiento
+    .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
+    .waitFor();
+  await seguimiento.getByRole('link', { name: 'Volver a talleres', exact: true }).click();
+  await seguimiento
+    .getByRole('heading', { name: 'Mis consultas de talleres', exact: true })
+    .waitFor();
+  assert.equal((await almacen.leer()).consultasTalleres.length, 1);
   await contextoSeguimiento.close();
   reporte.flujo.push(
+    'Copia local del correo con botón recupera el acceso en otro navegador, después de quitarlo y después de borrar datos',
+  );
+  reporte.flujo.push(
     'Consulta desde el taller, folio y enlace privado, respuesta en panel y lectura en la web',
+  );
+  const contextoBloqueado = await browser.newContext({ reducedMotion: 'reduce' });
+  await contextoBloqueado.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      get: () => {
+        throw new Error('Almacenamiento bloqueado para la prueba');
+      },
+    });
+  });
+  const bloqueada = await contextoBloqueado.newPage();
+  bloqueada.on('pageerror', (e) => reporte.errores.push(e.message));
+  await bloqueada.goto(`${origen}/#talleres`);
+  await bloqueada.locator('.taller-consulta summary').click();
+  const formularioBloqueado = bloqueada.locator('.formulario-consulta');
+  await formularioBloqueado
+    .getByLabel('Nombre completo', { exact: true })
+    .fill('Persona sin almacenamiento');
+  await formularioBloqueado
+    .getByLabel('Correo de contacto', { exact: true })
+    .fill('sin-almacenamiento@example.test');
+  await formularioBloqueado
+    .getByLabel('¿Qué te gustaría saber?', { exact: true })
+    .fill('¿Hay material de consulta?');
+  await formularioBloqueado.getByRole('checkbox').check();
+  await formularioBloqueado.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
+  await bloqueada.getByText(/Este navegador no permitió guardar el acceso/).waitFor();
+  assert.ok(
+    (await bloqueada.getByLabel('Enlace privado', { exact: true }).inputValue()).includes(
+      '#consulta-taller=',
+    ),
+  );
+  await bloqueada.getByRole('link', { name: 'Consultar mi solicitud', exact: true }).click();
+  await bloqueada.getByText('Tu consulta está pendiente de respuesta.', { exact: true }).waitFor();
+  await contextoBloqueado.close();
+  reporte.flujo.push(
+    'Almacenamiento bloqueado conserva el envío y ofrece un enlace privado de respaldo',
   );
   await pagina.setViewportSize({ width: 1440, height: 1000 });
   const programaElegido = (await almacen.leer()).entradas.filter(

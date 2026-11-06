@@ -19,7 +19,7 @@ La publicación y el estado operativo son independientes. Cancelar un taller can
 
 ## Persistencia y alcance técnico
 
-Se incorpora por petición del usuario el [recorrido de consultas y respuestas dentro de la web](consultas-web.md): formulario por taller, folio y enlace privado, atención por responsable/admin y lectura de la respuesta desde el sitio. Las tarjetas de servicio social también llevan a su formulario y preseleccionan el programa. La versión vigente del aviso pasa a v2 y se conserva intacta la página v1.
+Se incorpora por petición del usuario el [recorrido de consultas y respuestas dentro de la web](consultas-web.md): formulario por taller, folio y enlace privado, atención por responsable/admin y lectura de la respuesta desde el sitio. El acceso se guarda en el navegador, aparece en «Mis consultas de talleres» al regresar y se prepara una copia por correo con botón de recuperación. Las tarjetas de servicio social también llevan a su formulario y preseleccionan el programa. La versión vigente del aviso pasa a v3 y se conservan intactas las páginas v1 y v2.
 
 Las inscripciones y la configuración operativa se incorporan al estado persistente del gestor. Los datos existentes se adaptan al leerlos sin sustituir cuentas ni contenido. No se necesita una migración SQL adicional: MySQL conserva el documento de `cms_estado` y usa su bloqueo `FOR UPDATE` para serializar altas, cambios y cancelaciones. Este bloqueo abarca el gestor completo; es correcto para el volumen inicial y debe revisarse antes de ampliar considerablemente la carga.
 
@@ -39,12 +39,14 @@ Actualización tras la autorización del aviso: 66 pruebas generales aprobadas, 
 
 Tras incorporar las consultas web: 71 pruebas generales y cuatro de integración MySQL aprobadas por separado, compilación correcta, siete flujos de navegador y nueve revisiones axe sin incidencias graves o críticas. El recorrido verifica envío, respuesta desde el panel, lectura mediante enlace privado y selección del programa de servicio social.
 
+Tras añadir acceso guardado y copia por correo: 78 pruebas generales y cuatro de integración MySQL aprobadas por separado, compilación correcta, diez flujos de navegador y once revisiones axe sin incidencias graves o críticas. Se verifican regreso al sitio, recuperación desde la copia local en otro navegador y tras borrar los datos, retirada del acceso local y almacenamiento bloqueado. También se prueban rechazo del proveedor de correo, HTML escapado, origen configurado y ausencia de claves en el estado y la auditoría del servidor. Las copias siguen usando el buzón local; estos resultados no acreditan entrega SMTP real.
+
 ## Pendientes para aceptar la fase
 
 - DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.
 - Con el contenido y las convocatorias presentados ya aceptados según confirmación del usuario, ejecutar el ciclo desde un dispositivo externo en el alojamiento institucional. Las nuevas convocatorias se revisarán al publicarlas.
 - Revisar el formulario con teclado y navegador del teléfono físico. La emulación y axe no sustituyen esa prueba.
 - Implementar y verificar la depuración correspondiente a los plazos del aviso autorizado, junto con el tratamiento de exportaciones y respaldos y los instrumentos archivísticos aplicables, antes de operar con datos reales.
-- Programar RF-3.7 (correos de confirmación y notificación) y decidir si se incluye RF-3.10 (lista de espera). Esta entrega no envía correos de inscripción ni mantiene lista de espera.
+- Configurar y comprobar SMTP para las copias de consultas de talleres. Continuar RF-3.7 (correos de confirmación de inscripción y notificación) y decidir si se incluye RF-3.10 (lista de espera). La copia de consulta no equivale al correo de inscripción ni a una notificación de respuesta.
 
 El avance técnico inicia la fase; no acredita su aceptación institucional ni su disponibilidad en producción. La operación local se explica en [la guía de talleres e inscripciones](talleres-inscripciones.md).

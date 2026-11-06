@@ -16,6 +16,7 @@ export function configurarCorreo(carpeta, entorno = process.env) {
         JSON.stringify({ ...mensaje, creadoEn: new Date().toISOString() }, null, 2),
         { flag: 'wx', mode: 0o600 },
       );
+      return { modo: 'archivo' };
     };
   }
   if (modo !== 'smtp') throw new Error('CORREO_MODO debe ser archivo o smtp.');
@@ -35,7 +36,14 @@ export function configurarCorreo(carpeta, entorno = process.env) {
     logger: false,
     debug: false,
   });
-  return async ({ para, asunto, texto }) => {
-    await transporte.sendMail({ from: entorno.SMTP_FROM, to: para, subject: asunto, text: texto });
+  return async ({ para, asunto, texto, html }) => {
+    await transporte.sendMail({
+      from: entorno.SMTP_FROM,
+      to: para,
+      subject: asunto,
+      text: texto,
+      html,
+    });
+    return { modo: 'smtp' };
   };
 }

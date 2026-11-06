@@ -1,8 +1,8 @@
 # Aviso de privacidad de SIMCE MCyE
 
-Versión vigente: `simce-2026-11-06-v2`. El usuario autorizó el aviso inicial el 6 de noviembre de 2026 y solicitó después que las consultas y respuestas sobre talleres se gestionen dentro de la web. Esta actualización incorpora ese tratamiento, con los mismos datos de contacto y plazos previstos para las solicitudes de información. Se conserva el HTML de `simce-2026-11-06-v1` sin modificarlo para acreditar los consentimientos anteriores.
+Versión vigente: `simce-2026-11-06-v3`. El usuario autorizó el aviso inicial el 6 de noviembre de 2026 y solicitó después las consultas y respuestas de talleres dentro de la web, el guardado de su acceso en el navegador y una copia por correo con enlace de recuperación. Esta actualización describe esos usos con los mismos contactos y plazos previstos para las solicitudes de información. Se conservan los HTML de las versiones v1 y v2 sin modificarlos para acreditar los consentimientos anteriores.
 
-El texto cubre talleres, contactos de servicio social y acceso del personal a SIMCE. El recurso público de la versión es `/privacidad/simce-2026-11-06-v2.html`, dentro del mismo portal. La revisión local puede consultarlo por HTTP en loopback; el alojamiento institucional deberá servirlo con HTTPS. Las notas al final de este archivo son administrativas y no forman parte del aviso público. La autorización del aviso no acredita la contratación de proveedores, la ejecución de la depuración ni las pruebas del futuro alojamiento.
+El texto cubre talleres, contactos de servicio social y acceso del personal a SIMCE. El recurso público de la versión es `/privacidad/simce-2026-11-06-v3.html`, dentro del mismo portal. La revisión local puede consultarlo por HTTP en loopback; el alojamiento institucional deberá servirlo con HTTPS. Las notas al final de este archivo son administrativas y no forman parte del aviso público. La autorización del aviso no acredita la contratación de proveedores, la ejecución de la depuración ni las pruebas del futuro alojamiento.
 
 ## Aviso simplificado
 
@@ -48,7 +48,9 @@ Los formularios descritos no solicitan datos de salud, biométricos, ideología,
 
 Para inscribirse a un taller, enviar una consulta o solicitar información de servicio social, debe leer el aviso vigente y marcar personalmente su aceptación antes de enviar. La casilla se presenta vacía. Si no acepta, el sistema no completa el registro; puede solicitar información al Módulo por el contacto indicado. Si no proporciona los datos indispensables, no será posible tramitar por este medio la solicitud correspondiente.
 
-La consulta de información de un taller genera un folio y un enlace privado. La persona debe conservarlo para acceder a su pregunta y a la respuesta del Módulo; quien disponga de ese enlace podrá consultarlas. La clave del enlace se conserva en el servidor mediante una huella criptográfica. La lista de solicitudes solo es accesible para responsable y administrador. Enviar una consulta no ocupa una plaza del taller.
+La consulta de información de un taller genera un folio y un enlace privado. Su acceso se guarda automáticamente en el navegador, cuando este lo permite, para regresar a la pregunta y a las respuestas desde «Mis consultas de talleres». Cuando el servicio de correo esté habilitado se envía al correo proporcionado una copia de la pregunta, el taller y el folio, con un botón que abre el enlace privado. La copia permite recuperar el acceso si se borran los datos del navegador o se cambia de equipo. Si el envío falla o no está disponible se informa en la confirmación y la consulta permanece registrada. Se conserva el estado técnico del intento de envío, sin guardar errores privados del proveedor.
+
+Quien disponga del enlace privado o del acceso guardado en el navegador podrá leer la pregunta y sus respuestas. La clave se conserva en el servidor mediante una huella criptográfica; el mensaje de correo y el dispositivo contienen el acceso necesario para abrir la consulta. La lista administrativa de solicitudes solo es accesible para responsable y administrador. Enviar una consulta no ocupa una plaza del taller.
 
 La reactivación de una inscripción requiere que el personal responsable confirme la aceptación del aviso vigente por la persona participante; se mantiene el historial del consentimiento. La creación de cuentas internas y la auditoría atienden a la administración y seguridad de la actividad universitaria y no dependen de una casilla del formulario público. Las excepciones legales al consentimiento, cuando procedan, deben determinarse conforme a la normativa aplicable.
 
@@ -80,13 +82,15 @@ Indique el derecho que desea ejercer, los datos que permitan localizar el regist
 
 ### Cookies y almacenamiento del dispositivo
 
+El portal guarda hasta veinte accesos recientes a consultas de talleres en el almacenamiento local del navegador: folio, clave privada y nombre del taller. No guarda allí el nombre de la persona, su correo, su pregunta ni las respuestas. Los accesos permanecen al cerrar y volver a abrir el sitio en ese mismo navegador y origen; no se sincronizan automáticamente con otros equipos. Puede quitar cada acceso desde «Mis consultas de talleres» o borrar los datos del sitio en el navegador. Al llegar desde un enlace válido del correo, el acceso vuelve a guardarse en ese navegador si lo permite. Quitar el acceso local no elimina la solicitud del servidor ni la copia del correo. En un equipo compartido, puede quitarlo al terminar. Si el almacenamiento está bloqueado, la confirmación ofrece el enlace para conservarlo por otro medio.
+
 El panel utiliza una cookie de renovación de sesión para mantener el acceso del personal y mecanismos de almacenamiento local para la operación preparada sin conexión. Puede eliminar esos datos desde su navegador; borrar la información local operativa sin sincronizar puede ocasionar su pérdida. Las inscripciones y los contactos de interés se gestionan conectados y no forman parte de la réplica operativa sin conexión.
 
 La aplicación actual no incorpora herramientas publicitarias ni analítica de terceros. Los enlaces de correo, ubicación y sitios externos se abren fuera del sistema y están sujetos a las condiciones del proveedor correspondiente. Los registros que añada el alojamiento deberán inventariarse y reflejarse en la versión autorizada del aviso.
 
 ### Cambios y consulta del aviso
 
-La versión vigente y su fecha de actualización están disponibles desde el pie del portal y los enlaces de los formularios de SIMCE. Se conservarán las versiones anteriores vinculadas a los consentimientos registrados. Cuando un cambio requiera nueva aceptación, se solicitará antes de continuar el tratamiento correspondiente. Esta versión se identifica como `simce-2026-11-06-v2`; su recurso público se conserva para permitir su consulta posterior.
+La versión vigente y su fecha de actualización están disponibles desde el pie del portal y los enlaces de los formularios de SIMCE. Se conservarán las versiones anteriores vinculadas a los consentimientos registrados. Cuando un cambio requiera nueva aceptación, se solicitará antes de continuar el tratamiento correspondiente. Esta versión se identifica como `simce-2026-11-06-v3`; su recurso público se conserva para permitir su consulta posterior.
 
 ## Autorización y publicación
 
@@ -97,7 +101,7 @@ La versión vigente y su fecha de actualización están disponibles desde el pie
 | Evidencia de autorización                | Mensaje del usuario: «autorizo el aviso y los roles». No se registra un dictamen jurídico adicional ni se envía el documento a terceros.                                                             |
 | Implementación pendiente para producción | Procedimiento de depuración y respaldo; identificación de proveedores y sus condiciones; alojamiento HTTPS.                                                                                          |
 | Persona y fecha que autorizan            | Usuario de esta conversación, 6 de noviembre de 2026. Nombre y cargo no comunicados.                                                                                                                 |
-| Recurso público y vigencia de versión    | `/privacidad/simce-2026-11-06-v2.html`, versión final del 6 de noviembre de 2026. El dominio institucional sigue pendiente del alojamiento.                                                          |
+| Recurso público y vigencia de versión    | `/privacidad/simce-2026-11-06-v3.html`, actualización del 6 de noviembre de 2026 por solicitud de guardado local y respaldo por correo. El dominio institucional sigue pendiente del alojamiento.    |
 | Activación de formularios                | El lanzador local configura esta versión para interés e inscripciones, salvo que se sobrescriban sus variables. El despliegue institucional requiere configurar el mismo recurso en su origen HTTPS. |
 
 El [aviso general de la FES Cuautitlán](https://www.cuautitlan.unam.mx/aviso/Aviso_privacidad_integral.pdf), actualizado en 2019, aporta la identificación institucional; no se copia su catálogo amplio de datos, sus referencias antiguas ni sus tecnologías de seguimiento como si estuvieran presentes en SIMCE. La redacción se adapta al tratamiento real del proyecto y a la ley vigente consultada el 6 de noviembre de 2026.
