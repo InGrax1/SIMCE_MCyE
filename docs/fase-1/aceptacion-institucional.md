@@ -1,27 +1,32 @@
 # Revisión y aceptación institucional de Fase 1
 
-Estado al 2026-10-28: pendiente de revisión. Este documento es un guion de trabajo; no registra autorizaciones ni resultados institucionales. La validación técnica se realiza localmente; las pruebas del alojamiento quedan diferidas hasta disponer de servidor.
+Estado al 6 de noviembre de 2026: contenido aceptado por la institución, según confirmación expresa del usuario en esta conversación. La confirmación comprende textos, fotografías, identidad, contactos, asignaturas, programas y convocatorias del material presentado. Referencia del código del portal en este corte: `ab55cab`. Se registra la comunicación recibida; no se añade una firma ni un nombre de funcionario que no se haya proporcionado.
 
-## Contenido que debe confirmar la institución
+El aviso específico de privacidad se ha redactado por solicitud del usuario y queda pendiente de autorización de esa nueva versión. Las cuentas institucionales están propuestas. La prueba de publicación por la responsable se realizará después, según indicó el usuario; no se registra como ejecutada. Las pruebas del alojamiento continúan diferidas hasta disponer de servidor.
 
-| Contenido            | Revisión requerida                                                                                                                                                                             | Estado    |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Identidad y contacto | Nombre oficial, relación CEA/FESC/UNAM, logotipos autorizados, responsable, correo, ubicación y mapa.                                                                                          | Pendiente |
-| Redes sociales       | URL oficial y autorización de uso; el icono actual lleva al contacto.                                                                                                                          | Pendiente |
-| Áreas y procesos     | Nombres, descripciones, capacidades y normativa aplicable.                                                                                                                                     | Pendiente |
-| Prácticas            | Nombre, asignatura, licenciatura, descripción y vinculación académica de cada práctica. Los datos sin confirmar están señalados.                                                               | Pendiente |
-| Actividades          | Descripciones y áreas donde se realizan; validar expresiones sobre matanza, faenado y su normativa.                                                                                            | Pendiente |
-| Productos            | Fotografías, especies, presentaciones, descripciones y autorización de cualquier precio visible. No se afirma disponibilidad. Aclarar la variante de hamburguesa no identificada en el diseño. | Pendiente |
-| Servicio social      | Claves vigentes, licenciaturas, actividades, procedimiento de contacto y persona que atenderá los intereses.                                                                                   | Pendiente |
-| Talleres             | Convocatorias reales, estados, fechas, requisitos, costo autorizado y canal de atención.                                                                                                       | Pendiente |
-| Galería              | Sustituir o autorizar fotografías de referencia; derechos y consentimiento de las personas identificables.                                                                                     | Pendiente |
-| Aviso de privacidad  | URL y versión autorizadas, responsable del tratamiento, finalidad, atención y conservación/eliminación de intereses. Mantener el formulario deshabilitado hasta obtenerlos.                    | Pendiente |
+## Aceptación del contenido y seguimiento
+
+| Contenido               | Revisión requerida                                                                                    | Estado                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Identidad y contacto    | Nombre, adscripción, identidad visual, responsable y contactos del material presentado.               | Aceptado por la institución; comunicado por el usuario el 6 de noviembre. |
+| Redes sociales          | No se ha proporcionado una URL oficial adicional; el icono existente conduce al contacto aceptado.    | Se conserva el enlace actual.                                             |
+| Áreas y procesos        | Textos y descripciones del material presentado.                                                       | Aceptado.                                                                 |
+| Prácticas               | Textos, asignaturas y vinculación académica del material presentado.                                  | Aceptado.                                                                 |
+| Actividades             | Descripciones y asociaciones del material presentado.                                                 | Aceptado.                                                                 |
+| Productos               | Textos y fotografías presentados. Se conserva la descripción de las imágenes ilustrativas como tales. | Aceptado.                                                                 |
+| Servicio social         | Programas, textos y contactos presentados.                                                            | Aceptado.                                                                 |
+| Talleres                | Convocatorias del material presentado; no se crean fechas ni cupos nuevos en este registro.           | Aceptado.                                                                 |
+| Galería                 | Uso del material fotográfico e identidad presentados.                                                 | Aceptado.                                                                 |
+| Aviso de privacidad     | Nuevo aviso integral y simplificado de SIMCE.                                                         | Redactado; pendiente de revisión, autorización y URL institucional.       |
+| Cuentas institucionales | Dos accesos individuales iniciales: responsable y administrador; editor/operador cuando se designen.  | Propuesta preparada; pendientes de designación y alta.                    |
 
 La cuenta de revisión local y las entradas sintéticas no deben trasladarse a producción. El material de referencia se describe en [contenido-animaciones.md](contenido-animaciones.md).
 
+Documentos preparados: [aviso de privacidad](../privacidad/aviso-privacidad-simce.md), [propuesta de cuentas](../operacion/cuentas-institucionales.md) y [registro del ensayo de publicación](registro-publicacion-responsable.md). La aceptación del contenido no modifica los pendientes de alojamiento o báscula.
+
 ## Prueba por la responsable sin asistencia
 
-El recorrido puede ensayarse en el entorno local integrado, con una cuenta individual y el contenido autorizado. Cuando exista servidor, se repite sobre su dirección HTTPS:
+El usuario confirma que el recorrido puede hacerse localmente y decide realizarlo después. Se ha preparado [un registro para el hito de publicación autónoma de una entrada](registro-publicacion-responsable.md), con consigna, evidencias y criterio de aprobación. El recorrido ampliado siguiente se conserva para capacitación y revisión. Cuando exista servidor, se repite sobre su dirección HTTPS:
 
 1. Iniciar sesión, cambiar la contraseña inicial y reconocer la diferencia entre borrador y versión publicada.
 2. Crear un aviso, guardar un borrador y comprobar desde una ventana pública que todavía no aparece.
@@ -39,15 +44,16 @@ La persona que observa no debe dirigir las acciones. Si necesita ayuda, registre
 
 ## Registro a completar
 
-| Dato                                                         | Resultado |
-| ------------------------------------------------------------ | --------- |
-| Entorno y versión desplegada                                 | Pendiente |
-| Fecha y persona responsable                                  | Pendiente |
-| Persona observadora                                          | Pendiente |
-| Entradas y taller usados                                     | Pendiente |
-| Resultado de cada paso / ayuda requerida                     | Pendiente |
-| Evidencias autorizadas, sin credenciales ni datos personales | Pendiente |
-| Observaciones y correcciones                                 | Pendiente |
-| Aprobación institucional del contenido y del recorrido       | Pendiente |
+| Dato                                                         | Resultado                                                           |
+| ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Entorno y versión desplegada                                 | Pendiente                                                           |
+| Fecha y persona responsable                                  | Pendiente                                                           |
+| Persona observadora                                          | Pendiente                                                           |
+| Entradas y taller usados                                     | Pendiente                                                           |
+| Resultado de cada paso / ayuda requerida                     | Pendiente                                                           |
+| Evidencias autorizadas, sin credenciales ni datos personales | Pendiente                                                           |
+| Observaciones y correcciones                                 | Pendiente                                                           |
+| Aprobación institucional del contenido                       | Aceptado según confirmación del usuario del 6 de noviembre de 2026. |
+| Resultado del recorrido humano                               | Pendiente: se realizará después.                                    |
 
 Las pruebas locales de MySQL, respaldo, accesibilidad y publicación se generan con [los comandos de validación](validacion-local.md). No sustituyen este recorrido humano. Antes de la entrega institucional se adjuntará también evidencia del origen HTTPS, cookies seguras, permisos, correo y respaldos del alojamiento y los informes del pipeline de esa versión. Alojamiento, subdominio/TLS y la báscula mantienen sus propios pendientes de Fase 0.

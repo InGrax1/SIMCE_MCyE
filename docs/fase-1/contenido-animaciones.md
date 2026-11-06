@@ -9,7 +9,7 @@ Este avance completa la vista pública conservando el diseño recuperado de Figm
 - Ocho fichas de productos con una explicación de su proceso, imagen y consulta por correo sobre presentaciones y disponibilidad.
 - Galería de ocho imágenes con leyendas, manteniendo la distribución original.
 
-Los textos nuevos son propuestas editoriales basadas en los objetivos de docencia, investigación y formación del módulo. Los temas no acreditan asignaturas, talleres programados, cupos ni horarios confirmados. Las imágenes procedentes de Figma se reutilizan como referencias visuales y no como evidencia de prácticas nuevas en la institución. La revisión institucional sigue pendiente.
+Los textos se prepararon como propuestas editoriales basadas en los objetivos de docencia, investigación y formación del módulo. El 6 de noviembre de 2026, el usuario comunica la aceptación institucional del contenido presentado, incluidas fotografías, identidad, contactos, asignaturas, programas y convocatorias. Las imágenes procedentes de Figma conservan su naturaleza de referencias visuales y no se presentan como evidencia de actividades nuevas. Las nuevas fechas, cupos u ofertas se incorporan mediante su publicación específica. Véase el [registro de aceptación](aceptacion-institucional.md).
 
 ## Imagen de salchicha
 

@@ -1,8 +1,8 @@
 # Estado de Fase 1
 
-- Fecha de corte: 2026-10-28, America/Mexico_City.
+- Fecha de seguimiento institucional: 6 de noviembre de 2026, America/Mexico_City. Se conservan los resultados del corte técnico del 28 de octubre, identificados más abajo.
 - Alcance acordado: completar y verificar localmente; las comprobaciones del alojamiento quedan diferidas porque todavía no existe servidor.
-- Estado: portal y gestor implementados para revisión local; aceptación institucional y despliegue pendientes.
+- Estado: portal y gestor implementados y contenido aceptado por la institución según comunicación del usuario. Pendientes: autorización del nuevo aviso, designación/alta de cuentas, publicación autónoma por la responsable y despliegue.
 - Referencia visual: [CEA, frame 1:3](https://www.figma.com/design/Rw9Bb37khwyJnL2wUEjK89/CEA?node-id=1-3).
 
 ## Implementación local
@@ -36,13 +36,14 @@ El recorrido del navegador usa datos sintéticos aislados y comprueba publicaci�
 
 Los informes y capturas se conservan en `artifacts/fase-1/`, excluido de Git. Los resultados locales no acreditan una ejecución del pipeline remoto, una aprobación humana ni un despliegue real. La configuración de CI queda preparada para repetir los controles cuando se publique la versión.
 
-En este corte aprobaron 50 pruebas de API, dominio y panel, más las dos pruebas de integración MySQL. El ensayo de respaldo/restauración también aprobó. El recorrido de navegador no registró errores JavaScript ni infracciones graves/críticas de axe en ocho estados; Lighthouse registró LCP de 1980 ms, rendimiento 97/100 y accesibilidad 100/100. La auditoría de dependencias supera el umbral alto/crítico; permanecen los cuatro avisos bajos de la cadena de compilación PWA documentados en el corte anterior.
+En el corte técnico del 28 de octubre aprobaron 50 pruebas de API, dominio y panel, más las dos pruebas de integración MySQL. El ensayo de respaldo/restauración también aprobó. El recorrido de navegador no registró errores JavaScript ni infracciones graves/críticas de axe en ocho estados; Lighthouse registró LCP de 1980 ms, rendimiento 97/100 y accesibilidad 100/100. La auditoría de dependencias de aquel corte supera el umbral alto/crítico; permanecían los cuatro avisos bajos de la cadena de compilación PWA documentados entonces. El resultado técnico posterior, del 6 de noviembre, está en [el estado de Fase 2](../fase-2/estado.md).
 
-## Pendientes de la institución
+## Seguimiento de la institución
 
-- Validar identidad, responsable, contacto, ubicación, redes sociales, textos, asignaturas, claves de programas, especies, fotografías y convocatorias reales.
-- Proporcionar la URL y versión del aviso de privacidad autorizado antes de habilitar el formulario de interés. No se ha configurado un aviso ficticio en el portal local de revisión.
-- Definir las cuentas institucionales y realizar el recorrido de publicación sin asistencia. Puede ensayarse localmente con el guion de [aceptacion-institucional.md](aceptacion-institucional.md); no se registra una aprobación en nombre de la responsable.
+- Contenido aceptado por la institución: el usuario lo confirma el 6 de noviembre de 2026 para textos, fotografías, identidad, contactos, asignaturas, programas y convocatorias del material presentado. El detalle queda en [aceptacion-institucional.md](aceptacion-institucional.md).
+- Aviso específico de SIMCE redactado en versiones integral y simplificada: [propuesta de privacidad](../privacidad/aviso-privacidad-simce.md). Pendiente autorizar la nueva versión y definir su URL antes de habilitar formularios; las variables de activación se conservan sin cambios.
+- [Cuentas institucionales propuestas](../operacion/cuentas-institucionales.md): empezar con responsable y administrador individuales. Pendiente designar a las personas y autorizar las altas.
+- Publicación sin asistencia por la responsable: se realizará después, según decisión del usuario. Queda preparado el [registro local](registro-publicacion-responsable.md), sin resultados anticipados.
 
 Los textos e imágenes de referencia no acreditan sesiones, existencias ni productos reales adicionales. No se inventan fechas de talleres, precios, disponibilidad ni una quinta especie de hamburguesa. La sustitución de referencias por material aprobado se realiza desde el gestor.
 

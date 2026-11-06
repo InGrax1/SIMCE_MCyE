@@ -1,6 +1,6 @@
 # Estado de Fase 2
 
-Inicio técnico: 6 de noviembre de 2026, por instrucción del usuario. Alcance de referencia: §15.1 y requisitos M de RF-3 en `Especificacion_SIMCE_MCyE_v0.2.docx`. La fase corresponde a talleres e inscripciones. La aceptación institucional de Fase 1 y sus pruebas de alojamiento continúan pendientes.
+Inicio técnico: 6 de noviembre de 2026, por instrucción del usuario. Alcance de referencia: §15.1 y requisitos M de RF-3 en `Especificacion_SIMCE_MCyE_v0.2.docx`. La fase corresponde a talleres e inscripciones. El usuario comunica la aceptación institucional del contenido presentado. La publicación autónoma por la responsable se realizará después; el nuevo aviso y las pruebas de alojamiento conservan sus propios pendientes.
 
 ## Avance implementado
 
@@ -35,8 +35,8 @@ Resultado local del 6 de noviembre: 64 pruebas aprobadas en la verificación gen
 
 ## Pendientes para aceptar la fase
 
-- Resolver DE-06: recibir el aviso autorizado, su versión y su URL institucional estable. No se asume autorización a partir de un texto o enlace de prueba.
-- Validar los talleres, sus fechas, temarios, sedes y cupos con la responsable, y ejecutar el ciclo desde un dispositivo externo en el alojamiento institucional.
+- Resolver DE-06: autorizar la [propuesta específica de aviso](../privacidad/aviso-privacidad-simce.md), ya redactada por solicitud del usuario, y definir la versión final y URL institucional estable.
+- Con el contenido y las convocatorias presentados ya aceptados según confirmación del usuario, ejecutar el ciclo desde un dispositivo externo en el alojamiento institucional. Las nuevas convocatorias se revisarán al publicarlas.
 - Revisar el formulario con teclado y navegador del teléfono físico. La emulación y axe no sustituyen esa prueba.
 - Acordar y verificar la retención institucional, incluida la depuración prevista a 24 meses y el tratamiento de exportaciones y respaldos, antes de usar datos reales.
 - Programar RF-3.7 (correos de confirmación y notificación) y decidir si se incluye RF-3.10 (lista de espera). Esta entrega no envía correos de inscripción ni mantiene lista de espera.
