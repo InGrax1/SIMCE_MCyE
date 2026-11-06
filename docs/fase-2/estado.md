@@ -19,6 +19,8 @@ La publicación y el estado operativo son independientes. Cancelar un taller can
 
 ## Persistencia y alcance técnico
 
+Se incorpora por petición del usuario el [recorrido de consultas y respuestas dentro de la web](consultas-web.md): formulario por taller, folio y enlace privado, atención por responsable/admin y lectura de la respuesta desde el sitio. Las tarjetas de servicio social también llevan a su formulario y preseleccionan el programa. La versión vigente del aviso pasa a v2 y se conserva intacta la página v1.
+
 Las inscripciones y la configuración operativa se incorporan al estado persistente del gestor. Los datos existentes se adaptan al leerlos sin sustituir cuentas ni contenido. No se necesita una migración SQL adicional: MySQL conserva el documento de `cms_estado` y usa su bloqueo `FOR UPDATE` para serializar altas, cambios y cancelaciones. Este bloqueo abarca el gestor completo; es correcto para el volumen inicial y debe revisarse antes de ampliar considerablemente la carga.
 
 El modo de archivos conserva el límite de una sola instancia del servidor. El límite de cinco intentos públicos por IP y hora vive en memoria del proceso; una instalación con varias instancias necesitará coordinarlo. Las inscripciones no se replican a IndexedDB ni se incluyen en la operación sin conexión. Los endpoints públicos no entregan participantes ni historiales.
@@ -34,6 +36,8 @@ La disponibilidad se consulta al abrir el formulario y se verifica nuevamente al
 Resultado local del 6 de noviembre: 64 pruebas aprobadas en la verificación general, tres pruebas de integración MySQL aprobadas por separado, compilación correcta y cuatro flujos de navegador con cuatro revisiones axe sin incidencias graves o críticas. La regresión de Fase 1 pasó sus flujos y nueve revisiones de accesibilidad; Lighthouse móvil local registró LCP de 1984 ms, rendimiento de 97/100 y accesibilidad de 100/100. Se inspeccionaron el PDF descargado y un caso de cuatro páginas con nombres y correos largos, sin recortes ni solapamientos. Estas comprobaciones locales no sustituyen la aceptación institucional.
 
 Actualización tras la autorización del aviso: 66 pruebas generales aprobadas, compilación correcta y cinco flujos de navegador con seis revisiones axe sin incidencias graves o críticas, incluidas la página del aviso en escritorio/móvil y su enlace desde la casilla de consentimiento. Se verificó la consulta sin JavaScript. La regresión de Fase 1 conserva sus flujos y nueve revisiones de accesibilidad aprobados; Lighthouse local registró LCP de 2054 ms, rendimiento de 96/100 y accesibilidad de 100/100. El servidor local utiliza el aviso autorizado para ambos formularios y el administrador de pruebas exige cambio inicial de contraseña.
+
+Tras incorporar las consultas web: 71 pruebas generales y cuatro de integración MySQL aprobadas por separado, compilación correcta, siete flujos de navegador y nueve revisiones axe sin incidencias graves o críticas. El recorrido verifica envío, respuesta desde el panel, lectura mediante enlace privado y selección del programa de servicio social.
 
 ## Pendientes para aceptar la fase
 

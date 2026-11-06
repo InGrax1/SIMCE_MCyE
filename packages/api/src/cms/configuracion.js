@@ -9,7 +9,7 @@ import { configurarCorreo } from './correo.js';
 import { crearRecuperacion } from './recuperacion.js';
 import { configurarAvisoTalleres } from '../talleres/aviso.js';
 import { validarAvisoConfigurado } from './avisoPrivacidad.js';
-import { avisoPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
+import { avisosPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
@@ -20,8 +20,9 @@ export async function configurarCms() {
     process.env.AVISO_INTERES_VERSION,
   );
   validarAvisoConfigurado(process.env.AVISO_TALLERES_URL, process.env.AVISO_TALLERES_VERSION);
-  if ([process.env.AVISO_INTERES_URL, process.env.AVISO_TALLERES_URL].includes(avisoPrivacidad.url))
-    await access(resolve(carpetaPortal, avisoPrivacidad.url.slice(1)));
+  for (const aviso of avisosPrivacidad)
+    if ([process.env.AVISO_INTERES_URL, process.env.AVISO_TALLERES_URL].includes(aviso.url))
+      await access(resolve(carpetaPortal, aviso.url.slice(1)));
   let db;
   if (process.env.NODE_ENV === 'production' && process.env.STORAGE !== 'mysql')
     throw new Error('En producción el gestor requiere STORAGE=mysql.');

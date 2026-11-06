@@ -29,6 +29,7 @@ await almacen.cambiar(async (s) => {
     debeCambiar: false,
   });
   s.avisoTalleres = { url: avisoPrivacidad.url, version: avisoPrivacidad.version };
+  s.avisoInteres = { url: avisoPrivacidad.url, version: avisoPrivacidad.version };
 });
 const origenes = [];
 const auth = await crearAutenticacion({
@@ -111,7 +112,102 @@ try {
   const pagina = await contexto.newPage();
   pagina.on('pageerror', (e) => reporte.errores.push(e.message));
   await pagina.goto(`${origen}/#talleres`);
+  assert.equal(await pagina.locator('#talleres a[href^="mailto:"]').count(), 0);
+  await pagina.locator('.taller-consulta summary').click();
+  const formularioConsulta = pagina.locator('.formulario-consulta');
+  assert.equal(await formularioConsulta.getByRole('checkbox').isChecked(), false);
+  await formularioConsulta
+    .getByLabel('Nombre completo', { exact: true })
+    .fill('Persona interesada en el taller');
+  await formularioConsulta
+    .getByLabel('Correo de contacto', { exact: true })
+    .fill('consulta@example.test');
+  await formularioConsulta
+    .getByLabel('¿Qué te gustaría saber?', { exact: true })
+    .fill('¿Qué materiales debo llevar al taller?');
+  await formularioConsulta.getByRole('checkbox').check();
+  await pagina.setViewportSize({ width: 390, height: 844 });
+  await axe(pagina, 'Solicitud de información móvil');
+  await formularioConsulta.scrollIntoViewIfNeeded();
+  await pagina.screenshot({ path: join(artefactos, 'consulta-formulario-movil.png') });
+  await formularioConsulta.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
+  await pagina.getByRole('heading', { name: 'Recibimos tu consulta', exact: true }).waitFor();
+  const enlacePrivado = await pagina.getByLabel('Enlace privado', { exact: true }).inputValue();
+  assert.equal((await almacen.leer()).inscripciones.length, 0);
+  const consultaCreada = (await almacen.leer()).consultasTalleres[0];
+  const contextoSeguimiento = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+    reducedMotion: 'reduce',
+  });
+  const seguimiento = await contextoSeguimiento.newPage();
+  seguimiento.on('pageerror', (e) => reporte.errores.push(e.message));
+  await seguimiento.goto(enlacePrivado);
+  await seguimiento
+    .getByText('Tu consulta está pendiente de respuesta.', { exact: true })
+    .waitFor();
+  await panel
+    .getByRole('button', { name: 'Consultar solicitudes de información', exact: true })
+    .click();
+  await panel
+    .getByLabel(`Respuesta para ${consultaCreada.folio}`, { exact: true })
+    .fill('El material está incluido. Puedes llevar una libreta.');
+  await panel.getByRole('button', { name: 'Publicar respuesta', exact: true }).click();
+  await panel
+    .getByText(`Respuesta publicada para ${consultaCreada.folio}.`, { exact: true })
+    .waitFor();
+  await panel.locator('.cms-consultas').scrollIntoViewIfNeeded();
+  await panel.screenshot({ path: join(artefactos, 'consulta-panel-escritorio.png') });
+  await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
+  await seguimiento
+    .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
+    .waitFor();
+  for (const ancho of [1440, 390]) {
+    await seguimiento.setViewportSize({ width: ancho, height: 900 });
+    assert.equal(
+      await seguimiento.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+    await axe(seguimiento, `Consulta y respuesta web ${ancho}px`);
+    await seguimiento.locator('#consultar-solicitud').scrollIntoViewIfNeeded();
+    await seguimiento.screenshot({ path: join(artefactos, `consulta-respuesta-${ancho}.png`) });
+  }
+  await seguimiento.getByRole('link', { name: 'Volver a talleres', exact: true }).click();
+  await seguimiento.locator('#consultar-solicitud').waitFor({ state: 'detached' });
+  await contextoSeguimiento.close();
+  reporte.flujo.push(
+    'Consulta desde el taller, folio y enlace privado, respuesta en panel y lectura en la web',
+  );
+  await pagina.setViewportSize({ width: 1440, height: 1000 });
+  const programaElegido = (await almacen.leer()).entradas.filter(
+    (e) => e.tipo === 'programa' && e.publicado,
+  )[1];
+  await pagina
+    .locator('.programas-grid article')
+    .nth(1)
+    .getByRole('link', { name: /Solicitar Información/ })
+    .click();
+  await pagina.waitForFunction(() => document.activeElement.id === 'interes-servicio-social');
+  assert.ok(
+    (await pagina.locator('#programa-interes').textContent()).includes(
+      programaElegido.publicado.nombre,
+    ),
+  );
+  const formularioSocial = pagina.locator('.interes-social form');
+  await formularioSocial.getByLabel('Nombre', { exact: true }).fill('Interés de servicio social');
+  await formularioSocial.getByLabel('Correo', { exact: true }).fill('interes@example.test');
+  await formularioSocial.getByRole('checkbox').check();
+  await formularioSocial.getByRole('button', { name: 'Enviar interés', exact: true }).click();
+  await pagina
+    .getByText('Recibimos tu interés. El módulo podrá contactarte con más información.', {
+      exact: true,
+    })
+    .waitFor();
+  assert.equal((await almacen.leer()).intereses[0].programaId, programaElegido.id);
+  reporte.flujo.push(
+    'Solicitar información de servicio social selecciona su programa y envía dentro de la web',
+  );
   await pagina.locator('.taller-inscripcion summary').click();
+  const inscripcion = pagina.locator('.taller-inscripcion');
   await pagina.getByRole('button', { name: 'Confirmar inscripción' }).waitFor();
   const paginaAviso = contexto.waitForEvent('page');
   await pagina
@@ -135,7 +231,7 @@ try {
   reporte.flujo.push(
     'Aviso autorizado accesible desde la casilla de consentimiento, en el mismo origen',
   );
-  assert.equal(await pagina.getByLabel(/He leído y acepto/).isChecked(), false);
+  assert.equal(await inscripcion.getByLabel(/He leído y acepto/).isChecked(), false);
   for (const ancho of [1440, 1024, 768, 390, 320]) {
     await pagina.setViewportSize({ width: ancho, height: 1000 });
     assert.equal(
@@ -152,13 +248,15 @@ try {
   await axe(pagina, 'Formulario de inscripción escritorio');
   await pagina.locator('#talleres').scrollIntoViewIfNeeded();
   await pagina.screenshot({ path: join(artefactos, 'inscripcion-escritorio.png') });
-  await pagina.getByLabel('Nombre completo', { exact: true }).fill('María López de la Cruz');
-  await pagina.getByLabel('Correo', { exact: true }).fill('participante@example.test');
-  await pagina.getByLabel('Teléfono', { exact: true }).fill('5500000000');
-  await pagina.getByRole('combobox', { name: /Procedencia/ }).selectOption('interna');
-  await pagina.getByLabel('Licenciatura', { exact: true }).fill('Medicina Veterinaria y Zootecnia');
-  await pagina.getByLabel('Número de cuenta', { exact: true }).fill('000000000');
-  await pagina.getByLabel(/He leído y acepto/).check();
+  await inscripcion.getByLabel('Nombre completo', { exact: true }).fill('María López de la Cruz');
+  await inscripcion.getByLabel('Correo', { exact: true }).fill('participante@example.test');
+  await inscripcion.getByLabel('Teléfono', { exact: true }).fill('5500000000');
+  await inscripcion.getByRole('combobox', { name: /Procedencia/ }).selectOption('interna');
+  await inscripcion
+    .getByLabel('Licenciatura', { exact: true })
+    .fill('Medicina Veterinaria y Zootecnia');
+  await inscripcion.getByLabel('Número de cuenta', { exact: true }).fill('000000000');
+  await inscripcion.getByLabel(/He leído y acepto/).check();
   await pagina.getByRole('button', { name: 'Confirmar inscripción', exact: true }).click();
   await pagina.getByRole('heading', { name: 'Inscripción confirmada', exact: true }).waitFor();
   assert.match(await pagina.locator('.inscripcion-confirmada').textContent(), /INS-\d{4}-\d{8}/);
@@ -202,7 +300,7 @@ try {
     false,
   );
   await axe(panel, 'Gestión de inscripciones móvil');
-  await panel.locator('.cms-asistentes').scrollIntoViewIfNeeded();
+  await panel.locator('.cms-inscripciones .cms-asistentes').scrollIntoViewIfNeeded();
   await panel.screenshot({ path: join(artefactos, 'asistentes-movil.png') });
   for (const formato of ['CSV', 'PDF']) {
     const descarga = panel.waitForEvent('download');
@@ -224,10 +322,10 @@ try {
   await almacen.cambiar((s) => {
     s.avisoTalleres = null;
   });
-  await pagina.getByLabel('Nombre completo', { exact: true }).fill('Otra persona de prueba');
-  await pagina.getByLabel('Correo', { exact: true }).fill('otra@example.test');
-  await pagina.getByLabel('Teléfono', { exact: true }).fill('5500000000');
-  await pagina.getByLabel(/He leído y acepto/).check();
+  await inscripcion.getByLabel('Nombre completo', { exact: true }).fill('Otra persona de prueba');
+  await inscripcion.getByLabel('Correo', { exact: true }).fill('otra@example.test');
+  await inscripcion.getByLabel('Teléfono', { exact: true }).fill('5500000000');
+  await inscripcion.getByLabel(/He leído y acepto/).check();
   await pagina.getByRole('button', { name: 'Confirmar inscripción', exact: true }).click();
   await pagina
     .getByText('La inscripción aún no está disponible. Solicita información al módulo.', {

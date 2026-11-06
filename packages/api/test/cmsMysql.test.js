@@ -3,6 +3,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { crearConexionBaseDatos } from '../src/infra/baseDatos.js';
 import { AlmacenCmsMysql } from '../src/cms/almacen.js';
 import { registrarInscripcion, cambiarInscripcion } from '../src/talleres/servicio.js';
+import {
+  registrarConsulta,
+  responderConsulta,
+  consultarRespuesta,
+} from '../src/talleres/consultas.js';
 
 const conMysql = process.env.TEST_MYSQL === '1' ? describe : describe.skip;
 conMysql('gestor persistente MySQL', () => {
@@ -32,6 +37,38 @@ conMysql('gestor persistente MySQL', () => {
     );
     const recuperado = await new AlmacenCmsMysql(db).leer();
     expect(recuperado.auditoria.find((a) => a.id === id).cantidad).toBe(5);
+  });
+  it('conserva consultas y respuestas privadas al recrear el repositorio MySQL', async () => {
+    const id = randomUUID();
+    const avisoAnterior = (await almacen.leer()).avisoTalleres;
+    let folio;
+    try {
+      const acceso = await almacen.cambiar((s) => {
+        s.entradas.push({ id, tipo: 'taller', publicado: { nombre: 'Consulta sintética MySQL' } });
+        s.avisoTalleres = { url: 'https://example.test/aviso', version: 'prueba-mysql' };
+        return registrarConsulta(s, id, {
+          nombre: 'Persona de prueba',
+          correo: 'consulta@example.test',
+          mensaje: '¿Cuál es la sede?',
+          aceptoAviso: true,
+          versionAviso: 'prueba-mysql',
+        });
+      });
+      folio = acceso.folio;
+      const otro = new AlmacenCmsMysql(db);
+      await otro.cambiar((s) => {
+        const c = s.consultasTalleres.find((c) => c.folio === folio);
+        responderConsulta(s, c.id, { texto: 'Sede de prueba', version: 1 }, { id: 'prueba-mysql' });
+      });
+      const respuesta = consultarRespuesta(await new AlmacenCmsMysql(db).leer(), acceso);
+      expect(respuesta.respuestas[0].texto).toBe('Sede de prueba');
+    } finally {
+      await almacen.cambiar((s) => {
+        s.entradas = s.entradas.filter((t) => t.id !== id);
+        s.consultasTalleres = s.consultasTalleres.filter((c) => c.folio !== folio);
+        s.avisoTalleres = avisoAnterior;
+      });
+    }
   });
   it('asigna una sola última plaza entre dos repositorios y conserva cancelación y reactivación', async () => {
     const id = randomUUID();

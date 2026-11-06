@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesion.js';
 import { Prototipo } from './Prototipo.jsx';
 import { InscripcionesTaller } from './InscripcionesTaller.jsx';
+import { ConsultasTaller } from './ConsultasTaller.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
 
@@ -968,6 +969,14 @@ export function GestorContenido() {
                     </div>
                     {editado.current && <p>Guarda el borrador antes de publicar o despublicar.</p>}
                   </div>
+                )}
+                {tipo === 'taller' && entrada && publica && (
+                  <ConsultasTaller
+                    key={entrada.id}
+                    entrada={entrada}
+                    ejecutar={ejecutar}
+                    ocupado={ocupado}
+                  />
                 )}
                 {tipo === 'taller' && entrada && publica && (
                   <InscripcionesTaller

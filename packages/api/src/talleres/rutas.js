@@ -9,10 +9,31 @@ import {
   cambiarEstadoTaller,
 } from './servicio.js';
 import { exportarCsv, exportarPdf } from './exportar.js';
+import {
+  registrarConsulta,
+  consultarRespuesta,
+  listarConsultas,
+  responderConsulta,
+} from './consultas.js';
 
 export function crearRutasTalleres({ almacen, auth, publicador }) {
   const router = express.Router();
   const cuotas = new Map();
+  const cuotasConsultas = new Map();
+  const cuotasLectura = new Map();
+  function limitar(cuotas, limite, req) {
+    const ahora = Date.now();
+    for (const [ip, cuota] of cuotas) if (cuota.hasta <= ahora) cuotas.delete(ip);
+    const cuota = cuotas.get(req.ip) ?? { total: 0, hasta: ahora + 3600_000 };
+    if (cuota.total >= limite || cuotas.size >= 10000)
+      throw new ErrorApi(
+        429,
+        'LIMITE_TASA',
+        'Se alcanzó el límite de solicitudes. Inténtalo más tarde.',
+      );
+    cuota.total++;
+    cuotas.set(req.ip, cuota);
+  }
   router.get('/publico/talleres', async (_req, res) => {
     const estado = await almacen.leer();
     res.json({
@@ -39,13 +60,37 @@ export function crearRutasTalleres({ almacen, auth, publicador }) {
     );
     res.status(201).json(resultado);
   });
+  router.post('/publico/talleres/:id/consultas', auth.origen, async (req, res) => {
+    limitar(cuotasConsultas, 5, req);
+    res
+      .status(201)
+      .json(
+        await almacen.cambiar((estado) => registrarConsulta(estado, req.params.id, req.body ?? {})),
+      );
+  });
+  router.post('/publico/consultas-talleres/consultar', auth.origen, async (req, res) => {
+    limitar(cuotasLectura, 60, req);
+    res.json(consultarRespuesta(await almacen.leer(), req.body ?? {}));
+  });
   router.use(
-    ['/talleres', '/inscripciones'],
+    ['/talleres', '/inscripciones', '/consultas-talleres'],
     auth.identificar,
     auth.permitir(['responsable', 'admin']),
     (req, res, next) =>
       ['GET', 'HEAD'].includes(req.method) ? next() : auth.origen(req, res, next),
   );
+  router.get('/talleres/:id/consultas', async (req, res) => {
+    res.json(
+      await almacen.cambiar((estado) => listarConsultas(estado, req.params.id, req.usuario)),
+    );
+  });
+  router.post('/consultas-talleres/:id/respuestas', async (req, res) => {
+    res.json(
+      await almacen.cambiar((estado) =>
+        responderConsulta(estado, req.params.id, req.body ?? {}, req.usuario),
+      ),
+    );
+  });
   router.get('/talleres/:id/inscripciones', async (req, res) => {
     const formato = req.query.formato;
     if (formato && !['csv', 'pdf'].includes(formato))

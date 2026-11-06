@@ -384,3 +384,20 @@
 .cms-asistentes h4 {
   margin: 0;
 }
+.cms-consultas {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #cfc5c3;
+}
+.cms-consultas .consulta-mensaje {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cms-consultas form {
+  margin-top: 24px;
+}
+.cms-respuesta {
+  border-left: 3px solid #b5a6a3;
+  padding-left: 16px;
+  margin-block: 16px;
+}

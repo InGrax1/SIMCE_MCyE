@@ -14,13 +14,15 @@ Una edición del contenido continúa siendo borrador hasta publicarla. Los cambi
 
 ## Configurar el aviso
 
-El usuario autoriza el aviso `simce-2026-11-06-v1` el 6 de noviembre de 2026. Se incorpora su página `/privacidad/simce-2026-11-06-v1.html` con versiones integral y simplificada. El pie del portal y el formulario permiten consultarla sin sesión ni JavaScript. Se conserva el archivo de esta versión; un cambio de texto requiere otra versión y otra ruta.
+El aviso inicial `simce-2026-11-06-v1` fue autorizado por el usuario. La versión vigente es `simce-2026-11-06-v2`, disponible en `/privacidad/simce-2026-11-06-v2.html`, e incorpora las consultas y respuestas de talleres solicitadas después. El pie del portal y los formularios permiten consultar el aviso sin sesión ni JavaScript. El HTML de v1 se conserva sin cambios para acreditar los consentimientos anteriores.
 
-El lanzador `dev:fase1` usa este aviso por defecto para interés e inscripciones. `AVISO_TALLERES_URL` y `AVISO_TALLERES_VERSION` permiten sobrescribirlo. La ruta relativa se admite únicamente para esta página y versión incluidas; los avisos externos mantienen la exigencia de HTTPS y no pueden contener credenciales. La versión admite letras, números, puntos, guiones y guiones bajos, hasta 80 caracteres; no puede reutilizarse con otra URL.
+El lanzador `dev:fase1` usa la versión vigente por defecto para interés, consultas e inscripciones. `AVISO_TALLERES_URL` y `AVISO_TALLERES_VERSION` permiten sobrescribirla. Las rutas relativas se admiten únicamente con su respectiva versión incluida; los avisos externos mantienen la exigencia de HTTPS y no pueden contener credenciales. Una versión no puede reutilizarse con otra URL.
 
 El archivo `.env.example` mantiene los valores vacíos para que cada alojamiento configure la activación. En producción, configure ambos valores con la ruta y versión indicadas; la ruta heredará el origen HTTPS real. Para deshabilitar un formulario local, establezca explícitamente su URL y versión vacías y reinicie. Si carga `.env` con `node --env-file=.env scripts/iniciar-fase-uno.mjs`, sus valores vacíos también deshabilitan el formulario. Los registros y las versiones anteriores no se borran. Un formulario abierto con una versión anterior se rechaza al enviar.
 
 ## Consultar asistentes
+
+El botón «Solicitar información» utiliza el [formulario de consultas y respuestas dentro de la web](consultas-web.md). La consulta no reserva una plaza y la responsable la atiende desde el panel. El visitante recibe un enlace privado para leer la respuesta.
 
 «Consultar asistentes» carga la lista privada. «Exportar CSV» y «Exportar PDF» descargan los mismos registros, incluidas inscripciones canceladas, identificadas por su estado. Los CSV protegen las celdas frente a fórmulas ejecutables al abrirlas en una hoja de cálculo; los PDF incluyen encabezados y numeración en cada página.
 

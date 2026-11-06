@@ -108,6 +108,16 @@ describe('talleres e inscripciones', () => {
       .post(`/api/v1/publico/talleres/${id}/inscripciones`)
       .set('Origin', origen)
       .send(datos);
+  const preguntar = (datos = {}) =>
+    request(app)
+      .post(`/api/v1/publico/talleres/${id}/consultas`)
+      .set('Origin', origen)
+      .send({ ...participante(), mensaje: '¿Qué materiales debo llevar?', ...datos });
+  const seguimiento = (acceso) =>
+    request(app)
+      .post('/api/v1/publico/consultas-talleres/consultar')
+      .set('Origin', origen)
+      .send(acceso);
 
   it('entrega folio, normaliza correo y registra consentimiento sin publicar datos personales', async () => {
     const resultado = await inscribir(participante(' Participante@Example.test '));
@@ -298,6 +308,129 @@ describe('talleres e inscripciones', () => {
         })
       ).body.error,
     ).toBe('TALLER_CANCELADO');
+  });
+  it('registra consultas de información sin ocupar cupo y conserva solo la huella del acceso', async () => {
+    await almacen.cambiar((s) => {
+      delete s.entradas.find((e) => e.id === id).inscripcion;
+    });
+    const respuesta = await preguntar();
+    expect(respuesta.status).toBe(201);
+    expect(Object.keys(respuesta.body).sort()).toEqual(['acceso', 'folio']);
+    const s = await new AlmacenCmsArchivo(almacen.archivo).leer();
+    expect(s.inscripciones).toHaveLength(0);
+    expect(s.consultasTalleres).toHaveLength(1);
+    expect(s.consultasTalleres[0]).toMatchObject({
+      nombre: 'María López',
+      estado: 'pendiente',
+      versionAviso: 'sintetico-v1',
+      avisoAceptadoEn: expect.any(String),
+    });
+    expect(s.consultasTalleres[0].accesoHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(s)).not.toContain(respuesta.body.acceso);
+    expect(JSON.stringify(s.auditoria)).not.toContain('materiales');
+    const publico = await request(app).get('/api/v1/publico/contenido');
+    expect(JSON.stringify(publico.body)).not.toMatch(/materiales|accesoHash|participante@example/);
+  });
+  it('permite responder dentro del panel y consultar la respuesta solo con el enlace privado correcto', async () => {
+    const acceso = (await preguntar()).body;
+    const lista = await api('responsable', 'get', `/talleres/${id}/consultas`);
+    expect(lista.status).toBe(200);
+    expect(JSON.stringify(lista.body)).not.toContain('accesoHash');
+    const consulta = lista.body[0];
+    const respuesta = await api(
+      'responsable',
+      'post',
+      `/consultas-talleres/${consulta.id}/respuestas`,
+      { texto: 'Trae una libreta.\nEl material se proporciona en el taller.', version: 1 },
+    );
+    expect(respuesta.status).toBe(200);
+    const lectura = await seguimiento(acceso);
+    expect(lectura.status).toBe(200);
+    expect(lectura.headers['cache-control']).toBe('no-store');
+    expect(lectura.body).toMatchObject({
+      estado: 'respondida',
+      respuestas: [
+        {
+          texto: 'Trae una libreta.\nEl material se proporciona en el taller.',
+          momento: expect.any(String),
+        },
+      ],
+    });
+    expect(lectura.body.correo).toBeUndefined();
+    expect(lectura.body.accesoHash).toBeUndefined();
+    expect((await seguimiento({ folio: acceso.folio })).status).toBe(404);
+    expect(
+      (await seguimiento({ ...acceso, acceso: randomBytes(32).toString('base64url') })).status,
+    ).toBe(404);
+    expect((await seguimiento({ ...acceso, folio: 'CT-2026-99999999' })).status).toBe(404);
+  });
+  it('protege consultas y respuestas de visitantes y roles sin permiso, y rechaza cambios obsoletos', async () => {
+    await preguntar();
+    const c = (await almacen.leer()).consultasTalleres[0];
+    await request(app).get(`/api/v1/talleres/${id}/consultas`).expect(401);
+    for (const rol of ['editor', 'operador']) {
+      expect((await api(rol, 'get', `/talleres/${id}/consultas`)).status).toBe(403);
+      expect(
+        (
+          await api(rol, 'post', `/consultas-talleres/${c.id}/respuestas`, {
+            texto: 'Respuesta',
+            version: 1,
+          })
+        ).status,
+      ).toBe(403);
+    }
+    expect(
+      (
+        await api('admin', 'post', `/consultas-talleres/${c.id}/respuestas`, {
+          texto: '<script>texto</script>',
+          version: 1,
+        })
+      ).status,
+    ).toBe(422);
+    expect(
+      (
+        await api('admin', 'post', `/consultas-talleres/${c.id}/respuestas`, {
+          texto: 'Respuesta válida',
+          version: 1,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await api('admin', 'post', `/consultas-talleres/${c.id}/respuestas`, {
+          texto: 'Otra respuesta',
+          version: 1,
+        })
+      ).body.error,
+    ).toBe('VERSION_DESACTUALIZADA');
+    expect((await api('admin', 'delete', `/cms/entradas/${id}`, { version: 1 })).body.error).toBe(
+      'TALLER_CON_CONSULTAS',
+    );
+  });
+  it('exige aviso y consentimiento vigente para consultas y bloquea talleres no publicados', async () => {
+    expect((await preguntar({ aceptoAviso: false })).status).toBe(422);
+    expect((await preguntar({ versionAviso: 'obsoleto' })).status).toBe(422);
+    await almacen.cambiar((s) => {
+      s.entradas.find((e) => e.id === id).publicado = null;
+    });
+    expect((await preguntar()).status).toBe(404);
+    await almacen.cambiar((s) => {
+      const t = s.entradas.find((e) => e.id === id);
+      t.publicado = t.borrador;
+      s.avisoTalleres = null;
+    });
+    expect((await preguntar()).body.error).toBe('AVISO_PENDIENTE');
+    expect((await almacen.leer()).consultasTalleres).toHaveLength(0);
+  });
+  it('limita consultas por IP y rechaza orígenes ajenos sin almacenar datos', async () => {
+    await request(app)
+      .post(`/api/v1/publico/talleres/${id}/consultas`)
+      .set('Origin', 'https://ajeno.example.test')
+      .send(participante())
+      .expect(403);
+    for (let n = 0; n < 5; n++) expect((await preguntar({ mensaje: '' })).status).toBe(422);
+    expect((await preguntar()).status).toBe(429);
+    expect((await almacen.leer()).consultasTalleres).toHaveLength(0);
   });
   it('conserva versiones de avisos y rechaza reutilizarlas con otra URL', async () => {
     await configurarAvisoTalleres(almacen, {

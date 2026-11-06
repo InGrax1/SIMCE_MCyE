@@ -1,0 +1,213 @@
+import { useEffect, useRef, useState } from 'react';
+import { useContenidoPortal } from './contextoContenido.jsx';
+
+export function ConsultaTaller({ taller }) {
+  const { avisoTalleres } = useContenidoPortal();
+  const [ocupado, cambiarOcupado] = useState(false);
+  const [error, cambiarError] = useState('');
+  const [recibo, cambiarRecibo] = useState(null);
+  const bloqueo = useRef(false);
+  const confirmacion = useRef(null);
+  return (
+    <details className="taller-consulta">
+      <summary className="boton">Solicitar información</summary>
+      {!avisoTalleres ? (
+        <p>Las consultas en línea todavía no están disponibles.</p>
+      ) : recibo ? (
+        <div className="consulta-recibo" role="status" tabIndex={-1} ref={confirmacion}>
+          <h4>Recibimos tu consulta</h4>
+          <p>
+            Tu folio es <strong>{recibo.folio}</strong>. La responsable podrá responderte dentro de
+            este sitio.
+          </p>
+          <p>Guarda este enlace privado para volver a consultar la respuesta. Es personal.</p>
+          <a href={recibo.enlace}>Consultar mi solicitud</a>
+          <label>
+            Enlace privado
+            <input readOnly value={recibo.enlace} onFocus={(e) => e.currentTarget.select()} />
+          </label>
+        </div>
+      ) : (
+        <form
+          className="formulario-consulta"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (bloqueo.current) return;
+            bloqueo.current = true;
+            cambiarOcupado(true);
+            cambiarError('');
+            const datos = Object.fromEntries(new FormData(e.currentTarget));
+            try {
+              const respuesta = await fetch(`/api/v1/publico/talleres/${taller.id}/consultas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...datos,
+                  aceptoAviso: datos.aceptoAviso === 'on',
+                  versionAviso: avisoTalleres.version,
+                }),
+              });
+              const resultado = await respuesta.json();
+              if (!respuesta.ok)
+                throw new Error(
+                  resultado.mensaje ?? 'No se pudo enviar la consulta. Inténtalo de nuevo.',
+                );
+              const enlace = `${location.origin}/#consulta-taller=${encodeURIComponent(resultado.folio)}&acceso=${encodeURIComponent(resultado.acceso)}`;
+              cambiarRecibo({ folio: resultado.folio, enlace });
+              requestAnimationFrame(() => confirmacion.current?.focus());
+            } catch (e) {
+              cambiarError(e.message);
+            } finally {
+              bloqueo.current = false;
+              cambiarOcupado(false);
+            }
+          }}
+        >
+          <p>
+            Envíanos tu pregunta sobre este taller. Para reservar un lugar, utiliza la inscripción
+            del taller.
+          </p>
+          <fieldset disabled={ocupado}>
+            <legend>Solicitud de información</legend>
+            <label>
+              Nombre completo
+              <input name="nombre" autoComplete="name" maxLength={160} required />
+            </label>
+            <label>
+              Correo de contacto
+              <input name="correo" type="email" autoComplete="email" maxLength={160} required />
+            </label>
+            <label>
+              ¿Qué te gustaría saber?
+              <textarea name="mensaje" maxLength={1000} rows={4} required />
+            </label>
+            <label className="inscripcion-consentimiento">
+              <input name="aceptoAviso" type="checkbox" required />
+              <span>
+                Leí y acepto el{' '}
+                <a href={avisoTalleres.url} target="_blank" rel="noreferrer">
+                  aviso de privacidad
+                </a>
+                .
+              </span>
+            </label>
+            {error && <p role="alert">{error}</p>}
+            <button className="boton" disabled={ocupado}>
+              {ocupado ? 'Enviando…' : 'Enviar consulta'}
+            </button>
+          </fieldset>
+        </form>
+      )}
+    </details>
+  );
+}
+
+const fecha = (valor) =>
+  new Intl.DateTimeFormat('es-MX', {
+    timeZone: 'America/Mexico_City',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(valor));
+
+export function SeguimientoConsultaTaller() {
+  const [acceso, cambiarAcceso] = useState(null);
+  const [consulta, cambiarConsulta] = useState(null);
+  const [error, cambiarError] = useState('');
+  const [ocupado, cambiarOcupado] = useState(false);
+  const [revision, cambiarRevision] = useState(0);
+  const region = useRef(null);
+  useEffect(() => {
+    const leer = () => {
+      const datos = new URLSearchParams(location.hash.slice(1));
+      if (!datos.has('consulta-taller')) {
+        cambiarAcceso(null);
+        cambiarConsulta(null);
+        return;
+      }
+      cambiarAcceso({ folio: datos.get('consulta-taller'), acceso: datos.get('acceso') ?? '' });
+      requestAnimationFrame(() => {
+        region.current?.focus();
+        region.current?.scrollIntoView();
+      });
+    };
+    leer();
+    window.addEventListener('hashchange', leer);
+    return () => window.removeEventListener('hashchange', leer);
+  }, []);
+  useEffect(() => {
+    if (!acceso) return;
+    const controlador = new AbortController();
+    cambiarOcupado(true);
+    cambiarError('');
+    cambiarConsulta(null);
+    (async () => {
+      try {
+        const respuesta = await fetch('/api/v1/publico/consultas-talleres/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(acceso),
+          signal: controlador.signal,
+          cache: 'no-store',
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) throw new Error(datos.mensaje ?? 'No pudimos consultar la respuesta.');
+        if (!controlador.signal.aborted) cambiarConsulta(datos);
+      } catch (e) {
+        if (!controlador.signal.aborted) cambiarError(e.message);
+      } finally {
+        if (!controlador.signal.aborted) cambiarOcupado(false);
+      }
+    })();
+    return () => controlador.abort();
+  }, [acceso, revision]);
+  if (!acceso) return null;
+  return (
+    <section
+      id="consultar-solicitud"
+      className="seguimiento-consulta seccion"
+      aria-labelledby="titulo-seguimiento"
+      ref={region}
+      tabIndex={-1}
+    >
+      <div className="contenido contenido-estrecho">
+        <h2 id="titulo-seguimiento">Consulta del taller</h2>
+        {error && <p role="alert">{error}</p>}
+        {ocupado && <p role="status">Consultando tu solicitud…</p>}
+        {consulta && (
+          <>
+            <h3>{consulta.tallerNombre}</h3>
+            <p>
+              Folio: <strong>{consulta.folio}</strong> · {fecha(consulta.creadoEn)}
+            </p>
+            <h4>Tu pregunta</h4>
+            <p className="consulta-mensaje">{consulta.mensaje}</p>
+            {!consulta.respuestas.length ? (
+              <p role="status">Tu consulta está pendiente de respuesta.</p>
+            ) : (
+              <div className="consulta-respuestas">
+                {consulta.respuestas.map((r, i) => (
+                  <article key={i}>
+                    <h4>Respuesta del Módulo</h4>
+                    <time dateTime={r.momento}>{fecha(r.momento)}</time>
+                    <p className="consulta-mensaje">{r.texto}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        <div className="consulta-acciones">
+          <button
+            type="button"
+            className="boton"
+            disabled={ocupado}
+            onClick={() => cambiarRevision((n) => n + 1)}
+          >
+            Actualizar respuesta
+          </button>
+          <a href="#talleres">Volver a talleres</a>
+        </div>
+      </div>
+    </section>
+  );
+}

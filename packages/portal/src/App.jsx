@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { InscripcionTaller } from './InscripcionTaller.jsx';
+import { ConsultaTaller, SeguimientoConsultaTaller } from './ConsultaTaller.jsx';
 import { avisoPrivacidad } from './avisoPrivacidad.js';
 import { procesos, secciones } from './contenido.js';
 import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
@@ -682,20 +683,24 @@ function Productos() {
   );
 }
 
-function InteresServicioSocial() {
-  const { programas, correo, avisoInteres } = useContenidoPortal();
+function InteresServicioSocial({ programaSeleccionado, seleccionarPrograma }) {
+  const { programas, avisoInteres } = useContenidoPortal();
   const [estado, cambiarEstado] = useState('');
   const [ocupado, cambiarOcupado] = useState(false);
   const [error, cambiarError] = useState(false);
   if (!avisoInteres)
     return (
-      <p className="interes-consulta">
-        Para consultar los programas de servicio social,{' '}
-        <a href={`mailto:${correo}`}>escribe al módulo</a>.
+      <p id="interes-servicio-social" tabIndex={-1} className="interes-consulta">
+        El formulario de consultas de servicio social todavía no está disponible.
       </p>
     );
   return (
-    <section className="interes-social" aria-labelledby="titulo-interes">
+    <section
+      id="interes-servicio-social"
+      tabIndex={-1}
+      className="interes-social"
+      aria-labelledby="titulo-interes"
+    >
       <h3 id="titulo-interes">Cuéntanos qué programa te interesa</h3>
       <form
         method="post"
@@ -740,6 +745,8 @@ function InteresServicioSocial() {
           <SelectorSuave
             id="programa-interes"
             nombre="programa"
+            valor={programaSeleccionado}
+            alCambiar={seleccionarPrograma}
             requerido
             opciones={programas.map((p) => ({ value: p.id, label: p.nombre }))}
           />
@@ -774,7 +781,8 @@ function InteresServicioSocial() {
 }
 
 function ServicioSocial() {
-  const { programas, correo } = useContenidoPortal();
+  const { programas } = useContenidoPortal();
+  const [programaSeleccionado, seleccionarPrograma] = useState(programas[0]?.id ?? null);
   return (
     <section
       id="servicio-social"
@@ -808,14 +816,23 @@ function ServicioSocial() {
               </div>
               <a
                 className="boton boton-pequeno"
-                href={`mailto:${correo}?subject=${encodeURIComponent(`Servicio social ${programa.codigo}`)}`}
+                href="#interes-servicio-social"
+                onClick={() => {
+                  seleccionarPrograma(programa.id);
+                  requestAnimationFrame(() =>
+                    document.getElementById('interes-servicio-social')?.focus(),
+                  );
+                }}
               >
                 Solicitar Información <Flecha correo />
               </a>
             </article>
           ))}
         </div>
-        <InteresServicioSocial />
+        <InteresServicioSocial
+          programaSeleccionado={programaSeleccionado}
+          seleccionarPrograma={seleccionarPrograma}
+        />
       </div>
     </section>
   );
@@ -974,7 +991,7 @@ function Pie() {
 }
 
 function Talleres() {
-  const { talleres, avisos, correo } = useContenidoPortal();
+  const { talleres, avisos } = useContenidoPortal();
   return (
     <section
       id="talleres"
@@ -988,8 +1005,8 @@ function Talleres() {
           Aprende y participa <em>con el módulo.</em>
         </h2>
         <p>
-          Consulta las convocatorias y su estado. Para conocer los requisitos de participación,
-          comunícate con la responsable del módulo.
+          Consulta las convocatorias, solicita información y revisa las respuestas de la responsable
+          aquí mismo.
         </p>
         {talleres.length ? (
           <div className="talleres-grid">
@@ -1016,12 +1033,7 @@ function Talleres() {
                 {t.requisitos && <p>Requisitos: {t.requisitos}</p>}
                 {t.costo && <p>Costo indicativo: {t.costo}</p>}
                 <InscripcionTaller taller={t} />
-                <a
-                  className="boton"
-                  href={`mailto:${correo}?subject=${encodeURIComponent(t.nombre ?? t.titulo)}`}
-                >
-                  Solicitar información
-                </a>
+                <ConsultaTaller taller={t} />
               </article>
             ))}
           </div>
@@ -1052,6 +1064,7 @@ function PaginaPortal() {
       </a>
       <Encabezado />
       <main id="contenido-principal" tabIndex={-1} ref={contenido}>
+        <SeguimientoConsultaTaller />
         <Inicio />
         <Separador
           archivo="PapelRasgadoHorizontalFigma1.svg"

@@ -234,6 +234,8 @@ export function crearEstadoInicial() {
     avisoTalleres: null,
     avisosTalleres: [],
     inscripciones: [],
+    consultasTalleres: [],
+    consecutivoConsultaTaller: 0,
     consecutivoInscripcion: 0,
     sesiones: [],
     entradas,
@@ -248,6 +250,7 @@ export function crearEstadoInicial() {
 export function actualizarEstado(estado) {
   estado.recuperaciones ??= [];
   estado.inscripciones ??= [];
+  estado.consultasTalleres ??= [];
   estado.avisosTalleres ??= [];
   if ((estado.versionEsquema ?? 1) < 2) {
     for (const entrada of estado.entradas.filter(

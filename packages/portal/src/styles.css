@@ -4282,23 +4282,24 @@ button:not(:disabled):active,
 .taller-temario {
   white-space: pre-line;
 }
-.formulario-inscripcion fieldset {
+:is(.formulario-inscripcion, .formulario-consulta) fieldset {
   border: 0;
   padding: 0;
   margin: 20px 0;
   min-width: 0;
 }
-.formulario-inscripcion legend {
+:is(.formulario-inscripcion, .formulario-consulta) legend {
   font-weight: 600;
   margin-bottom: 16px;
 }
-.formulario-inscripcion label {
+:is(.formulario-inscripcion, .formulario-consulta) label {
   display: grid;
   gap: 8px;
   margin: 16px 0;
 }
-.formulario-inscripcion input,
-.formulario-inscripcion select {
+:is(.formulario-inscripcion, .formulario-consulta) input,
+:is(.formulario-inscripcion, .formulario-consulta) textarea,
+:is(.formulario-inscripcion, .formulario-consulta) select {
   width: 100%;
   min-width: 0;
   min-height: 48px;
@@ -4310,18 +4311,18 @@ button:not(:disabled):active,
   border: 1px solid #877774;
   border-radius: 8px;
 }
-.formulario-inscripcion .inscripcion-consentimiento {
+:is(.formulario-inscripcion, .formulario-consulta) .inscripcion-consentimiento {
   display: flex;
   gap: 12px;
   align-items: start;
 }
-.formulario-inscripcion input[type='checkbox'] {
+:is(.formulario-inscripcion, .formulario-consulta) input[type='checkbox'] {
   width: 22px;
   min-height: 22px;
   flex-shrink: 0;
   margin-top: 4px;
 }
-.formulario-inscripcion a {
+:is(.formulario-inscripcion, .formulario-consulta) a {
   text-decoration: underline;
   overflow-wrap: anywhere;
 }
@@ -4337,4 +4338,77 @@ button:not(:disabled):active,
 .taller-inscripcion button,
 .taller-inscripcion summary {
   touch-action: manipulation;
+}
+.taller-consulta {
+  margin-top: 24px;
+}
+.taller-consulta > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.taller-consulta > summary::-webkit-details-marker {
+  display: none;
+}
+.taller-consulta > .boton {
+  margin: 0;
+}
+.taller-consulta :focus-visible {
+  outline: 3px solid #2463a8;
+  outline-offset: 4px;
+}
+.consulta-recibo {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fff8f2;
+  border-left: 4px solid #84271f;
+}
+.consulta-recibo a,
+.consulta-acciones a {
+  color: #84271f;
+  text-decoration: underline;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+.consulta-recibo label {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.consulta-recibo input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #877774;
+  border-radius: 8px;
+}
+.consulta-mensaje {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.seguimiento-consulta {
+  padding-block: 64px;
+  background: #fff8f2;
+}
+.seguimiento-consulta h2 {
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  margin-bottom: 24px;
+}
+.seguimiento-consulta h3,
+.seguimiento-consulta h4 {
+  font-weight: 600;
+  margin-block: 20px 12px;
+}
+.consulta-respuestas article {
+  margin-top: 24px;
+  border-top: 1px solid #b9aaaa;
+  padding-top: 12px;
+}
+.consulta-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-top: 24px;
 }

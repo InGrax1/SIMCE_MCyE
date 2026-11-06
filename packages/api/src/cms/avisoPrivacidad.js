@@ -1,4 +1,4 @@
-import { avisoPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
+import { avisosPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
 
 export function validarAvisoConfigurado(url, version) {
   if (Boolean(url) !== Boolean(version))
@@ -8,7 +8,8 @@ export function validarAvisoConfigurado(url, version) {
     throw new Error('El aviso necesita una versión de hasta 80 caracteres.');
   // Este recurso está incluido en el portal; hereda HTTPS en el alojamiento
   // y también puede consultarse en el origen de revisión local.
-  if (url === avisoPrivacidad.url && version === avisoPrivacidad.version) return { url, version };
+  if (avisosPrivacidad.some((aviso) => url === aviso.url && version === aviso.version))
+    return { url, version };
   let direccion;
   try {
     direccion = new URL(url);

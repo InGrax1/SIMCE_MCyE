@@ -319,6 +319,15 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recupe
           'TALLER_CON_INSCRIPCIONES',
           'El taller tiene inscripciones. Conserva su historial y cancélalo desde el panel.',
         );
+      if (
+        entrada.tipo === 'taller' &&
+        estado.consultasTalleres.some((c) => c.tallerId === entrada.id)
+      )
+        throw new ErrorApi(
+          409,
+          'TALLER_CON_CONSULTAS',
+          'El taller tiene consultas. Despublícalo para conservar su historial.',
+        );
       if (entrada.tipo === 'institucion')
         throw new ErrorApi(
           422,

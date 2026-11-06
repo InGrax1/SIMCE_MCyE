@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { validarAvisoConfigurado } from '../src/cms/avisoPrivacidad.js';
 import { configurarCms } from '../src/cms/configuracion.js';
 import { crearAplicacion } from '../src/app.js';
-import { avisoPrivacidad } from '../../portal/src/avisoPrivacidad.js';
+import { avisoPrivacidad, avisosPrivacidad } from '../../portal/src/avisoPrivacidad.js';
 
 describe('aviso autorizado y consulta pública', () => {
   let carpeta, cms;
@@ -22,6 +22,9 @@ describe('aviso autorizado y consulta pública', () => {
       url: avisoPrivacidad.url,
       version: avisoPrivacidad.version,
     });
+    expect(
+      validarAvisoConfigurado(avisosPrivacidad[0].url, avisosPrivacidad[0].version),
+    ).toMatchObject({ version: 'simce-2026-11-06-v1' });
     expect(validarAvisoConfigurado('https://example.test/aviso', 'externo-v1')).toEqual({
       url: 'https://example.test/aviso',
       version: 'externo-v1',
@@ -69,5 +72,9 @@ describe('aviso autorizado y consulta pública', () => {
     expect(respuesta.text).toContain('unidaddetransparencia@unam.mx');
     expect(respuesta.text).not.toContain('Revisión y autorización');
     expect(respuesta.text).not.toMatch(/<script|JWT_SECRET|Persona y fecha que autorizan/);
+    const anterior = await request(crearAplicacion({ cms }))
+      .get(avisosPrivacidad[0].url)
+      .expect(200);
+    expect(anterior.text).toContain('simce-2026-11-06-v1');
   });
 });
