@@ -6,6 +6,7 @@ import { crearRutasCms } from './rutas.js';
 import { crearConexionBaseDatos } from '../infra/baseDatos.js';
 import { configurarCorreo } from './correo.js';
 import { crearRecuperacion } from './recuperacion.js';
+import { configurarAvisoTalleres } from '../talleres/aviso.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
@@ -20,6 +21,7 @@ export async function configurarCms() {
       ? ((db = crearConexionBaseDatos()), new AlmacenCmsMysql(db))
       : new AlmacenCmsArchivo(resolve(carpeta, 'estado.json'));
   if (db) await almacen.iniciar();
+  await configurarAvisoTalleres(almacen);
   const url = process.env.AVISO_INTERES_URL;
   const versionAviso = process.env.AVISO_INTERES_VERSION;
   if (url && !/^https:\/\//.test(url))

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesion.js';
 import { Prototipo } from './Prototipo.jsx';
+import { InscripcionesTaller } from './InscripcionesTaller.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
 
@@ -311,6 +312,7 @@ export function GestorContenido() {
   const [previa, cambiarPrevia] = useState('');
   const [auditoria, cambiarAuditoria] = useState(null);
   const [intereses, cambiarIntereses] = useState(null);
+  const [motivoFechas, cambiarMotivoFechas] = useState('');
   const bloqueo = useRef(false);
   const editado = useRef(false);
   function recibir(valor) {
@@ -421,6 +423,7 @@ export function GestorContenido() {
     if (editado.current && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?'))
       return;
     cambiarTipo(nuevoTipo);
+    cambiarMotivoFechas('');
     cambiarEntrada(item);
     cambiarDatos(
       structuredClone(
@@ -725,26 +728,34 @@ export function GestorContenido() {
                         </fieldset>
                       );
                     if (nombre === 'estadoTaller')
-                      return (
-                        <label key={nombre}>
-                          {etiquetas[nombre]}
-                          <select
-                            value={valor || 'informativo'}
-                            onChange={(e) => campo(nombre, e.target.value)}
-                          >
-                            {[
-                              ['informativo', 'Información'],
-                              ['abierto', 'Convocatoria abierta'],
-                              ['cerrado', 'Cerrado'],
-                              ['concluido', 'Concluido'],
-                            ].map(([id, texto]) => (
-                              <option key={id} value={id}>
-                                {texto}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      );
+                      if (entrada?.inscripcion)
+                        return (
+                          <p key={nombre}>
+                            El estado y la disponibilidad se gestionan en «Inscripciones del
+                            taller».
+                          </p>
+                        );
+                      else
+                        return (
+                          <label key={nombre}>
+                            {etiquetas[nombre]}
+                            <select
+                              value={valor || 'informativo'}
+                              onChange={(e) => campo(nombre, e.target.value)}
+                            >
+                              {[
+                                ['informativo', 'Información'],
+                                ['abierto', 'Convocatoria abierta'],
+                                ['cerrado', 'Cerrado'],
+                                ['concluido', 'Concluido'],
+                              ].map(([id, texto]) => (
+                                <option key={id} value={id}>
+                                  {texto}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        );
                     const multilinea =
                       listas.includes(nombre) ||
                       ['descripcion', 'objetivo', 'requisitos'].includes(nombre);
@@ -868,6 +879,16 @@ export function GestorContenido() {
                 </form>
                 {entrada && publica && (
                   <div className="cms-publicar">
+                    {tipo === 'taller' && entrada.inscripcion && (
+                      <label>
+                        Motivo de los cambios de fechas al publicar
+                        <input
+                          value={motivoFechas}
+                          onChange={(e) => cambiarMotivoFechas(e.target.value)}
+                          maxLength={500}
+                        />
+                      </label>
+                    )}
                     <label className="cms-check">
                       <input
                         type="checkbox"
@@ -884,7 +905,11 @@ export function GestorContenido() {
                           ejecutar(async () => {
                             await consultarApi(`/cms/entradas/${entrada.id}/publicar`, {
                               metodo: 'POST',
-                              datos: { version: entrada.version, confirmarRevision: true },
+                              datos: {
+                                version: entrada.version,
+                                confirmarRevision: true,
+                                motivo: motivoFechas,
+                              },
                             });
                             editado.current = false;
                             const actual = await cargar();
@@ -943,6 +968,19 @@ export function GestorContenido() {
                     </div>
                     {editado.current && <p>Guarda el borrador antes de publicar o despublicar.</p>}
                   </div>
+                )}
+                {tipo === 'taller' && entrada && publica && (
+                  <InscripcionesTaller
+                    key={`${entrada.id}-${entrada.version}`}
+                    entrada={entrada}
+                    ejecutar={ejecutar}
+                    ocupado={ocupado || editado.current}
+                    actualizar={async () => {
+                      const actual = await cargar();
+                      seleccionar(actual.entradas.find((e) => e.id === entrada.id));
+                      cambiarMensaje('Inscripción del taller actualizada.');
+                    }}
+                  />
                 )}
                 {entrada?.historial.length > 0 && (
                   <details className="cms-historial">

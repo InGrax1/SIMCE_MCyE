@@ -4268,3 +4268,73 @@ button:not(:disabled):active,
     transition: none;
   }
 }
+/* Inscripción conectada: conserva las fuentes y colores del portal. */
+.taller-inscripcion {
+  margin: 24px 0;
+  text-align: left;
+}
+.taller-inscripcion summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 12px 0;
+}
+.taller-temario {
+  white-space: pre-line;
+}
+.formulario-inscripcion fieldset {
+  border: 0;
+  padding: 0;
+  margin: 20px 0;
+  min-width: 0;
+}
+.formulario-inscripcion legend {
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.formulario-inscripcion label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.formulario-inscripcion input,
+.formulario-inscripcion select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px;
+  font: inherit;
+  font-size: 16px;
+  background: #fff;
+  color: #241d1d;
+  border: 1px solid #877774;
+  border-radius: 8px;
+}
+.formulario-inscripcion .inscripcion-consentimiento {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+}
+.formulario-inscripcion input[type='checkbox'] {
+  width: 22px;
+  min-height: 22px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.formulario-inscripcion a {
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+.inscripcion-confirmada {
+  padding: 16px;
+  border-left: 4px solid #84271f;
+  background: #fff8f2;
+}
+.taller-inscripcion :focus-visible {
+  outline: 3px solid #2463a8;
+  outline-offset: 4px;
+}
+.taller-inscripcion button,
+.taller-inscripcion summary {
+  touch-action: manipulation;
+}

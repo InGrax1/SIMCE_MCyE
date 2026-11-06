@@ -75,6 +75,8 @@ export async function consultarApi(
     throw error;
   }
   if (respuesta.status === 204) return null;
+  if (/application\/pdf|text\/csv/.test(respuesta.headers.get('content-type') ?? ''))
+    return respuesta.blob();
   return respuesta.headers.get('content-type')?.includes('text/html')
     ? respuesta.text()
     : respuesta.json();

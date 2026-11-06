@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { InscripcionTaller } from './InscripcionTaller.jsx';
 import { procesos, secciones } from './contenido.js';
 import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
 import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
@@ -993,14 +994,14 @@ function Talleres() {
             {talleres.map((t) => (
               <article key={t.id}>
                 <span className="chip">
-                  {
-                    {
-                      informativo: 'Información',
-                      abierto: 'Convocatoria abierta',
-                      cerrado: 'Cerrado',
-                      concluido: 'Concluido',
-                    }[t.estadoTaller]
-                  }
+                  {{
+                    informativo: 'Información',
+                    abierto: 'Convocatoria abierta',
+                    cerrado: 'Cerrado',
+                    concluido: 'Concluido',
+                    programado: 'Taller programado',
+                    cancelado: 'Cancelado',
+                  }[t.inscripcion?.estado ?? t.estadoTaller] ?? 'Información'}
                 </span>
                 <h3>{t.nombre ?? t.titulo}</h3>
                 <p>{t.descripcion}</p>
@@ -1012,6 +1013,7 @@ function Talleres() {
                 )}
                 {t.requisitos && <p>Requisitos: {t.requisitos}</p>}
                 {t.costo && <p>Costo indicativo: {t.costo}</p>}
+                <InscripcionTaller taller={t} />
                 <a
                   className="boton"
                   href={`mailto:${correo}?subject=${encodeURIComponent(t.nombre ?? t.titulo)}`}

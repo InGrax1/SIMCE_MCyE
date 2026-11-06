@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import * as inicial from '../../../portal/src/contenido.js';
 import { ErrorApi } from '../errores.js';
+import { proyectarTaller } from '../talleres/reglas.js';
 
 export const tipos = [
   'area',
@@ -230,6 +231,10 @@ export function crearEstadoInicial() {
     recuperaciones: [],
     intereses: [],
     avisoInteres: null,
+    avisoTalleres: null,
+    avisosTalleres: [],
+    inscripciones: [],
+    consecutivoInscripcion: 0,
     sesiones: [],
     entradas,
     medios: [],
@@ -242,6 +247,8 @@ export function crearEstadoInicial() {
 // Adapta los datos del avance anterior sin reemplazar ediciones ni cuentas locales.
 export function actualizarEstado(estado) {
   estado.recuperaciones ??= [];
+  estado.inscripciones ??= [];
+  estado.avisosTalleres ??= [];
   if ((estado.versionEsquema ?? 1) < 2) {
     for (const entrada of estado.entradas.filter(
       (e) => e.tipo === 'galeria' && e.validacion === 'referencia',
@@ -299,7 +306,8 @@ export function proyectarPortal(estado) {
     estado.entradas.find((e) => e.tipo === 'institucion' && e.publicado)?.publicado ?? {};
   contenido.talleres = estado.entradas
     .filter((e) => e.tipo === 'taller' && e.publicado)
-    .map((e) => ({ ...e.publicado, id: e.id }));
+    .map((e) => proyectarTaller(estado, e));
+  contenido.avisoTalleres = estado.avisoTalleres ?? null;
   contenido.avisos = estado.entradas
     .filter((e) => e.tipo === 'aviso' && e.publicado)
     .map((e) => ({ ...e.publicado, id: e.id }));

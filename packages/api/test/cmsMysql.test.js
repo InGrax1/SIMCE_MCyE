@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { crearConexionBaseDatos } from '../src/infra/baseDatos.js';
 import { AlmacenCmsMysql } from '../src/cms/almacen.js';
+import { registrarInscripcion, cambiarInscripcion } from '../src/talleres/servicio.js';
 
 const conMysql = process.env.TEST_MYSQL === '1' ? describe : describe.skip;
 conMysql('gestor persistente MySQL', () => {
@@ -31,5 +32,81 @@ conMysql('gestor persistente MySQL', () => {
     );
     const recuperado = await new AlmacenCmsMysql(db).leer();
     expect(recuperado.auditoria.find((a) => a.id === id).cantidad).toBe(5);
+  });
+  it('asigna una sola última plaza entre dos repositorios y conserva cancelación y reactivación', async () => {
+    const id = randomUUID();
+    const ahora = new Date('2026-11-06T18:00:00.000Z');
+    const avisoAnterior = (await almacen.leer()).avisoTalleres;
+    const datos = (correo) => ({
+      nombre: 'Participante sintético',
+      correo,
+      telefono: '5500000000',
+      procedencia: 'externa',
+      aceptoAviso: true,
+      versionAviso: 'prueba-mysql',
+    });
+    try {
+      await almacen.cambiar((s) => {
+        s.avisoTalleres = { url: 'https://example.test/aviso-mysql', version: 'prueba-mysql' };
+        s.entradas.push({
+          id,
+          tipo: 'taller',
+          publicado: { nombre: 'Prueba MySQL' },
+          version: 1,
+          inscripcion: {
+            cupo: 1,
+            estado: 'programado',
+            apertura: '2026-11-01T00:00:00.000Z',
+            cierre: '2026-11-09T00:00:00.000Z',
+          },
+        });
+      });
+      const otro = new AlmacenCmsMysql(db);
+      const respuestas = await Promise.allSettled([
+        almacen.cambiar((s) => registrarInscripcion(s, id, datos('uno@example.test'), ahora)),
+        otro.cambiar((s) => registrarInscripcion(s, id, datos('dos@example.test'), ahora)),
+      ]);
+      expect(respuestas.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(respuestas.find((r) => r.status === 'rejected').reason.codigo).toBe('CUPO_AGOTADO');
+      let inscrito = (await otro.leer()).inscripciones.find((i) => i.tallerId === id);
+      await almacen.cambiar((s) =>
+        cambiarInscripcion(
+          s,
+          inscrito.id,
+          {
+            accion: 'cancelar',
+            motivo: 'Solicitud de prueba',
+            version: 1,
+          },
+          { id: 'prueba-mysql' },
+          ahora,
+        ),
+      );
+      await otro.cambiar((s) =>
+        cambiarInscripcion(
+          s,
+          inscrito.id,
+          {
+            ...datos(inscrito.correo),
+            accion: 'reactivar',
+            motivo: 'Consentimiento de prueba',
+            version: 2,
+          },
+          { id: 'prueba-mysql' },
+          ahora,
+        ),
+      );
+      inscrito = (await new AlmacenCmsMysql(db).leer()).inscripciones.find(
+        (i) => i.tallerId === id,
+      );
+      expect(inscrito.estado).toBe('confirmada');
+      expect(inscrito.historial).toHaveLength(3);
+    } finally {
+      await almacen.cambiar((s) => {
+        s.entradas = s.entradas.filter((t) => t.id !== id);
+        s.inscripciones = s.inscripciones.filter((i) => i.tallerId !== id);
+        s.avisoTalleres = avisoAnterior;
+      });
+    }
   });
 });

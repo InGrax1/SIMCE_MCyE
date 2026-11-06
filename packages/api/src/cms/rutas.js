@@ -1,4 +1,6 @@
 import express from 'express';
+import { crearRutasTalleres } from '../talleres/rutas.js';
+import { validarPublicacionTaller } from '../talleres/reglas.js';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile, unlink, readFile } from 'node:fs/promises';
@@ -37,6 +39,7 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recupe
     res.set('Cache-Control', 'no-store');
     next();
   });
+  router.use(crearRutasTalleres({ almacen, auth, publicador }));
   router.get('/publico/contenido', async (_req, res) =>
     res.json(proyectarPortal(await almacen.leer())),
   );
@@ -252,8 +255,25 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recupe
       const entrada = buscar(estado, req.params.id);
       version(entrada, req.body.version);
       validarPublicacion(entrada);
+      validarPublicacionTaller(entrada, entrada.borrador, req.body.motivo);
+      const fechasAnteriores = entrada.fechasPublicadas ?? entrada.publicado;
+      if (
+        entrada.tipo === 'taller' &&
+        entrada.inscripcion &&
+        fechasAnteriores &&
+        ['inicio', 'fin'].some((c) => entrada.borrador[c] !== fechasAnteriores[c])
+      )
+        (entrada.historialOperativo ??= []).push({
+          accion: 'CAMBIAR_FECHAS',
+          motivo: req.body.motivo.trim(),
+          anterior: { inicio: fechasAnteriores.inicio, fin: fechasAnteriores.fin },
+          usuarioId: req.usuario.id,
+          momento: new Date().toISOString(),
+        });
       validarAsociacionGaleria(estado, entrada.tipo, entrada.borrador, true);
       entrada.publicado = structuredClone(entrada.borrador);
+      if (entrada.tipo === 'taller')
+        entrada.fechasPublicadas = { inicio: entrada.publicado.inicio, fin: entrada.publicado.fin };
       entrada.version++;
       entrada.validacion = 'revisado-por-publicador';
       estado.revisionPortal++;
@@ -271,6 +291,8 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recupe
           'FICHA_ESENCIAL',
           'La ficha institucional se actualiza publicando sus cambios.',
         );
+      if (entrada.tipo === 'taller' && entrada.publicado)
+        entrada.fechasPublicadas = { inicio: entrada.publicado.inicio, fin: entrada.publicado.fin };
       entrada.publicado = null;
       if (
         entrada.tipo === 'area' &&
@@ -291,6 +313,12 @@ export function crearRutasCms({ almacen, auth, publicador, carpetaMedios, recupe
     await almacen.cambiar((estado) => {
       const entrada = buscar(estado, req.params.id);
       version(entrada, req.body.version);
+      if (entrada.tipo === 'taller' && estado.inscripciones.some((i) => i.tallerId === entrada.id))
+        throw new ErrorApi(
+          409,
+          'TALLER_CON_INSCRIPCIONES',
+          'El taller tiene inscripciones. Conserva su historial y cancélalo desde el panel.',
+        );
       if (entrada.tipo === 'institucion')
         throw new ErrorApi(
           422,

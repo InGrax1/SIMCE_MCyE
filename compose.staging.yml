@@ -44,6 +44,8 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
       AVISO_INTERES_URL: ${AVISO_INTERES_URL:-}
       AVISO_INTERES_VERSION: ${AVISO_INTERES_VERSION:-}
+      AVISO_TALLERES_URL: ${AVISO_TALLERES_URL:-}
+      AVISO_TALLERES_VERSION: ${AVISO_TALLERES_VERSION:-}
     volumes:
       - simce_cms:/app/.local/cms
     depends_on:

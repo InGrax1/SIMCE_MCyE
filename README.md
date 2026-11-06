@@ -1,6 +1,6 @@
 # SIMCE MCyE
 
-Sistema Integral de Manejo, Control y Entrega. Incluye el prototipo operativo de Fase 0 y el portal público React con gestor de contenido de Fase 1, según `Especificacion_SIMCE_MCyE_v0.2.docx`.
+Sistema Integral de Manejo, Control y Entrega. Incluye el prototipo operativo de Fase 0, el portal público React con gestor de contenido de Fase 1 y el inicio técnico de talleres e inscripciones de Fase 2, según `Especificacion_SIMCE_MCyE_v0.2.docx`.
 
 ## Requisitos e instalación
 
@@ -25,6 +25,7 @@ npm run check
 npm run build
 npx playwright install chromium
 npm run check:fase1
+npm run check:fase2
 npm run check:mysql-local
 npm run prototype
 ```
@@ -57,6 +58,8 @@ Para el desarrollo independiente de las vistas existen `dev:portal` y `dev:panel
 `.env.example` contiene marcadores; `.env` y `.local/` están excluidos de Git. No utilice las cuentas sintéticas ni los secretos locales en un alojamiento institucional. El despliegue, los volúmenes y TLS se explican en [docs/despliegue/staging.md](docs/despliegue/staging.md).
 
 ## Estado
+
+La Fase 2 incorpora inscripciones con consentimiento y folio, cupo concurrente, lista privada, exportación CSV/PDF y acciones con historial. El formulario permanece deshabilitado hasta configurar el aviso autorizado. El entorno integrado continúa iniciándose con `dev:fase1`. Consulte el [estado de Fase 2](docs/fase-2/estado.md) y la [guía de talleres](docs/fase-2/talleres-inscripciones.md).
 
 La Fase 1 tiene gestor, publicación conectada al HTML público, galerías por área, recuperación de contraseña, talleres y controles locales. Conserva la composición de Figma con sus mejoras adaptables y animaciones. MySQL nativo y el ensayo de respaldo/restauración se verifican sin Docker. Por indicación del usuario, las pruebas del alojamiento quedan pendientes hasta disponer de servidor. También requieren confirmación institucional el contenido, el aviso de privacidad y la publicación sin asistencia por la responsable. Consulte [docs/fase-1/estado.md](docs/fase-1/estado.md).
 

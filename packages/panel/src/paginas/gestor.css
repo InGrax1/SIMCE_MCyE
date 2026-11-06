@@ -358,3 +358,29 @@
     flex: 1 1 160px;
   }
 }
+.cms-inscripciones {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #cfc5c3;
+}
+.cms-inscripciones fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin-bottom: 24px;
+}
+.cms-inscripciones label {
+  margin: 16px 0;
+}
+.cms-asistentes {
+  list-style: none;
+  padding: 0;
+}
+.cms-asistentes > li {
+  padding: 24px 0;
+  border-top: 1px solid #cfc5c3;
+  overflow-wrap: anywhere;
+}
+.cms-asistentes h4 {
+  margin: 0;
+}
