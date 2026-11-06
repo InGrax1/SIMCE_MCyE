@@ -5,8 +5,10 @@ import { spawn } from 'node:child_process';
 import { AlmacenCmsArchivo } from '../packages/api/src/cms/almacen.js';
 import { hashClave } from '../packages/api/src/cms/autenticacion.js';
 import { avisoPrivacidad } from '../packages/portal/src/avisoPrivacidad.js';
+import { cargarEntornoLocal } from './entorno-local.mjs';
 
 const raiz = resolve(import.meta.dirname, '..');
+cargarEntornoLocal(raiz);
 const carpeta = resolve(raiz, '.local/cms');
 await mkdir(carpeta, { recursive: true });
 const archivoConfiguracion = resolve(carpeta, 'desarrollo.json');
@@ -43,6 +45,11 @@ const puerto = process.env.PORT ?? '3080';
 console.log(`Portal: http://127.0.0.1:${puerto}/ · Gestor: http://127.0.0.1:${puerto}/panel/`);
 console.log(
   'La cuenta de prueba local está en .local/cms/acceso-inicial.json. No es una cuenta institucional.',
+);
+console.log(
+  process.env.CORREO_MODO === 'smtp'
+    ? 'Correo: modo SMTP (envío externo).'
+    : 'Correo: buzón local (sin envío externo). Para enviar, configura CORREO_MODO=smtp en .env.',
 );
 const proceso = spawn(process.execPath, ['packages/api/src/servidor.js'], {
   cwd: raiz,

@@ -44,7 +44,7 @@ npm run db:local
 
 Crea la base MySQL local, aplica migraciones y carga las semillas sin duplicarlas. Conserva el volumen `simce_mysql`. Si falta `.env`, lo crea desde `.env.example` con secretos locales aleatorios. Para aplicar solo migraciones puede usarse `scripts/crear-base-datos-local.ps1 -OmitirSemillas`.
 
-Para el desarrollo independiente de las vistas existen `dev:portal` y `dev:panel`; el panel redirige `/api` a la API local. Antes de iniciar `dev:api`, compile el portal y configure `JWT_SECRET`, `CMS_ORIGENES`, `STORAGE` y, si corresponde, `DATABASE_*`. Las variables se cargan en el entorno del proceso; para un archivo local puede usarse la opción `node --env-file=.env`. El comando `dev:fase1` configura por sí mismo el entorno local integrado.
+Para el desarrollo independiente de las vistas existen `dev:portal` y `dev:panel`; el panel redirige `/api` a la API local. Antes de iniciar `dev:api`, compile el portal y configure `JWT_SECRET`, `CMS_ORIGENES`, `STORAGE` y, si corresponde, `DATABASE_*`. Las variables se cargan en el entorno del proceso; para un archivo local puede usarse la opción `node --env-file=.env`. El comando `dev:fase1` lee automáticamente el `.env` de la raíz y configura el entorno local integrado. Las variables del proceso tienen prioridad; el puerto predeterminado es 3080 si no se define `PORT`. Para enviar copias de consultas, configure `CORREO_MODO=smtp` y los datos `SMTP_*`, y reinicie la instancia activa. El arranque indica si utiliza SMTP o el buzón de archivos, sin imprimir credenciales.
 
 ## Paquetes y configuración
 

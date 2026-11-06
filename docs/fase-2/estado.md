@@ -41,6 +41,8 @@ Tras incorporar las consultas web: 71 pruebas generales y cuatro de integración
 
 Tras añadir acceso guardado y copia por correo: 78 pruebas generales y cuatro de integración MySQL aprobadas por separado, compilación correcta, diez flujos de navegador y once revisiones axe sin incidencias graves o críticas. Se verifican regreso al sitio, recuperación desde la copia local en otro navegador y tras borrar los datos, retirada del acceso local y almacenamiento bloqueado. También se prueban rechazo del proveedor de correo, HTML escapado, origen configurado y ausencia de claves en el estado y la auditoría del servidor. Las copias siguen usando el buzón local; estos resultados no acreditan entrega SMTP real.
 
+Corrección posterior del arranque local: `dev:fase1` carga automáticamente `.env`, conserva la prioridad de variables del proceso e informa del modo de correo sin imprimir credenciales. Se aprobaron 81 pruebas generales y la compilación. Se verificaron conexión TLS y autenticación del SMTP configurado por el usuario, sin enviar mensajes de prueba. La instancia local se reinició en el puerto 3080 con SMTP y el aviso v3; las cuentas, contenido, inscripciones, intereses y consultas se conservaron. La recepción de la copia en una bandeja real queda por comprobar al enviar una consulta nueva.
+
 ## Pendientes para aceptar la fase
 
 - DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.
