@@ -2,7 +2,7 @@
 
 - Fecha de seguimiento institucional: 6 de noviembre de 2026, America/Mexico_City. Se conservan los resultados del corte técnico del 28 de octubre, identificados más abajo.
 - Alcance acordado: completar y verificar localmente; las comprobaciones del alojamiento quedan diferidas porque todavía no existe servidor.
-- Estado: portal y gestor implementados y contenido aceptado por la institución según comunicación del usuario. Pendientes: autorización del nuevo aviso, designación/alta de cuentas, publicación autónoma por la responsable y despliegue.
+- Estado: contenido aceptado según comunicación del usuario; aviso y roles autorizados. El aviso está disponible y conectado a los formularios locales. Se crea un administrador de pruebas. Pendientes: identidad del administrador institucional, alta de la responsable para su ensayo, publicación autónoma y despliegue.
 - Referencia visual: [CEA, frame 1:3](https://www.figma.com/design/Rw9Bb37khwyJnL2wUEjK89/CEA?node-id=1-3).
 
 ## Implementación local
@@ -41,8 +41,8 @@ En el corte técnico del 28 de octubre aprobaron 50 pruebas de API, dominio y pa
 ## Seguimiento de la institución
 
 - Contenido aceptado por la institución: el usuario lo confirma el 6 de noviembre de 2026 para textos, fotografías, identidad, contactos, asignaturas, programas y convocatorias del material presentado. El detalle queda en [aceptacion-institucional.md](aceptacion-institucional.md).
-- Aviso específico de SIMCE redactado en versiones integral y simplificada: [propuesta de privacidad](../privacidad/aviso-privacidad-simce.md). Pendiente autorizar la nueva versión y definir su URL antes de habilitar formularios; las variables de activación se conservan sin cambios.
-- [Cuentas institucionales propuestas](../operacion/cuentas-institucionales.md): empezar con responsable y administrador individuales. Pendiente designar a las personas y autorizar las altas.
+- Aviso de SIMCE autorizado por el usuario: [registro y texto](../privacidad/aviso-privacidad-simce.md), versión `simce-2026-11-06-v1`. Se incorpora el recurso público y el arranque local lo configura para ambos formularios. El alojamiento futuro lo servirá bajo su propio origen HTTPS.
+- [Roles autorizados y cuentas](../operacion/cuentas-institucionales.md): se crea `admin.pruebas@example.test` por petición del usuario, con cambio inicial obligatorio y credencial fuera de Git. El administrador institucional definitivo queda pendiente de identidad; la responsable mantiene su ensayo para después.
 - Publicación sin asistencia por la responsable: se realizará después, según decisión del usuario. Queda preparado el [registro local](registro-publicacion-responsable.md), sin resultados anticipados.
 
 Los textos e imágenes de referencia no acreditan sesiones, existencias ni productos reales adicionales. No se inventan fechas de talleres, precios, disponibilidad ni una quinta especie de hamburguesa. La sustitución de referencias por material aprobado se realiza desde el gestor.

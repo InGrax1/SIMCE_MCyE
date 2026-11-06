@@ -5,7 +5,7 @@ Estado al 6 de noviembre de 2026: pendiente de ejecución, a petición del usuar
 ## Preparación por el observador
 
 - Iniciar el entorno local integrado con la compilación vigente y comprobar que responde el portal y `/panel/`.
-- Preparar y entregar una cuenta individual de rol `responsable`, con cambio inicial de contraseña. Conservar la contraseña fuera de este registro. La [propuesta de cuentas](../operacion/cuentas-institucionales.md) define la asignación.
+- Preparar y entregar una cuenta individual de rol `responsable`, ya autorizado, con cambio inicial de contraseña. Conservar la contraseña fuera de este registro. El [registro de roles y cuentas](../operacion/cuentas-institucionales.md) define la asignación. El administrador de pruebas no sustituye esta cuenta.
 - Acordar un texto de prueba sin datos personales. Como ejemplo identificado: título «Aviso de prueba de publicación local», descripción «Esta entrada se utiliza para comprobar el manejo autónomo del gestor en el equipo de revisión» y la fecha real del ensayo.
 - Preparar una ventana pública independiente para verificar el resultado. El ensayo no requiere servidor institucional ni activar los formularios de datos personales.
 

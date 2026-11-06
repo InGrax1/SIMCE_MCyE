@@ -1,8 +1,8 @@
 # Aviso de privacidad de SIMCE MCyE
 
-Versión de trabajo: `simce-2026-11-06-v0.1`. Fecha de elaboración: 6 de noviembre de 2026. Estado: propuesta específica del Módulo, preparada por solicitud del usuario para revisión de la FES Cuautitlán. La aceptación del contenido del portal no se extiende automáticamente a este documento nuevo. La fecha de entrada en vigor y la URL institucional se incorporarán al autorizarlo.
+Versión autorizada: `simce-2026-11-06-v1`. Fecha de elaboración y autorización: 6 de noviembre de 2026. El usuario autoriza expresamente el aviso en esta conversación. Se registra esa autorización sin atribuirla a una firma o funcionario no identificado. La versión final conserva el alcance y los plazos del texto presentado, con ajustes de redacción para reflejar su autorización y consulta en el portal.
 
-El texto cubre el tratamiento previsto para talleres, contactos de servicio social y acceso del personal a SIMCE. Las condiciones propuestas de conservación y los servicios de alojamiento/correo se deben confirmar antes de su publicación. Las notas de revisión al final de este archivo son administrativas y no forman parte del texto destinado al público.
+El texto cubre talleres, contactos de servicio social y acceso del personal a SIMCE. El recurso público de la versión es `/privacidad/simce-2026-11-06-v1.html`, dentro del mismo portal. La revisión local puede consultarlo por HTTP en loopback; el alojamiento institucional deberá servirlo con HTTPS. Las notas al final de este archivo son administrativas y no forman parte del aviso público. La autorización del aviso no acredita la contratación de proveedores, la ejecución de la depuración ni las pruebas del futuro alojamiento.
 
 ## Aviso simplificado
 
@@ -10,7 +10,7 @@ La Universidad Nacional Autónoma de México, por conducto de la Facultad de Est
 
 Utilizaremos sus datos para gestionar su inscripción y participación en talleres; responder solicitudes de información e interés en servicio social; y administrar las cuentas, permisos y seguridad del personal que utiliza el sistema. En los formularios públicos se solicita su aceptación expresa del aviso. No se utilizarán sus datos para publicidad ni para finalidades adicionales. No se prevén transferencias que requieran su consentimiento; las comunicaciones exigidas por una disposición aplicable o por una autoridad competente se atenderán conforme al marco universitario y legal.
 
-Puede abstenerse de enviar el formulario o solicitar la revocación del consentimiento y el ejercicio de sus derechos de acceso, rectificación, cancelación u oposición ante la Unidad de Transparencia de la UNAM. Para orientación sobre su registro puede escribir a [janelisolis@cuautitlan.unam.mx](mailto:janelisolis@cuautitlan.unam.mx). El aviso integral se encontrará en el enlace «Aviso de privacidad» del formulario correspondiente, con su versión y fecha vigentes. Ese enlace deberá apuntar a la URL institucional de esta versión antes de habilitar la captura.
+Puede abstenerse de enviar el formulario o solicitar la revocación del consentimiento y el ejercicio de sus derechos de acceso, rectificación, cancelación u oposición ante la Unidad de Transparencia de la UNAM. Para orientación sobre su registro puede escribir a [janelisolis@cuautitlan.unam.mx](mailto:janelisolis@cuautitlan.unam.mx). Consulte el aviso integral en el enlace «Aviso de privacidad» del formulario correspondiente o en el pie del portal, con su versión y fecha vigentes.
 
 ## Aviso integral
 
@@ -26,7 +26,7 @@ Para orientación sobre talleres, solicitudes y registros del Módulo: Mtra. Jan
 
 El tratamiento se encuadra en las funciones educativas y de difusión de la Universidad previstas en los artículos 1 y 2 de su Ley Orgánica, en la protección reconocida por los artículos 6 y 16 constitucionales y en la Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados vigente. También se sujeta a la normativa universitaria aplicable sobre datos personales y archivos.
 
-La estructura del aviso atiende a los elementos de información de los artículos 20, 21 y 22 de la [Ley General vigente](https://www.diputados.gob.mx/LeyesBiblio/pdf/LGPDPPSO.pdf). La institución deberá confirmar el fundamento específico de la actividad del Módulo al autorizar esta versión. No se trasladan al sistema las facultades ni los tratamientos propios de otras dependencias.
+La estructura del aviso atiende a los elementos de información de los artículos 20, 21 y 22 de la [Ley General vigente](https://www.diputados.gob.mx/LeyesBiblio/pdf/LGPDPPSO.pdf). Su aplicación se limita a las actividades del Módulo descritas en este documento. No se trasladan al sistema las facultades ni los tratamientos propios de otras dependencias.
 
 ### Datos y finalidades
 
@@ -57,11 +57,11 @@ El acceso se limita al personal autorizado según sus funciones. El rol editor p
 
 Los datos podrán comunicarse a las áreas universitarias competentes cuando sea necesario para atender el trámite solicitado y a las autoridades que lo requieran de forma legalmente procedente. No se prevén transferencias para comercialización o finalidades ajenas. Si se incorporan destinatarios o finalidades que requieran consentimiento, se informarán antes de realizar la transferencia.
 
-El alojamiento, respaldo y correo, si se prestan mediante terceros, deberán realizarse por proveedores sujetos a instrucciones y condiciones de protección de datos definidas por la institución. Antes de habilitar un servicio se deben identificar sus funciones, ubicación del tratamiento y condiciones aplicables. Esta propuesta no declara contratado ni autorizado a ningún proveedor.
+El alojamiento, respaldo y correo, si se prestan mediante terceros, deberán realizarse por proveedores sujetos a instrucciones y condiciones de protección de datos definidas por la institución. Antes de habilitar un servicio se deben identificar sus funciones, ubicación del tratamiento y condiciones aplicables. Este aviso no declara contratado ni autorizado a ningún proveedor.
 
 ### Conservación y eliminación
 
-Se propone conservar los datos de inscripción durante 24 meses después de concluir el taller y los contactos de interés durante 12 meses después de cerrar su atención. Son plazos operativos propuestos para revisión institucional, sujetos al catálogo de disposición documental y a las obligaciones aplicables; no constituyen por sí mismos una política archivística autorizada.
+Los plazos operativos previstos son 24 meses después de concluir el taller para los datos de inscripción y 12 meses después de cerrar su atención para los contactos de interés. Están sujetos al catálogo de disposición documental y a las obligaciones aplicables; la autorización de este aviso no sustituye los instrumentos archivísticos correspondientes.
 
 Las cuentas se mantendrán durante la asignación autorizada del personal; al terminarla se revocarán sus accesos. La conservación posterior de identificadores de auditoría, expedientes y evidencias se determinará con los instrumentos universitarios aplicables. No se presume una conservación indefinida.
 
@@ -83,18 +83,18 @@ La aplicación actual no incorpora herramientas publicitarias ni analítica de t
 
 ### Cambios y consulta del aviso
 
-La versión autorizada, su fecha de actualización y el medio para consultar su contenido se publicarán junto a los formularios de SIMCE. Se conservarán las versiones anteriores vinculadas a los consentimientos registrados. Cuando un cambio requiera nueva aceptación, se solicitará antes de continuar el tratamiento correspondiente. La URL institucional exacta se asentará al publicar esta versión; un documento de trabajo del repositorio no sustituye ese enlace público.
+La versión vigente y su fecha de actualización están disponibles desde el pie del portal y los enlaces de los formularios de SIMCE. Se conservarán las versiones anteriores vinculadas a los consentimientos registrados. Cuando un cambio requiera nueva aceptación, se solicitará antes de continuar el tratamiento correspondiente. Esta versión se identifica como `simce-2026-11-06-v1`; su recurso público se conserva para permitir su consulta posterior.
 
-## Revisión y autorización de esta propuesta
+## Autorización y publicación
 
-| Dato                                 | Situación al 6 de noviembre de 2026                                                                                                                  |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Redacción solicitada por el usuario  | Preparada en versiones simplificada e integral.                                                                                                      |
-| Base de contenido                    | Funciones implementadas de SIMCE; aviso general FESC utilizado como referencia de contexto.                                                          |
-| Revisión sugerida                    | Área competente de la FESC/UNAM; puede solicitarse orientación a la Unidad Jurídica o a la Unidad de Transparencia. No se ha enviado este documento. |
-| Confirmaciones necesarias            | Responsable formal y fundamento específico; necesidad de los campos; plazos y procedimiento de depuración; proveedores, encargados y comunicaciones. |
-| Persona y fecha que autorizan        | Pendientes.                                                                                                                                          |
-| URL institucional y entrada en vigor | Pendientes.                                                                                                                                          |
-| Activación de formularios            | Pendiente de autorización y publicación del aviso. Las variables `AVISO_INTERES_*` y `AVISO_TALLERES_*` no se han modificado.                        |
+| Dato                                     | Situación al 6 de noviembre de 2026                                                                                                                                                                  |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Redacción solicitada por el usuario      | Autorizada en versiones simplificada e integral el 6 de noviembre de 2026.                                                                                                                           |
+| Base de contenido                        | Funciones implementadas de SIMCE; aviso general FESC utilizado como referencia de contexto.                                                                                                          |
+| Evidencia de autorización                | Mensaje del usuario: «autorizo el aviso y los roles». No se registra un dictamen jurídico adicional ni se envía el documento a terceros.                                                             |
+| Implementación pendiente para producción | Procedimiento de depuración y respaldo; identificación de proveedores y sus condiciones; alojamiento HTTPS.                                                                                          |
+| Persona y fecha que autorizan            | Usuario de esta conversación, 6 de noviembre de 2026. Nombre y cargo no comunicados.                                                                                                                 |
+| Recurso público y vigencia de versión    | `/privacidad/simce-2026-11-06-v1.html`, versión final del 6 de noviembre de 2026. El dominio institucional sigue pendiente del alojamiento.                                                          |
+| Activación de formularios                | El lanzador local configura esta versión para interés e inscripciones, salvo que se sobrescriban sus variables. El despliegue institucional requiere configurar el mismo recurso en su origen HTTPS. |
 
 El [aviso general de la FES Cuautitlán](https://www.cuautitlan.unam.mx/aviso/Aviso_privacidad_integral.pdf), actualizado en 2019, aporta la identificación institucional; no se copia su catálogo amplio de datos, sus referencias antiguas ni sus tecnologías de seguimiento como si estuvieran presentes en SIMCE. La redacción se adapta al tratamiento real del proyecto y a la ley vigente consultada el 6 de noviembre de 2026.

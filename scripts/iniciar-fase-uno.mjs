@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { AlmacenCmsArchivo } from '../packages/api/src/cms/almacen.js';
 import { hashClave } from '../packages/api/src/cms/autenticacion.js';
+import { avisoPrivacidad } from '../packages/portal/src/avisoPrivacidad.js';
 
 const raiz = resolve(import.meta.dirname, '..');
 const carpeta = resolve(raiz, '.local/cms');
@@ -54,6 +55,10 @@ const proceso = spawn(process.execPath, ['packages/api/src/servidor.js'], {
     PORT: puerto,
     CMS_DIR: carpeta,
     CORREO_MODO: 'archivo',
+    AVISO_INTERES_URL: process.env.AVISO_INTERES_URL ?? avisoPrivacidad.url,
+    AVISO_INTERES_VERSION: process.env.AVISO_INTERES_VERSION ?? avisoPrivacidad.version,
+    AVISO_TALLERES_URL: process.env.AVISO_TALLERES_URL ?? avisoPrivacidad.url,
+    AVISO_TALLERES_VERSION: process.env.AVISO_TALLERES_VERSION ?? avisoPrivacidad.version,
     PANEL_ORIGEN_PUBLICO: `http://127.0.0.1:${puerto}`,
     JWT_SECRET: configuracion.secreto,
     CMS_ORIGENES: `http://127.0.0.1:${puerto},http://localhost:${puerto}`,

@@ -14,11 +14,11 @@ Una edición del contenido continúa siendo borrador hasta publicarla. Los cambi
 
 ## Configurar el aviso
 
-`AVISO_TALLERES_URL` y `AVISO_TALLERES_VERSION` deben configurarse juntas después de la autorización institucional. La URL debe usar HTTPS; la versión admite letras, números, puntos, guiones y guiones bajos, hasta 80 caracteres. Una versión registrada no puede reutilizarse con otra URL. Las URL deben identificar documentos institucionales inmutables y disponibles para acreditar el consentimiento.
+El usuario autoriza el aviso `simce-2026-11-06-v1` el 6 de noviembre de 2026. Se incorpora su página `/privacidad/simce-2026-11-06-v1.html` con versiones integral y simplificada. El pie del portal y el formulario permiten consultarla sin sesión ni JavaScript. Se conserva el archivo de esta versión; un cambio de texto requiere otra versión y otra ruta.
 
-El archivo `.env.example` mantiene ambos valores vacíos. Para cargar un `.env` local al iniciar puede usarse `node --env-file=.env scripts/iniciar-fase-uno.mjs`. El lanzador también hereda las variables del proceso. No se incluyen avisos de ejemplo activados en el contenido local ni en el entorno de producción.
+El lanzador `dev:fase1` usa este aviso por defecto para interés e inscripciones. `AVISO_TALLERES_URL` y `AVISO_TALLERES_VERSION` permiten sobrescribirlo. La ruta relativa se admite únicamente para esta página y versión incluidas; los avisos externos mantienen la exigencia de HTTPS y no pueden contener credenciales. La versión admite letras, números, puntos, guiones y guiones bajos, hasta 80 caracteres; no puede reutilizarse con otra URL.
 
-Retirar las dos variables y reiniciar deshabilita nuevas inscripciones, sin borrar registros ni las versiones anteriores del aviso. Un formulario abierto con una versión anterior se rechaza al enviar. El administrador debe conservar además los documentos institucionales correspondientes a las versiones históricas.
+El archivo `.env.example` mantiene los valores vacíos para que cada alojamiento configure la activación. En producción, configure ambos valores con la ruta y versión indicadas; la ruta heredará el origen HTTPS real. Para deshabilitar un formulario local, establezca explícitamente su URL y versión vacías y reinicie. Si carga `.env` con `node --env-file=.env scripts/iniciar-fase-uno.mjs`, sus valores vacíos también deshabilitan el formulario. Los registros y las versiones anteriores no se borran. Un formulario abierto con una versión anterior se rechaza al enviar.
 
 ## Consultar asistentes
 

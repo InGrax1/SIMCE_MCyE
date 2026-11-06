@@ -1,6 +1,6 @@
 # Estado de Fase 2
 
-Inicio técnico: 6 de noviembre de 2026, por instrucción del usuario. Alcance de referencia: §15.1 y requisitos M de RF-3 en `Especificacion_SIMCE_MCyE_v0.2.docx`. La fase corresponde a talleres e inscripciones. El usuario comunica la aceptación institucional del contenido presentado. La publicación autónoma por la responsable se realizará después; el nuevo aviso y las pruebas de alojamiento conservan sus propios pendientes.
+Inicio técnico: 6 de noviembre de 2026, por instrucción del usuario. Alcance de referencia: §15.1 y requisitos M de RF-3 en `Especificacion_SIMCE_MCyE_v0.2.docx`. El contenido está aceptado según comunicación del usuario, quien también autoriza el aviso y los roles. El aviso se integra al portal y a la revisión local. La publicación autónoma por la responsable y las pruebas de alojamiento siguen pendientes.
 
 ## Avance implementado
 
@@ -33,12 +33,14 @@ La disponibilidad se consulta al abrir el formulario y se verifica nuevamente al
 
 Resultado local del 6 de noviembre: 64 pruebas aprobadas en la verificación general, tres pruebas de integración MySQL aprobadas por separado, compilación correcta y cuatro flujos de navegador con cuatro revisiones axe sin incidencias graves o críticas. La regresión de Fase 1 pasó sus flujos y nueve revisiones de accesibilidad; Lighthouse móvil local registró LCP de 1984 ms, rendimiento de 97/100 y accesibilidad de 100/100. Se inspeccionaron el PDF descargado y un caso de cuatro páginas con nombres y correos largos, sin recortes ni solapamientos. Estas comprobaciones locales no sustituyen la aceptación institucional.
 
+Actualización tras la autorización del aviso: 66 pruebas generales aprobadas, compilación correcta y cinco flujos de navegador con seis revisiones axe sin incidencias graves o críticas, incluidas la página del aviso en escritorio/móvil y su enlace desde la casilla de consentimiento. Se verificó la consulta sin JavaScript. La regresión de Fase 1 conserva sus flujos y nueve revisiones de accesibilidad aprobados; Lighthouse local registró LCP de 2054 ms, rendimiento de 96/100 y accesibilidad de 100/100. El servidor local utiliza el aviso autorizado para ambos formularios y el administrador de pruebas exige cambio inicial de contraseña.
+
 ## Pendientes para aceptar la fase
 
-- Resolver DE-06: autorizar la [propuesta específica de aviso](../privacidad/aviso-privacidad-simce.md), ya redactada por solicitud del usuario, y definir la versión final y URL institucional estable.
+- DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.
 - Con el contenido y las convocatorias presentados ya aceptados según confirmación del usuario, ejecutar el ciclo desde un dispositivo externo en el alojamiento institucional. Las nuevas convocatorias se revisarán al publicarlas.
 - Revisar el formulario con teclado y navegador del teléfono físico. La emulación y axe no sustituyen esa prueba.
-- Acordar y verificar la retención institucional, incluida la depuración prevista a 24 meses y el tratamiento de exportaciones y respaldos, antes de usar datos reales.
+- Implementar y verificar la depuración correspondiente a los plazos del aviso autorizado, junto con el tratamiento de exportaciones y respaldos y los instrumentos archivísticos aplicables, antes de operar con datos reales.
 - Programar RF-3.7 (correos de confirmación y notificación) y decidir si se incluye RF-3.10 (lista de espera). Esta entrega no envía correos de inscripción ni mantiene lista de espera.
 
 El avance técnico inicia la fase; no acredita su aceptación institucional ni su disponibilidad en producción. La operación local se explica en [la guía de talleres e inscripciones](talleres-inscripciones.md).

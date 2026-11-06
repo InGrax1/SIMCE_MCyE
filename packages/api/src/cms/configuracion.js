@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { access } from 'node:fs/promises';
 import { AlmacenCmsArchivo, AlmacenCmsMysql } from './almacen.js';
 import { crearAutenticacion } from './autenticacion.js';
 import { crearPublicador } from './publicacion.js';
@@ -7,10 +8,20 @@ import { crearConexionBaseDatos } from '../infra/baseDatos.js';
 import { configurarCorreo } from './correo.js';
 import { crearRecuperacion } from './recuperacion.js';
 import { configurarAvisoTalleres } from '../talleres/aviso.js';
+import { validarAvisoConfigurado } from './avisoPrivacidad.js';
+import { avisoPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
   const carpeta = resolve(process.env.CMS_DIR ?? resolve(raiz, '.local/cms'));
+  const carpetaPortal = resolve(process.env.PORTAL_DIST ?? resolve(raiz, 'packages/portal/dist'));
+  const avisoInteres = validarAvisoConfigurado(
+    process.env.AVISO_INTERES_URL,
+    process.env.AVISO_INTERES_VERSION,
+  );
+  validarAvisoConfigurado(process.env.AVISO_TALLERES_URL, process.env.AVISO_TALLERES_VERSION);
+  if ([process.env.AVISO_INTERES_URL, process.env.AVISO_TALLERES_URL].includes(avisoPrivacidad.url))
+    await access(resolve(carpetaPortal, avisoPrivacidad.url.slice(1)));
   let db;
   if (process.env.NODE_ENV === 'production' && process.env.STORAGE !== 'mysql')
     throw new Error('En producción el gestor requiere STORAGE=mysql.');
@@ -22,17 +33,11 @@ export async function configurarCms() {
       : new AlmacenCmsArchivo(resolve(carpeta, 'estado.json'));
   if (db) await almacen.iniciar();
   await configurarAvisoTalleres(almacen);
-  const url = process.env.AVISO_INTERES_URL;
-  const versionAviso = process.env.AVISO_INTERES_VERSION;
-  if (url && !/^https:\/\//.test(url))
-    throw new Error('El aviso de privacidad necesita una URL HTTPS.');
-  const avisoInteres = url && versionAviso ? { url, version: versionAviso } : null;
   if (JSON.stringify((await almacen.leer()).avisoInteres ?? null) !== JSON.stringify(avisoInteres))
     await almacen.cambiar((s) => {
       s.avisoInteres = avisoInteres;
       s.revisionPortal++;
     });
-  const carpetaPortal = resolve(process.env.PORTAL_DIST ?? resolve(raiz, 'packages/portal/dist'));
   const carpetaMedios = resolve(carpeta, 'medios');
   const auth = await crearAutenticacion({
     almacen,

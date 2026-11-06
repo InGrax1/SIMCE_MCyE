@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { InscripcionTaller } from './InscripcionTaller.jsx';
+import { avisoPrivacidad } from './avisoPrivacidad.js';
 import { procesos, secciones } from './contenido.js';
 import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
 import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
@@ -963,6 +964,7 @@ function Pie() {
       </div>
       <div>
         <h2>Información</h2>
+        <a href={avisoPrivacidad.url}>Aviso de privacidad</a>
         <a href="#productos">Productos y embutidos</a>
         <a href="#servicio-social">Servicio social</a>
         <a href="#contacto">Contacto</a>

@@ -9,6 +9,7 @@ import { AlmacenCmsArchivo } from '../packages/api/src/cms/almacen.js';
 import { crearAutenticacion, hashClave } from '../packages/api/src/cms/autenticacion.js';
 import { crearRutasCms } from '../packages/api/src/cms/rutas.js';
 import { crearPublicador } from '../packages/api/src/cms/publicacion.js';
+import { avisoPrivacidad } from '../packages/portal/src/avisoPrivacidad.js';
 
 const raiz = resolve(import.meta.dirname, '..');
 const artefactos = join(raiz, 'artifacts/fase-2');
@@ -27,7 +28,7 @@ await almacen.cambiar(async (s) => {
     activo: true,
     debeCambiar: false,
   });
-  s.avisoTalleres = { url: 'https://example.test/aviso-sintetico', version: 'solo-pruebas-v1' };
+  s.avisoTalleres = { url: avisoPrivacidad.url, version: avisoPrivacidad.version };
 });
 const origenes = [];
 const auth = await crearAutenticacion({
@@ -112,6 +113,28 @@ try {
   await pagina.goto(`${origen}/#talleres`);
   await pagina.locator('.taller-inscripcion summary').click();
   await pagina.getByRole('button', { name: 'Confirmar inscripción' }).waitFor();
+  const paginaAviso = contexto.waitForEvent('page');
+  await pagina
+    .locator('.formulario-inscripcion')
+    .getByRole('link', { name: 'aviso de privacidad', exact: true })
+    .click();
+  const aviso = await paginaAviso;
+  await aviso.waitForLoadState();
+  assert.equal(new URL(aviso.url()).pathname, avisoPrivacidad.url);
+  await aviso.getByRole('heading', { name: 'Aviso integral', exact: true }).waitFor();
+  for (const ancho of [1440, 390]) {
+    await aviso.setViewportSize({ width: ancho, height: 900 });
+    assert.equal(
+      await aviso.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+    await axe(aviso, `Aviso autorizado ${ancho}px`);
+    await aviso.screenshot({ path: join(artefactos, `aviso-${ancho}.png`), fullPage: true });
+  }
+  await aviso.close();
+  reporte.flujo.push(
+    'Aviso autorizado accesible desde la casilla de consentimiento, en el mismo origen',
+  );
   assert.equal(await pagina.getByLabel(/He leído y acepto/).isChecked(), false);
   for (const ancho of [1440, 1024, 768, 390, 320]) {
     await pagina.setViewportSize({ width: ancho, height: 1000 });
@@ -153,7 +176,7 @@ try {
         telefono: '5500000000',
         procedencia: 'externa',
         aceptoAviso: true,
-        versionAviso: 'solo-pruebas-v1',
+        versionAviso: avisoPrivacidad.version,
       },
     },
   );

@@ -2,27 +2,27 @@
 
 Estado al 6 de noviembre de 2026: contenido aceptado por la institución, según confirmación expresa del usuario en esta conversación. La confirmación comprende textos, fotografías, identidad, contactos, asignaturas, programas y convocatorias del material presentado. Referencia del código del portal en este corte: `ab55cab`. Se registra la comunicación recibida; no se añade una firma ni un nombre de funcionario que no se haya proporcionado.
 
-El aviso específico de privacidad se ha redactado por solicitud del usuario y queda pendiente de autorización de esa nueva versión. Las cuentas institucionales están propuestas. La prueba de publicación por la responsable se realizará después, según indicó el usuario; no se registra como ejecutada. Las pruebas del alojamiento continúan diferidas hasta disponer de servidor.
+El usuario autoriza después el aviso y los roles mediante el mensaje «autorizo el aviso y los roles». El aviso final `simce-2026-11-06-v1` se incorpora al portal y al entorno local. Por instrucción adicional se crea un administrador de pruebas local; la identidad del administrador institucional definitivo sigue pendiente. La prueba de publicación por la responsable se realizará después y no se registra como ejecutada. Las pruebas del alojamiento continúan diferidas hasta disponer de servidor.
 
 ## Aceptación del contenido y seguimiento
 
-| Contenido               | Revisión requerida                                                                                    | Estado                                                                    |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Identidad y contacto    | Nombre, adscripción, identidad visual, responsable y contactos del material presentado.               | Aceptado por la institución; comunicado por el usuario el 6 de noviembre. |
-| Redes sociales          | No se ha proporcionado una URL oficial adicional; el icono existente conduce al contacto aceptado.    | Se conserva el enlace actual.                                             |
-| Áreas y procesos        | Textos y descripciones del material presentado.                                                       | Aceptado.                                                                 |
-| Prácticas               | Textos, asignaturas y vinculación académica del material presentado.                                  | Aceptado.                                                                 |
-| Actividades             | Descripciones y asociaciones del material presentado.                                                 | Aceptado.                                                                 |
-| Productos               | Textos y fotografías presentados. Se conserva la descripción de las imágenes ilustrativas como tales. | Aceptado.                                                                 |
-| Servicio social         | Programas, textos y contactos presentados.                                                            | Aceptado.                                                                 |
-| Talleres                | Convocatorias del material presentado; no se crean fechas ni cupos nuevos en este registro.           | Aceptado.                                                                 |
-| Galería                 | Uso del material fotográfico e identidad presentados.                                                 | Aceptado.                                                                 |
-| Aviso de privacidad     | Nuevo aviso integral y simplificado de SIMCE.                                                         | Redactado; pendiente de revisión, autorización y URL institucional.       |
-| Cuentas institucionales | Dos accesos individuales iniciales: responsable y administrador; editor/operador cuando se designen.  | Propuesta preparada; pendientes de designación y alta.                    |
+| Contenido            | Revisión requerida                                                                                    | Estado                                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Identidad y contacto | Nombre, adscripción, identidad visual, responsable y contactos del material presentado.               | Aceptado por la institución; comunicado por el usuario el 6 de noviembre.                                     |
+| Redes sociales       | No se ha proporcionado una URL oficial adicional; el icono existente conduce al contacto aceptado.    | Se conserva el enlace actual.                                                                                 |
+| Áreas y procesos     | Textos y descripciones del material presentado.                                                       | Aceptado.                                                                                                     |
+| Prácticas            | Textos, asignaturas y vinculación académica del material presentado.                                  | Aceptado.                                                                                                     |
+| Actividades          | Descripciones y asociaciones del material presentado.                                                 | Aceptado.                                                                                                     |
+| Productos            | Textos y fotografías presentados. Se conserva la descripción de las imágenes ilustrativas como tales. | Aceptado.                                                                                                     |
+| Servicio social      | Programas, textos y contactos presentados.                                                            | Aceptado.                                                                                                     |
+| Talleres             | Convocatorias del material presentado; no se crean fechas ni cupos nuevos en este registro.           | Aceptado.                                                                                                     |
+| Galería              | Uso del material fotográfico e identidad presentados.                                                 | Aceptado.                                                                                                     |
+| Aviso de privacidad  | Aviso integral y simplificado `simce-2026-11-06-v1`.                                                  | Autorizado por el usuario; disponible en `/privacidad/simce-2026-11-06-v1.html`.                              |
+| Cuentas y roles      | Responsable y administrador individuales; editor/operador al designarlos.                             | Roles autorizados; administrador de pruebas local creado. Administrador institucional pendiente de identidad. |
 
 La cuenta de revisión local y las entradas sintéticas no deben trasladarse a producción. El material de referencia se describe en [contenido-animaciones.md](contenido-animaciones.md).
 
-Documentos preparados: [aviso de privacidad](../privacidad/aviso-privacidad-simce.md), [propuesta de cuentas](../operacion/cuentas-institucionales.md) y [registro del ensayo de publicación](registro-publicacion-responsable.md). La aceptación del contenido no modifica los pendientes de alojamiento o báscula.
+Documentos preparados: [aviso de privacidad](../privacidad/aviso-privacidad-simce.md), [roles y cuentas autorizados](../operacion/cuentas-institucionales.md) y [registro del ensayo de publicación](registro-publicacion-responsable.md). La aceptación del contenido no modifica los pendientes de alojamiento o báscula.
 
 ## Prueba por la responsable sin asistencia
 

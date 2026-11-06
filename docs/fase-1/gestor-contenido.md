@@ -36,7 +36,7 @@ El gestor conserva las tres versiones anteriores. «Restaurar» copia una versi�
 
 Los talleres se muestran en «Talleres y avisos», con estado informativo, convocatoria abierta, cerrado o concluido. La convocatoria abierta exige fechas de inicio y conclusión válidas. La información de costo y requisitos es texto revisable. No hay registro de asistentes ni pagos en Fase 1.
 
-El formulario de interés de servicio social solo se habilita cuando el administrador configura `AVISO_INTERES_URL` con la URL HTTPS autorizada y `AVISO_INTERES_VERSION` con su versión. Se exige consentimiento y se guarda la versión aceptada. El gestor permite a responsable/administrador consultar las solicitudes; los datos personales no forman parte del HTML ni de la respuesta pública. No se envían correos automáticamente. La política de atención, conservación y eliminación de estos datos debe ser validada por la institución antes de habilitarlo.
+El formulario de interés de servicio social exige un aviso configurado con `AVISO_INTERES_URL` y `AVISO_INTERES_VERSION`. El usuario autoriza el aviso `simce-2026-11-06-v1`, incluido en `/privacidad/simce-2026-11-06-v1.html`; el lanzador local lo configura por defecto. El alojamiento institucional debe configurar ambos valores y servir el portal por HTTPS. También se admiten avisos externos HTTPS. Vaciar explícitamente ambos valores deshabilita el formulario. Se exige consentimiento y se guarda la versión aceptada. Responsable/administrador consultan las solicitudes sin exponerlas en el HTML ni en la respuesta pública. No se envían correos de interés automáticamente; la depuración y los respaldos se operarán conforme al aviso autorizado y los instrumentos aplicables.
 
 ## Estado de publicación
 
