@@ -7,7 +7,7 @@ El botón «Solicitar información» de cada taller abre un formulario en la pro
 1. Abrir un taller publicado y pulsar «Solicitar información».
 2. Completar nombre y correo y aceptar el aviso vigente. Si se añade una pregunta, admite hasta 1000 caracteres.
 3. Enviar. La confirmación informa si se guardó el acceso en este navegador y el resultado de la copia por correo. No se abre una aplicación externa.
-4. Al regresar al sitio, ir a Talleres → «Mis consultas de talleres» y pulsar «Consultar estado» junto al folio. También se puede abrir «Consultar mi solicitud» inmediatamente después de enviar.
+4. Al regresar al sitio, ir a «Mis consultas de talleres» al inicio de Talleres y pulsar «Consultar estado» junto al folio. El apartado se muestra aunque el navegador esté vacío. Si se intenta repetir una consulta, el aviso de duplicado enlaza a este apartado.
 5. Si se borran los datos del sitio o se cambia de navegador o equipo, abrir «Consulta tu estado» desde el correo. Una consulta válida vuelve a guardarse automáticamente en ese navegador.
 6. Para dejar de mostrarla en un equipo compartido, pulsar «Quitar de este navegador». Esto no borra la consulta del servidor ni su copia en el correo.
 

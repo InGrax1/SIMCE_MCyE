@@ -56,7 +56,7 @@ export function registrarConsulta(estado, tallerId, datos, ahora = new Date()) {
     throw new ErrorApi(
       409,
       'CONSULTA_DUPLICADA',
-      'Ya existe una consulta para este correo y taller. Ábrela en «Mis consultas de talleres» o desde tu correo para continuar en el mismo folio.',
+      'Ya existe una consulta para este correo y taller. Continúa desde tu acceso guardado o pulsa «Consulta tu estado» en el correo de confirmación.',
     );
   const consecutivo = (estado.consecutivoConsultaTaller ?? 0) + 1;
   if (consecutivo > 99999999)

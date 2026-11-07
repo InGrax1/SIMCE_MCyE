@@ -1064,6 +1064,7 @@ function Talleres() {
           Consulta las convocatorias, solicita información y revisa las respuestas de la responsable
           aquí mismo.
         </p>
+        <MisConsultasTaller />
         {talleres.length ? (
           <div className="talleres-grid">
             {talleres.map((t) => (
@@ -1098,7 +1099,6 @@ function Talleres() {
             Por ahora no hay talleres publicados. Escríbenos para consultar próximas actividades.
           </p>
         )}
-        <MisConsultasTaller />
         <MisConsultasTaller tipo="INS" />
         {avisos.map((aviso) => (
           <article className="aviso" key={aviso.id}>

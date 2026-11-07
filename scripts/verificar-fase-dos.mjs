@@ -220,22 +220,6 @@ try {
     .replaceAll('&amp;', '&');
   assert.equal(enlaceCorreo, enlacePrivado);
   assert.ok(copia.texto.includes('¿Qué materiales debo llevar al taller?'));
-  const consultaDuplicada = await contexto.request.post(
-    `${origen}/api/v1/publico/talleres/${taller.id}/consultas`,
-    {
-      headers: { Origin: origen },
-      data: {
-        nombre: 'Otra solicitud',
-        correo: ' CONSULTA@EXAMPLE.TEST ',
-        mensaje: 'Otra pregunta',
-        aceptoAviso: true,
-        versionAviso: avisoPrivacidad.version,
-      },
-    },
-  );
-  assert.equal(consultaDuplicada.status(), 409);
-  assert.equal((await consultaDuplicada.json()).error, 'CONSULTA_DUPLICADA');
-  assert.equal((await almacen.leer()).consultasTalleres.length, 1);
   await pagina.goto(`${origen}/#talleres`);
   await pagina.getByRole('heading', { name: 'Mis consultas de talleres', exact: true }).waitFor();
   await pagina
@@ -253,7 +237,35 @@ try {
   const seguimiento = await contextoSeguimiento.newPage();
   seguimiento.on('pageerror', (e) => reporte.errores.push(e.message));
   await seguimiento.goto(`${origen}/#talleres`);
-  assert.equal(await seguimiento.locator('.consultas-guardadas').count(), 0);
+  const misConsultas = seguimiento.getByRole('region', { name: 'Mis consultas de talleres' });
+  const sinConsultas = misConsultas.getByText('No hay consultas guardadas en este navegador.', {
+    exact: false,
+  });
+  await sinConsultas.waitFor();
+  await seguimiento.locator('.taller-consulta summary').click();
+  const formularioDuplicado = seguimiento.locator('.formulario-consulta');
+  await formularioDuplicado.getByLabel('Nombre completo', { exact: true }).fill('Otra solicitud');
+  await formularioDuplicado
+    .getByLabel('Correo de contacto', { exact: true })
+    .fill('CONSULTA@EXAMPLE.TEST');
+  await formularioDuplicado.getByRole('checkbox').check();
+  const respuestaDuplicada = seguimiento.waitForResponse(
+    (respuesta) => respuesta.url() === `${origen}/api/v1/publico/talleres/${taller.id}/consultas`,
+  );
+  await formularioDuplicado.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
+  const duplicada = await respuestaDuplicada;
+  assert.equal(duplicada.status(), 409);
+  assert.equal((await duplicada.json()).error, 'CONSULTA_DUPLICADA');
+  await formularioDuplicado
+    .getByRole('alert')
+    .getByText(/Ya existe una consulta/)
+    .waitFor();
+  await formularioDuplicado.getByRole('link', { name: 'Ir a Mis consultas de talleres' }).click();
+  await seguimiento.waitForURL('**/#mis-consultas-talleres');
+  await sinConsultas.waitFor();
+  await misConsultas.getByText('Consulta tu estado', { exact: true }).waitFor();
+  assert.equal((await almacen.leer()).consultasTalleres.length, 1);
+  reporte.flujo.push('Duplicado enlaza a Mis consultas de talleres en un navegador sin accesos');
   await seguimiento.goto(enlaceCorreo);
   await seguimiento
     .getByText('Tu consulta está pendiente de respuesta.', { exact: true })
@@ -346,23 +358,22 @@ try {
       false,
     );
     if (ancho !== 320) await axe(seguimiento, `Mis consultas guardadas ${ancho}px`);
-    await seguimiento.locator('.consultas-guardadas').scrollIntoViewIfNeeded();
+    await misConsultas.scrollIntoViewIfNeeded();
     await seguimiento.screenshot({ path: join(artefactos, `consultas-guardadas-${ancho}.png`) });
   }
   await seguimiento
     .getByRole('button', { name: `Quitar ${consultaCreada.folio} de este navegador`, exact: true })
     .click();
-  await seguimiento.locator('.consultas-guardadas').waitFor({ state: 'detached' });
+  await sinConsultas.waitFor();
   await seguimiento.reload();
-  assert.equal(await seguimiento.locator('.consultas-guardadas').count(), 0);
+  await sinConsultas.waitFor();
   await seguimiento.goto(enlaceCorreo);
   await seguimiento
     .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
     .waitFor();
   await seguimiento.evaluate(() => localStorage.clear());
   await seguimiento.goto(`${origen}/#talleres`);
-  await seguimiento.locator('.consultas-guardadas').waitFor({ state: 'detached' });
-  assert.equal(await seguimiento.locator('.consultas-guardadas').count(), 0);
+  await sinConsultas.waitFor();
   await seguimiento.goto(enlaceCorreo);
   await seguimiento
     .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })

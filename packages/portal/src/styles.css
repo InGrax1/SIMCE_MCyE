@@ -4364,6 +4364,7 @@ button:not(:disabled):active,
 }
 .consulta-recibo a,
 .inscripcion-confirmada a,
+.formulario-consulta fieldset > a,
 .consulta-acciones a {
   color: #84271f;
   text-decoration: underline;

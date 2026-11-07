@@ -10,10 +10,13 @@ import {
   quitarConsulta,
 } from './consultasGuardadas.js';
 
+const idMisConsultas = 'mis-consultas-talleres';
+
 export function ConsultaTaller({ taller }) {
   const { avisoTalleres } = useContenidoPortal();
   const [ocupado, cambiarOcupado] = useState(false);
   const [error, cambiarError] = useState('');
+  const [duplicada, cambiarDuplicada] = useState(false);
   const [recibo, cambiarRecibo] = useState(null);
   const bloqueo = useRef(false);
   const confirmacion = useRef(null);
@@ -61,6 +64,7 @@ export function ConsultaTaller({ taller }) {
             bloqueo.current = true;
             cambiarOcupado(true);
             cambiarError('');
+            cambiarDuplicada(false);
             const datos = Object.fromEntries(new FormData(e.currentTarget));
             try {
               const respuesta = await fetch(`/api/v1/publico/talleres/${taller.id}/consultas`, {
@@ -74,10 +78,12 @@ export function ConsultaTaller({ taller }) {
                 }),
               });
               const resultado = await respuesta.json();
-              if (!respuesta.ok)
+              if (!respuesta.ok) {
+                cambiarDuplicada(resultado.error === 'CONSULTA_DUPLICADA');
                 throw new Error(
                   resultado.mensaje ?? 'No se pudo enviar la consulta. Inténtalo de nuevo.',
                 );
+              }
               const guardado = guardarConsulta({
                 folio: resultado.folio,
                 acceso: resultado.acceso,
@@ -126,6 +132,7 @@ export function ConsultaTaller({ taller }) {
               </span>
             </label>
             {error && <p role="alert">{error}</p>}
+            {duplicada && <a href={`#${idMisConsultas}`}>Ir a Mis consultas de talleres</a>}
             <button className="boton" disabled={ocupado}>
               {ocupado ? 'Enviando…' : 'Enviar consulta'}
             </button>
@@ -351,65 +358,72 @@ export function MisConsultasTaller({ tipo = 'CT' }) {
       for (const evento of eventos) window.removeEventListener(evento, actualizar);
     };
   }, [tipo]);
-  if (!consultas.length) return null;
+  if (!consultas.length && tipo !== 'CT') return null;
+  const id =
+    tipo === 'INS'
+      ? 'mis-inscripciones-talleres'
+      : tipo === 'SS'
+        ? 'mis-solicitudes-social'
+        : idMisConsultas;
   return (
-    <div
-      className="consultas-guardadas"
-      id={
-        tipo === 'INS'
-          ? 'mis-inscripciones-talleres'
-          : tipo === 'SS'
-            ? 'mis-solicitudes-social'
-            : 'mis-consultas-talleres'
-      }
-    >
-      <h3>
+    <section className="consultas-guardadas" id={id} aria-labelledby={`${id}-titulo`} tabIndex={-1}>
+      <h3 id={`${id}-titulo`}>
         {tipo === 'INS'
           ? 'Mis inscripciones a talleres'
           : tipo === 'SS'
             ? 'Mis solicitudes de servicio social'
             : 'Mis consultas de talleres'}
       </h3>
-      <p>
-        Estas solicitudes están guardadas en este navegador. Puedes quitar su acceso en un equipo
-        compartido; tu consulta seguirá registrada en el Módulo.
-      </p>
+      {consultas.length ? (
+        <p>
+          Estas solicitudes están guardadas en este navegador. Puedes quitar su acceso en un equipo
+          compartido. Tu consulta seguirá registrada en el Módulo.
+        </p>
+      ) : (
+        <p>
+          No hay consultas guardadas en este navegador. Si ya enviaste una, abre el correo de
+          confirmación y pulsa <strong>Consulta tu estado</strong> para continuar con tu folio.
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
-      <ul>
-        {consultas.map((c) => (
-          <li key={c.folio}>
-            <div>
-              <strong>{c.tallerNombre}</strong>
-              <span>Folio: {c.folio}</span>
-            </div>
-            <div className="consulta-acciones">
-              <a href={enlaceConsulta(c)} aria-label={`Consultar estado de ${c.folio}`}>
-                Consultar estado
-              </a>
-              <button
-                type="button"
-                aria-label={`Quitar ${c.folio} de este navegador`}
-                onClick={() => {
-                  if (!quitarConsulta(c.folio)) {
-                    cambiarError(
-                      'No se pudo quitar el acceso de este navegador. Inténtalo de nuevo.',
-                    );
-                    return;
-                  }
-                  cambiarError('');
-                  if (
-                    new URLSearchParams(location.hash.slice(1)).get(fragmentoSeguimiento(tipo)) ===
-                    c.folio
-                  )
-                    location.hash = tipo === 'SS' ? 'interes-servicio-social' : 'talleres';
-                }}
-              >
-                Quitar de este navegador
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+      {consultas.length > 0 && (
+        <ul>
+          {consultas.map((c) => (
+            <li key={c.folio}>
+              <div>
+                <strong>{c.tallerNombre}</strong>
+                <span>Folio: {c.folio}</span>
+              </div>
+              <div className="consulta-acciones">
+                <a href={enlaceConsulta(c)} aria-label={`Consultar estado de ${c.folio}`}>
+                  Consultar estado
+                </a>
+                <button
+                  type="button"
+                  aria-label={`Quitar ${c.folio} de este navegador`}
+                  onClick={() => {
+                    if (!quitarConsulta(c.folio)) {
+                      cambiarError(
+                        'No se pudo quitar el acceso de este navegador. Inténtalo de nuevo.',
+                      );
+                      return;
+                    }
+                    cambiarError('');
+                    if (
+                      new URLSearchParams(location.hash.slice(1)).get(
+                        fragmentoSeguimiento(tipo),
+                      ) === c.folio
+                    )
+                      location.hash = tipo === 'SS' ? 'interes-servicio-social' : 'talleres';
+                  }}
+                >
+                  Quitar de este navegador
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
