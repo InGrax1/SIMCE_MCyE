@@ -1,6 +1,13 @@
 let token;
 let alRenovar;
 let renovacion;
+async function conectar(url, opciones) {
+  try {
+    return await fetch(url, opciones);
+  } catch {
+    throw new Error('No pudimos conectar con el sitio. Inténtalo de nuevo en unos momentos.');
+  }
+}
 export function establecerSesion(valor, notificar) {
   token = valor;
   alRenovar = notificar ?? alRenovar;
@@ -13,7 +20,7 @@ function invalidarSesion() {
   alRenovar?.(null);
 }
 async function solicitarRefresco() {
-  const respuesta = await fetch('/api/v1/auth/refrescar', {
+  const respuesta = await conectar('/api/v1/auth/refrescar', {
     method: 'POST',
     credentials: 'same-origin',
   });
@@ -43,7 +50,7 @@ export async function consultarApi(
   { metodo = 'GET', datos, cuerpo, cabeceras = {}, reintentar = true } = {},
 ) {
   const tokenEnviado = token;
-  const respuesta = await fetch(`/api/v1${ruta}`, {
+  const respuesta = await conectar(`/api/v1${ruta}`, {
     method: metodo,
     credentials: 'same-origin',
     headers: {

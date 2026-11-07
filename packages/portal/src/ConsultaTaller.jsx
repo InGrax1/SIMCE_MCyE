@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useContenidoPortal } from './contextoContenido.jsx';
+import { mensajeSolicitud } from './mensajesSolicitud.js';
 import {
   enlaceConsulta,
   eventoConsultas,
@@ -83,7 +84,7 @@ export function ConsultaTaller({ taller }) {
               const enlace = `${location.origin}${enlaceConsulta(resultado)}`;
               cambiarRecibo({ folio: resultado.folio, enlace, guardado, correo: resultado.correo });
             } catch (e) {
-              cambiarError(e.message);
+              cambiarError(mensajeSolicitud(e));
             } finally {
               bloqueo.current = false;
               cambiarOcupado(false);
@@ -191,7 +192,7 @@ export function SeguimientoConsultaTaller() {
           guardarConsulta({ ...acceso, tallerNombre: datos.tallerNombre });
         }
       } catch (e) {
-        if (!controlador.signal.aborted) cambiarError(e.message);
+        if (!controlador.signal.aborted) cambiarError(mensajeSolicitud(e));
       } finally {
         if (!controlador.signal.aborted) cambiarOcupado(false);
       }
@@ -262,7 +263,7 @@ export function SeguimientoConsultaTaller() {
                     cambiarConsulta(datos);
                   formulario.reset();
                 } catch (e) {
-                  cambiarError(e.message);
+                  cambiarError(mensajeSolicitud(e));
                 } finally {
                   cambiarOcupado(false);
                 }

@@ -9,6 +9,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
   establecerSesion(null, () => {});
 });
+it('informa fallos de conexión en español y conserva la sesión para reintentar', async () => {
+  establecerSesion('token-vigente', () => {});
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+  await expect(consultarApi('/cms/solicitudes')).rejects.toThrow(
+    'No pudimos conectar con el sitio. Inténtalo de nuevo en unos momentos.',
+  );
+  expect(cabecerasSesion()).toEqual({ Authorization: 'Bearer token-vigente' });
+});
 it('vuelve al login si la API sigue rechazando la sesión después de renovarla', async () => {
   const notificar = vi.fn();
   establecerSesion('token-vencido', notificar);

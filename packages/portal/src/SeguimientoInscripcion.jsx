@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { guardarConsulta } from './consultasGuardadas.js';
+import { mensajeSolicitud } from './mensajesSolicitud.js';
 
 const fecha = (valor) =>
   valor
@@ -73,7 +74,7 @@ export function SeguimientoInscripcion() {
           guardarConsulta({ ...acceso, tallerNombre: datos.tallerNombre });
         }
       } catch (e) {
-        if (!controlador.signal.aborted) cambiarError(e.message);
+        if (!controlador.signal.aborted) cambiarError(mensajeSolicitud(e));
       } finally {
         if (!controlador.signal.aborted) cambiarOcupado(false);
       }
@@ -183,7 +184,7 @@ export function SeguimientoInscripcion() {
                     }
                     formulario.reset();
                   } catch (e) {
-                    cambiarError(e.message);
+                    cambiarError(mensajeSolicitud(e));
                   } finally {
                     bloqueo.current = false;
                     cambiarOcupado(false);

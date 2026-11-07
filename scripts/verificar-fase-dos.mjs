@@ -144,6 +144,27 @@ try {
   await axe(pagina, 'Solicitud de información móvil');
   await formularioConsulta.scrollIntoViewIfNeeded();
   await pagina.screenshot({ path: join(artefactos, 'consulta-formulario-movil.png') });
+  await pagina.route('**/api/v1/publico/talleres/*/consultas', (ruta) => ruta.abort('failed'), {
+    times: 1,
+  });
+  await formularioConsulta.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
+  await formularioConsulta
+    .getByRole('alert')
+    .getByText('No pudimos conectar con el sitio. Inténtalo de nuevo en unos momentos.', {
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(
+    await formularioConsulta.getByLabel('Correo de contacto', { exact: true }).inputValue(),
+    'consulta@example.test',
+  );
+  assert.equal(
+    await formularioConsulta.getByLabel('¿Qué te gustaría saber?', { exact: true }).inputValue(),
+    '¿Qué materiales debo llevar al taller?',
+  );
+  reporte.flujo.push(
+    'Fallo de conexión muestra un aviso en español, conserva el formulario y permite reintentar',
+  );
   await formularioConsulta.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
   await pagina.getByRole('heading', { name: 'Recibimos tu consulta', exact: true }).waitFor();
   await pagina.getByText(/Guardamos el acceso en este navegador/).waitFor();

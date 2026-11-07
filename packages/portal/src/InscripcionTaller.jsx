@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { enlaceConsulta, guardarConsulta } from './consultasGuardadas.js';
+import { mensajeSolicitud } from './mensajesSolicitud.js';
 
 const fecha = (valor) =>
   new Intl.DateTimeFormat('es-MX', {
@@ -32,7 +33,7 @@ export function InscripcionTaller({ taller }) {
       cambiarActual(datos.talleres.find((t) => t.id === taller.id) ?? { inscripcion: null });
       cambiarAviso(datos.aviso);
     } catch (e) {
-      cambiarError(e.message);
+      cambiarError(mensajeSolicitud(e));
     }
   }
   async function enviar(e) {
@@ -73,7 +74,7 @@ export function InscripcionTaller({ taller }) {
         enlace: `${location.origin}${enlaceConsulta(resultado)}`,
       });
     } catch (e) {
-      cambiarError(e.message);
+      cambiarError(mensajeSolicitud(e));
     } finally {
       bloqueo.current = false;
       cambiarOcupado(false);
