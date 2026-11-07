@@ -68,7 +68,7 @@ export function SolicitudesPanel({ ejecutar, ocupado, participantes = false }) {
   }
   const estadosFiltro = participantes
     ? ['confirmada', 'cancelada', 'asistio']
-    : ['pendiente', 'respondida', 'cancelada'];
+    : ['pendiente', 'respondida', 'aceptada', 'rechazada', 'cancelada'];
   function elegirCategoria(clave) {
     cambiarCategoria(clave);
     cambiarBusqueda('');

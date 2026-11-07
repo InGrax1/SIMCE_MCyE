@@ -67,10 +67,26 @@ origenes.push(origen);
 enviarReciboConsulta = crearCorreoConsultas({
   almacen,
   origenPublico: origen,
+  secreto: randomBytes(48).toString('hex'),
   enviarCorreo: configurarCorreo(temporal, { NODE_ENV: 'test', CORREO_MODO: 'archivo' }),
 });
 const reporte = { flujo: [], accesibilidad: [], errores: [], fecha: new Date().toISOString() };
 let browser;
+async function enlaceDeRespuesta(folio, mensaje) {
+  const buzón = join(temporal, 'correos');
+  for (const nombre of await readdir(buzón)) {
+    const copia = JSON.parse(await readFile(join(buzón, nombre), 'utf8'));
+    if (
+      copia.asunto.startsWith(`El Módulo respondió tu solicitud ${folio}`) &&
+      copia.texto.includes(mensaje)
+    ) {
+      return copia.html
+        .match(/href="([^"]+)"[^>]*>Consulta tu estado<\/a>/)[1]
+        .replaceAll('&amp;', '&');
+    }
+  }
+  assert.fail(`No se encontró el correo de respuesta de ${folio}.`);
+}
 async function axe(pagina, nombre) {
   const resultado = await new AxeBuilder({ page: pagina })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
@@ -271,18 +287,25 @@ try {
     .getByText('Tu consulta está pendiente de respuesta.', { exact: true })
     .waitFor();
   await navegacionPanel.getByRole('button', { name: 'Solicitudes', exact: true }).click();
+  await panel.getByText('Añadir una nota (opcional)', { exact: true }).click();
   await panel
-    .getByLabel(`Respuesta para ${consultaCreada.folio}`, { exact: true })
+    .getByRole('textbox', { name: 'Nota para el solicitante' })
     .fill('El material está incluido. Puedes llevar una libreta.');
-  await panel.getByRole('button', { name: 'Publicar respuesta', exact: true }).click();
+  await panel.getByRole('button', { name: 'Aceptar', exact: true }).click();
   await panel
-    .getByText(`Respuesta publicada para ${consultaCreada.folio}.`, { exact: true })
+    .getByText(
+      `Solicitud ${consultaCreada.folio} aceptada. Correo preparado en el buzón local de prueba.`,
+    )
     .waitFor();
   await panel.screenshot({ path: join(artefactos, 'consulta-panel-escritorio.png') });
-  await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
-  await seguimiento
-    .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
-    .waitFor();
+  const enlaceRespuesta = await enlaceDeRespuesta(
+    consultaCreada.folio,
+    'El Módulo aceptó tu solicitud',
+  );
+  assert.notEqual(enlaceRespuesta, enlaceCorreo);
+  await seguimiento.goto(enlaceRespuesta);
+  await seguimiento.getByText('Tu solicitud fue aceptada.', { exact: true }).waitFor();
+  await seguimiento.getByText(/El material está incluido. Puedes llevar una libreta./).waitFor();
   await seguimiento
     .getByLabel('Continuar esta consulta', { exact: true })
     .fill('¿A qué hora inicia el taller?');
@@ -296,16 +319,22 @@ try {
   await solicitudesPanel.getByRole('button', { name: /^Consultas de talleres/ }).click();
   const fichaConsulta = solicitudesPanel.locator('.cms-bandeja-detalle');
   await fichaConsulta.getByText('¿A qué hora inicia el taller?', { exact: true }).waitFor();
-  await fichaConsulta
-    .getByLabel(`Respuesta para ${consultaCreada.folio}`, { exact: true })
-    .fill('El taller inicia a las nueve.');
-  await fichaConsulta.getByRole('button', { name: 'Publicar respuesta', exact: true }).click();
+  await fichaConsulta.getByRole('button', { name: 'Rechazar', exact: true }).click();
   await solicitudesPanel
-    .getByText(`Respuesta publicada para ${consultaCreada.folio}.`, { exact: true })
+    .getByText(
+      `Solicitud ${consultaCreada.folio} rechazada. Correo preparado en el buzón local de prueba.`,
+    )
     .waitFor();
+  assert.equal(
+    await enlaceDeRespuesta(consultaCreada.folio, 'El Módulo rechazó tu solicitud'),
+    enlaceRespuesta,
+  );
   await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
-  await seguimiento.getByText('El taller inicia a las nueve.', { exact: true }).waitFor();
+  await seguimiento.getByText('Tu solicitud fue rechazada.', { exact: true }).waitFor();
   assert.equal((await almacen.leer()).consultasTalleres.length, 1);
+  reporte.flujo.push(
+    'Aceptar y rechazar con mensaje automático, nota opcional y correo con el mismo folio',
+  );
   reporte.flujo.push(
     'Consulta duplicada bloqueada y mensajes adicionales atendidos desde el apartado central con el mismo folio',
   );
@@ -368,16 +397,12 @@ try {
   await seguimiento.reload();
   await sinConsultas.waitFor();
   await seguimiento.goto(enlaceCorreo);
-  await seguimiento
-    .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
-    .waitFor();
+  await seguimiento.getByText(/El material está incluido. Puedes llevar una libreta./).waitFor();
   await seguimiento.evaluate(() => localStorage.clear());
   await seguimiento.goto(`${origen}/#talleres`);
   await sinConsultas.waitFor();
   await seguimiento.goto(enlaceCorreo);
-  await seguimiento
-    .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
-    .waitFor();
+  await seguimiento.getByText(/El material está incluido. Puedes llevar una libreta./).waitFor();
   await seguimiento.getByRole('link', { name: 'Volver a talleres', exact: true }).click();
   await seguimiento
     .getByRole('heading', { name: 'Mis consultas de talleres', exact: true })
@@ -471,17 +496,23 @@ try {
   await miSocial.getByRole('heading', { name: 'Mi solicitud de servicio social' }).waitFor();
   await solicitudesPanel.getByRole('button', { name: /^Servicio social/ }).click();
   const detalleSocial = solicitudesPanel.locator('.cms-bandeja-detalle');
+  await detalleSocial.getByText('Añadir una nota (opcional)', { exact: true }).click();
   await detalleSocial
-    .getByLabel(`Respuesta para ${solicitudSocial.folio}`, { exact: true })
+    .getByRole('textbox', { name: 'Nota para el solicitante' })
     .fill('Puedes presentar tu solicitud con tu historial académico.');
-  await detalleSocial.getByRole('button', { name: 'Publicar respuesta', exact: true }).click();
+  await detalleSocial.getByRole('button', { name: 'Aceptar', exact: true }).click();
   await detalleSocial
-    .getByText(`Respuesta publicada para ${solicitudSocial.folio}.`, { exact: true })
+    .getByText(
+      `Solicitud ${solicitudSocial.folio} aceptada. Correo preparado en el buzón local de prueba.`,
+    )
     .waitFor();
-  await miSocial.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
-  await miSocial
-    .getByText('Puedes presentar tu solicitud con tu historial académico.', { exact: true })
-    .waitFor();
+  await seguimientoSocial.goto(
+    await enlaceDeRespuesta(
+      solicitudSocial.folio,
+      'La admisión al programa se confirma por separado.',
+    ),
+  );
+  await miSocial.getByText(/Puedes presentar tu solicitud con tu historial académico./).waitFor();
   await miSocial
     .getByLabel('Continuar esta consulta', { exact: true })
     .fill('¿Qué horarios están disponibles?');

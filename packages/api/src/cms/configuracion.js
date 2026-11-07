@@ -72,6 +72,7 @@ export async function configurarCms() {
   const enviarReciboConsulta = crearCorreoConsultas({
     almacen,
     enviarCorreo,
+    secreto: process.env.JWT_SECRET,
     origenPublico: process.env.PORTAL_ORIGEN_PUBLICO || origenPanel,
     produccion: process.env.NODE_ENV === 'production',
   });

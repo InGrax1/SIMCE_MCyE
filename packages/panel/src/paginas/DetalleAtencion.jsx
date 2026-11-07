@@ -4,6 +4,8 @@ import { consultarApi } from '../servicios/sesion.js';
 export const etiquetasEstado = {
   pendiente: 'Pendiente',
   respondida: 'Respondida',
+  aceptada: 'Aceptada',
+  rechazada: 'Rechazada',
   cancelada: 'Cancelada',
   confirmada: 'Confirmada',
   asistio: 'Asistencia registrada',
@@ -12,6 +14,8 @@ const eventos = {
   REGISTRAR_SOLICITUD: 'Solicitud recibida',
   AGREGAR_MENSAJE: 'Mensaje del solicitante',
   RESPONDER_SOLICITUD: 'Respuesta publicada',
+  ACEPTAR_SOLICITUD: 'Solicitud aceptada',
+  RECHAZAR_SOLICITUD: 'Solicitud rechazada',
   CANCELAR_SOLICITUD: 'Solicitud cancelada',
   REABRIR_SOLICITUD: 'Solicitud reabierta',
   HABILITAR_SEGUIMIENTO: 'Preparación del acceso privado',
@@ -20,6 +24,12 @@ const eventos = {
   reactivar: 'Inscripción reactivada',
   asistencia: 'Asistencia registrada',
   CANCELAR_TALLER: 'Taller cancelado',
+};
+const avisosCorreoRespuesta = {
+  enviado: 'Correo enviado.',
+  archivo: 'Correo preparado en el buzón local de prueba.',
+  fallido: 'No se pudo enviar el correo. La respuesta está disponible en el portal.',
+  no_disponible: 'El envío por correo no está disponible. La respuesta está en el portal.',
 };
 export const fechaPanel = (momento, corta = false) =>
   momento
@@ -142,6 +152,23 @@ export function DetalleSolicitud({ registro, social, ejecutar, ocupado, cargar }
       );
     });
   }
+  function decidir(e) {
+    e.preventDefault();
+    const decision = e.nativeEvent.submitter?.value;
+    if (!decision) return;
+    ejecutar(async () => {
+      cambiarMensaje('');
+      const resultado = await consultarApi(`${ruta}/respuestas`, {
+        metodo: 'POST',
+        datos: { decision, texto: respuesta.trim(), version: registro.version },
+      });
+      await cargar();
+      cambiarRespuesta('');
+      cambiarMensaje(
+        `Solicitud ${registro.folio} ${resultado.estado}. ${avisosCorreoRespuesta[resultado.correoRespuesta]}`,
+      );
+    });
+  }
   return (
     <div className="cms-detalle-cuerpo">
       {mensaje && (
@@ -204,6 +231,43 @@ export function DetalleSolicitud({ registro, social, ejecutar, ocupado, cargar }
           enviar={gestionar}
         />
       )}
+      {cancelada ? (
+        <p className="cms-detalle-cerrado">
+          La solicitud está cancelada. Reábrela para continuar la conversación.
+        </p>
+      ) : (
+        !accion && (
+          <form className="cms-responder" onSubmit={decidir}>
+            <h3>Resolver solicitud</h3>
+            <p>La decisión publica un mensaje automático y envía una copia por correo.</p>
+            <details>
+              <summary>Añadir una nota (opcional)</summary>
+              <label>
+                Nota para el solicitante
+                <textarea
+                  value={respuesta}
+                  onChange={(e) => cambiarRespuesta(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  disabled={ocupado}
+                />
+              </label>
+            </details>
+            <div className="cms-acciones">
+              <button value="aceptar" disabled={ocupado || registro.estado === 'aceptada'}>
+                Aceptar
+              </button>
+              <button
+                value="rechazar"
+                className="secundario"
+                disabled={ocupado || registro.estado === 'rechazada'}
+              >
+                Rechazar
+              </button>
+            </div>
+          </form>
+        )
+      )}
       <h3>Conversación</h3>
       <ol className="cms-conversacion">
         {conversacion.map((m, i) => (
@@ -216,41 +280,6 @@ export function DetalleSolicitud({ registro, social, ejecutar, ocupado, cargar }
           </li>
         ))}
       </ol>
-      {cancelada ? (
-        <p className="cms-detalle-cerrado">
-          La solicitud está cancelada. Reábrela para continuar la conversación.
-        </p>
-      ) : (
-        <form
-          className="cms-responder"
-          onSubmit={(e) => {
-            e.preventDefault();
-            ejecutar(async () => {
-              await consultarApi(`${ruta}/respuestas`, {
-                metodo: 'POST',
-                datos: { texto: respuesta, version: registro.version },
-              });
-              await cargar();
-              cambiarRespuesta('');
-              cambiarMensaje(`Respuesta publicada para ${registro.folio}.`);
-            });
-          }}
-        >
-          <label>
-            Respuesta para {registro.folio}
-            <textarea
-              value={respuesta}
-              onChange={(e) => cambiarRespuesta(e.target.value)}
-              placeholder="Escribe una respuesta al solicitante"
-              rows={4}
-              maxLength={2000}
-              required
-              disabled={ocupado}
-            />
-          </label>
-          <button disabled={ocupado || !respuesta.trim()}>Publicar respuesta</button>
-        </form>
-      )}
     </div>
   );
 }

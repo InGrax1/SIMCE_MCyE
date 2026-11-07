@@ -13,7 +13,7 @@ import {
   registrarConsulta,
   consultarRespuesta,
   listarConsultas,
-  responderConsulta,
+  responderYNotificar,
   agregarSeguimiento,
   cambiarEstadoSolicitud,
 } from './consultas.js';
@@ -104,8 +104,12 @@ export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboCons
   });
   router.post('/consultas-talleres/:id/respuestas', async (req, res) => {
     res.json(
-      await almacen.cambiar((estado) =>
-        responderConsulta(estado, req.params.id, req.body ?? {}, req.usuario),
+      await responderYNotificar(
+        almacen,
+        enviarReciboConsulta,
+        req.params.id,
+        req.body ?? {},
+        req.usuario,
       ),
     );
   });

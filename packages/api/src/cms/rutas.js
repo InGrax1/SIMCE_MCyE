@@ -9,7 +9,7 @@ import {
 import {
   consultarRespuesta,
   agregarSeguimiento,
-  responderConsulta,
+  responderYNotificar,
   cambiarEstadoSolicitud,
   proyectarSolicitud,
 } from '../talleres/consultas.js';
@@ -181,8 +181,13 @@ export function crearRutasCms({
   });
   router.post('/cms/intereses/:id/respuestas', auth.permitir(responsables), async (req, res) => {
     res.json(
-      await almacen.cambiar((s) =>
-        responderConsulta(s, req.params.id, req.body, req.usuario, new Date(), 'SS'),
+      await responderYNotificar(
+        almacen,
+        enviarReciboConsulta,
+        req.params.id,
+        req.body ?? {},
+        req.usuario,
+        'SS',
       ),
     );
   });

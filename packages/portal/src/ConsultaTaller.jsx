@@ -155,10 +155,19 @@ const fecha = (valor) =>
 const accionesSolicitud = {
   REGISTRAR_SOLICITUD: 'Solicitud recibida',
   RESPONDER_SOLICITUD: 'Respuesta publicada',
+  ACEPTAR_SOLICITUD: 'Solicitud aceptada',
+  RECHAZAR_SOLICITUD: 'Solicitud rechazada',
   AGREGAR_MENSAJE: 'Mensaje del solicitante',
   CANCELAR_SOLICITUD: 'Solicitud cancelada',
   REABRIR_SOLICITUD: 'Solicitud reabierta',
   HABILITAR_SEGUIMIENTO: 'Enlace de seguimiento preparado',
+};
+const estadoConsulta = {
+  pendiente: 'Tu consulta está pendiente de respuesta.',
+  respondida: 'Tu consulta fue respondida.',
+  aceptada: 'Tu solicitud fue aceptada.',
+  rechazada: 'Tu solicitud fue rechazada.',
+  cancelada: 'La solicitud está cancelada.',
 };
 
 export function SeguimientoConsultaTaller({ tipo = 'CT' }) {
@@ -253,13 +262,7 @@ export function SeguimientoConsultaTaller({ tipo = 'CT' }) {
             <p className="consulta-mensaje">
               {consulta.mensaje || 'Solicitaste información sin agregar un mensaje inicial.'}
             </p>
-            <p role="status">
-              {consulta.estado === 'cancelada'
-                ? 'La solicitud está cancelada.'
-                : consulta.estado === 'pendiente'
-                  ? 'Tu consulta está pendiente de respuesta.'
-                  : 'Tu consulta fue respondida.'}
-            </p>
+            <p role="status">{estadoConsulta[consulta.estado]}</p>
             <div className="consulta-respuestas">
               {mensajes.map((m, i) => (
                 <article key={i}>

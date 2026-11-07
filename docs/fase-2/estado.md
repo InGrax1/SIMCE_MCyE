@@ -56,6 +56,6 @@ El 7 de noviembre de 2026, el usuario reporta que se probó la publicación en l
 - DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.
 - Ejecutar el ciclo desde un dispositivo externo cuando se disponga del alojamiento institucional. Las nuevas convocatorias se revisarán al publicarlas.
 - Implementar y verificar la depuración correspondiente a los plazos del aviso autorizado, junto con el tratamiento de exportaciones y respaldos y los instrumentos archivísticos aplicables, antes de operar con datos reales.
-- Continuar RF-3.7 con notificaciones de cambios y respuestas, y decidir si se incluye RF-3.10 (lista de espera).
+- Continuar RF-3.7 con notificaciones de cambios de estado operativo. Las decisiones y respuestas de solicitudes de taller y servicio social generan su correo de contestación. Queda por decidir si se incluye RF-3.10 (lista de espera).
 
 El avance técnico inicia la fase; no acredita su aceptación institucional ni su disponibilidad en producción. La operación local se explica en [la guía de talleres e inscripciones](talleres-inscripciones.md).

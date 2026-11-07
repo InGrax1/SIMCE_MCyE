@@ -636,13 +636,14 @@
 }
 .cms-estado-etiqueta:is(
   [data-estado='respondida'],
+  [data-estado='aceptada'],
   [data-estado='confirmada'],
   [data-estado='asistio']
 ) {
   color: #28533e;
   background: #e4f0e8;
 }
-.cms-estado-etiqueta[data-estado='cancelada'] {
+.cms-estado-etiqueta:is([data-estado='cancelada'], [data-estado='rechazada']) {
   color: #81332c;
   background: #f7e7e4;
 }
@@ -720,6 +721,19 @@
 .cms-responder label,
 .cms-form-gestion label {
   margin-bottom: 14px;
+}
+.cms-responder {
+  margin-block: 20px;
+  padding: 16px;
+  border: 1px solid #e3dcd8;
+  border-radius: 10px;
+  background: #faf7f5;
+}
+.cms-responder h3 {
+  margin: 0 0 8px;
+}
+.cms-responder details {
+  margin-block: 10px;
 }
 .cms-detalle-controles {
   display: flex;

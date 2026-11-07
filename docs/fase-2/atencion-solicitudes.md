@@ -4,6 +4,12 @@ Responsable y administrador entran a **Solicitudes**, una bandeja separada de lo
 
 Las inscripciones se gestionan en **Participantes**, con acciones y motivo por registro. **Talleres** contiene la edición de convocatorias, fechas, cupo, sede y exportación de asistentes. **Contenido** agrupa las demás entradas del portal; **Bitácora** muestra la actividad reciente. Las listas privadas no están disponibles para editor ni operador.
 
+## Aceptar o rechazar
+
+En **Resolver solicitud**, «Aceptar» y «Rechazar» publican el mensaje correspondiente en la conversación. Para añadir detalles, abrir «Añadir una nota (opcional)» antes de pulsar el botón. La decisión queda en el historial y un nuevo mensaje del solicitante devuelve la atención a pendiente. En servicio social, aceptar da curso al seguimiento. La admisión se confirma por separado.
+
+El correo de contestación contiene el mensaje y el botón «Consulta tu estado», que abre el mismo folio. El acceso guardado en el navegador y el enlace del correo inicial siguen disponibles. Si el envío falla, el panel lo informa y la respuesta queda publicada en el portal.
+
 ## Cancelar o reabrir una solicitud
 
 En el detalle, el personal autorizado pulsa «Cancelar solicitud», escribe el motivo y confirma. Se conserva su folio, la conversación y el historial. El visitante ve el estado y motivo al abrir su enlace privado. Mientras esté cancelada, la solicitud permite lectura, pero no mensajes nuevos ni respuestas. «Reabrir solicitud» requiere motivo y devuelve la atención a pendiente, con el mismo folio y enlace. Cancelar una consulta de taller no cambia las plazas de inscripción.

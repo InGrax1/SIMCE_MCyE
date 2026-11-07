@@ -405,6 +405,54 @@ describe('talleres e inscripciones', () => {
     ).toBe(404);
     expect((await seguimiento({ ...acceso, folio: 'CT-2026-99999999' })).status).toBe(404);
   });
+  it('notifica una decisión sin nota por correo y conserva ambos accesos al mismo folio', async () => {
+    const recibo = (await preguntar()).body;
+    const c = (await almacen.leer()).consultasTalleres[0];
+    const ruta = `/consultas-talleres/${c.id}/respuestas`;
+    const correos = [];
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      origenPublico: origen,
+      secreto: randomBytes(48).toString('hex'),
+      enviarCorreo: async (correo) => {
+        correos.push(correo);
+        if (correos.length > 1) throw new Error('Proveedor no disponible');
+        return { modo: 'smtp' };
+      },
+    });
+    const aceptada = await api('responsable', 'post', ruta, { decision: 'aceptar', version: 1 });
+    expect(aceptada.status).toBe(200);
+    expect(aceptada.body).toMatchObject({ estado: 'aceptada', correoRespuesta: 'enviado' });
+    expect(aceptada.body.accesoRespuestaHash).toBeUndefined();
+    expect(correos[0].texto).toContain('El Módulo aceptó tu solicitud');
+    expect(correos[0].html).toContain('Consulta tu estado');
+    const enlace = new URL(correos[0].texto.split('\n').find((linea) => linea.startsWith(origen)));
+    const parametros = new URLSearchParams(enlace.hash.slice(1));
+    const aviso = { folio: parametros.get('consulta-taller'), acceso: parametros.get('acceso') };
+    expect(aviso.folio).toBe(recibo.folio);
+    expect(aviso.acceso).not.toBe(recibo.acceso);
+    expect((await seguimiento(recibo)).body.estado).toBe('aceptada');
+    expect((await seguimiento(aviso)).body.estado).toBe('aceptada');
+    expect(
+      (await api('responsable', 'post', ruta, { decision: 'aceptar', version: 2 })).status,
+    ).toBe(409);
+    expect(correos).toHaveLength(1);
+    const rechazada = await api('responsable', 'post', ruta, {
+      decision: 'rechazar',
+      texto: 'Acude a la próxima convocatoria.',
+      version: 2,
+    });
+    expect(rechazada.body).toMatchObject({ estado: 'rechazada', correoRespuesta: 'fallido' });
+    expect((await seguimiento(aviso)).body.respuestas.at(-1).texto).toContain(
+      'Acude a la próxima convocatoria.',
+    );
+    const estado = await almacen.leer();
+    expect(estado.consultasTalleres[0].correoConfirmacion).toEqual(c.correoConfirmacion);
+    expect(JSON.stringify(estado)).not.toContain(aviso.acceso);
+    expect(
+      (await api('responsable', 'get', '/cms/solicitudes')).body.consultas[0].accesoRespuestaHash,
+    ).toBeUndefined();
+  });
   it('bloquea consultas duplicadas normalizadas sin generar otro folio ni enviar otra copia', async () => {
     const primera = await preguntar();
     const segunda = await preguntar({

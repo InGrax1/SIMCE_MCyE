@@ -11,6 +11,20 @@ export const proyectarSolicitud = (consulta) => ({
 const privada = proyectarSolicitud;
 const registros = (estado, tipo) =>
   tipo === 'SS' ? (estado.intereses ?? []) : (estado.consultasTalleres ?? []);
+const decisiones = {
+  aceptar: {
+    estado: 'aceptada',
+    evento: 'ACEPTAR_SOLICITUD',
+    CT: 'El Módulo aceptó tu solicitud de información sobre el taller. Puedes continuar la conversación desde este folio.',
+    SS: 'El Módulo aceptó dar seguimiento a tu solicitud de servicio social. La admisión al programa se confirma por separado.',
+  },
+  rechazar: {
+    estado: 'rechazada',
+    evento: 'RECHAZAR_SOLICITUD',
+    CT: 'El Módulo rechazó tu solicitud de información sobre el taller. Si necesitas una aclaración, puedes escribirnos desde este folio.',
+    SS: 'El Módulo rechazó tu solicitud de seguimiento de servicio social. Si necesitas una aclaración, puedes escribirnos desde este folio.',
+  },
+};
 function versionActual(consulta, version) {
   if (!Number.isInteger(version) || consulta.version !== version)
     throw new ErrorApi(
@@ -141,12 +155,24 @@ export function responderConsulta(estado, id, datos, usuario, ahora = new Date()
   if (!consulta) throw new ErrorApi(404, 'NO_ENCONTRADO', 'No se encontró la consulta.');
   versionActual(consulta, datos.version);
   exigirActiva(consulta);
-  const texto = textoInscripcion(datos.texto, 'respuesta', 2000, true);
+  const resolucion =
+    typeof datos.decision === 'string' && Object.hasOwn(decisiones, datos.decision)
+      ? decisiones[datos.decision]
+      : null;
+  if (!resolucion && datos.decision !== undefined)
+    throw new ErrorApi(422, 'DECISION_INVALIDA', 'Elige aceptar o rechazar la solicitud.');
+  if (resolucion?.estado === consulta.estado)
+    throw new ErrorApi(409, 'DECISION_YA_REGISTRADA', 'La solicitud ya tiene esa decisión.');
+  const nota =
+    resolucion && (datos.texto === undefined || datos.texto === '')
+      ? ''
+      : textoInscripcion(datos.texto, 'respuesta', 2000, true);
+  const texto = resolucion ? [resolucion[tipo], nota].filter(Boolean).join('\n\n') : nota;
   consulta.respuestas.push({ texto, momento: ahora.toISOString() });
-  consulta.estado = 'respondida';
+  consulta.estado = resolucion?.estado ?? 'respondida';
   consulta.respondidaEn = ahora.toISOString();
   consulta.version++;
-  historial(consulta, 'RESPONDER_SOLICITUD', usuario, ahora.toISOString());
+  historial(consulta, resolucion?.evento ?? 'RESPONDER_SOLICITUD', usuario, ahora.toISOString());
   auditar(
     estado,
     usuario,
@@ -154,6 +180,24 @@ export function responderConsulta(estado, id, datos, usuario, ahora = new Date()
     id,
   );
   return privada(consulta);
+}
+
+export async function responderYNotificar(almacen, enviarCorreo, id, datos, usuario, tipo) {
+  const resultado = await almacen.cambiar((estado) =>
+    responderConsulta(estado, id, datos, usuario, new Date(), tipo),
+  );
+  let correo = 'no_disponible';
+  if (enviarCorreo) {
+    try {
+      correo = await enviarCorreo({
+        folio: resultado.folio,
+        respuesta: resultado.respuestas.at(-1).texto,
+      });
+    } catch {
+      correo = 'fallido';
+    }
+  }
+  return { ...resultado, correoRespuesta: correo };
 }
 
 export function cambiarEstadoSolicitud(

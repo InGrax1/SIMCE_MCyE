@@ -1,4 +1,5 @@
 import { auditar } from '../cms/contenido.js';
+import { crearAccesoRespuesta } from './accesoPrivado.js';
 
 const escapar = (valor) =>
   valor
@@ -8,7 +9,13 @@ const escapar = (valor) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, produccion = false }) {
+export function crearCorreoConsultas({
+  almacen,
+  enviarCorreo,
+  origenPublico,
+  secreto,
+  produccion = false,
+}) {
   const origen = new URL(origenPublico);
   if (
     origen.origin !== origenPublico ||
@@ -19,26 +26,42 @@ export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, pro
   )
     throw new Error('Configura PORTAL_ORIGEN_PUBLICO con HTTPS o un origen local de desarrollo.');
 
-  return async ({ folio, acceso }) => {
+  return async ({ folio, acceso, respuesta }) => {
     const inscripcion = folio.startsWith('INS-');
     const social = folio.startsWith('SS-');
     const coleccion = inscripcion ? 'inscripciones' : social ? 'intereses' : 'consultasTalleres';
     const consulta = (await almacen.leer())[coleccion].find((c) => c.folio === folio);
-    const titulo = inscripcion
-      ? 'Inscripción confirmada'
-      : social
-        ? 'Recibimos tu solicitud de servicio social'
-        : 'Recibimos tu consulta';
+    const esRespuesta = respuesta !== undefined;
+    if (esRespuesta && enviarCorreo && secreto) {
+      const privado = crearAccesoRespuesta(consulta.id, secreto);
+      if (consulta.accesoRespuestaHash !== privado.accesoHash)
+        await almacen.cambiar((s) => {
+          const registro = s[coleccion].find((c) => c.id === consulta.id);
+          registro.accesoRespuestaHash = privado.accesoHash;
+        });
+      acceso = privado.acceso;
+    }
+    const titulo = esRespuesta
+      ? 'El Módulo respondió tu solicitud'
+      : inscripcion
+        ? 'Inscripción confirmada'
+        : social
+          ? 'Recibimos tu solicitud de servicio social'
+          : 'Recibimos tu consulta';
     const actividad = `${social ? 'Programa' : 'Taller'}: ${consulta.programaNombre ?? consulta.tallerNombre}`;
     const mensaje =
       consulta.mensaje ||
       (social ? 'Solicito información sobre este programa.' : 'Sin mensaje inicial.');
-    const detalleTexto = inscripcion
-      ? 'Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.'
-      : `Tu pregunta:\n${mensaje}`;
-    const detalleHtml = inscripcion
-      ? '<p>Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.</p>'
-      : `<h2>Tu pregunta</h2><p style="white-space:pre-wrap">${escapar(mensaje)}</p>`;
+    const detalleTexto = esRespuesta
+      ? respuesta
+      : inscripcion
+        ? 'Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.'
+        : `Tu pregunta:\n${mensaje}`;
+    const detalleHtml = esRespuesta
+      ? `<p style="white-space:pre-wrap">${escapar(respuesta)}</p>`
+      : inscripcion
+        ? '<p>Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.</p>'
+        : `<h2>Tu pregunta</h2><p style="white-space:pre-wrap">${escapar(mensaje)}</p>`;
     const nota = inscripcion
       ? 'La asistencia la registra el personal del Módulo.'
       : social
@@ -47,7 +70,7 @@ export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, pro
     const url = new URL('/', origen);
     url.hash = `${inscripcion ? 'inscripcion-taller' : social ? 'servicio-social' : 'consulta-taller'}=${encodeURIComponent(folio)}&acceso=${encodeURIComponent(acceso)}`;
     let estado = 'no_disponible';
-    if (enviarCorreo) {
+    if (enviarCorreo && acceso) {
       try {
         const resultado = await enviarCorreo({
           para: consulta.correo,
@@ -62,13 +85,16 @@ export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, pro
     }
     await almacen.cambiar((s) => {
       const registro = s[coleccion].find((c) => c.folio === folio);
-      registro.correoConfirmacion = { estado, intentadoEn: new Date().toISOString() };
-      auditar(
-        s,
-        { id: 'sistema' },
-        `${inscripcion ? 'CORREO_INSCRIPCION' : social ? 'CORREO_SERVICIO_SOCIAL' : 'CORREO_CONSULTA'}_${estado.toUpperCase()}`,
-        registro.id,
-      );
+      if (!esRespuesta)
+        registro.correoConfirmacion = { estado, intentadoEn: new Date().toISOString() };
+      const evento = esRespuesta
+        ? 'CORREO_RESPUESTA'
+        : inscripcion
+          ? 'CORREO_INSCRIPCION'
+          : social
+            ? 'CORREO_SERVICIO_SOCIAL'
+            : 'CORREO_CONSULTA';
+      auditar(s, { id: 'sistema' }, `${evento}_${estado.toUpperCase()}`, registro.id);
     });
     return estado;
   };
