@@ -66,4 +66,14 @@ describe('acceso a consultas en el navegador', () => {
     expect(guardarConsulta(consulta(1))).toBe(false);
     expect(quitarConsulta(consulta(1).folio)).toBe(false);
   });
+  it('conserva accesos de consultas e inscripciones por separado y quita solo el solicitado', () => {
+    const inscripcion = { ...consulta(1), folio: 'INS-2026-00000001' };
+    guardarConsulta(consulta(1));
+    guardarConsulta(inscripcion);
+    expect(leerConsultasGuardadas()).toEqual([consulta(1)]);
+    expect(leerConsultasGuardadas('INS')).toEqual([inscripcion]);
+    quitarConsulta(inscripcion.folio);
+    expect(leerConsultasGuardadas('INS')).toEqual([]);
+    expect(leerConsultasGuardadas()).toHaveLength(1);
+  });
 });

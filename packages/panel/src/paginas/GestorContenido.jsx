@@ -3,6 +3,7 @@ import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesi
 import { Prototipo } from './Prototipo.jsx';
 import { InscripcionesTaller } from './InscripcionesTaller.jsx';
 import { ConsultasTaller } from './ConsultasTaller.jsx';
+import { SolicitudesPanel } from './SolicitudesPanel.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
 
@@ -614,6 +615,7 @@ export function GestorContenido() {
                 </button>
               )}
             </div>
+            {publica && <SolicitudesPanel ejecutar={ejecutar} ocupado={ocupado} />}
             <div className="cms-columnas">
               <aside className="cms-listado">
                 <label>

@@ -1,6 +1,7 @@
 import express from 'express';
 import { crearRutasTalleres } from '../talleres/rutas.js';
 import { validarPublicacionTaller } from '../talleres/reglas.js';
+import { sinAccesoPrivado } from '../talleres/accesoPrivado.js';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile, unlink, readFile } from 'node:fs/promises';
@@ -166,6 +167,32 @@ export function crearRutasCms({
       return estado.intereses ?? [];
     });
     res.json(salida);
+  });
+  router.get('/cms/solicitudes', auth.permitir(responsables), async (req, res) => {
+    res.json(
+      await almacen.cambiar((s) => {
+        auditar(s, req.usuario, 'CONSULTAR_SOLICITUDES', 'solicitudes');
+        return {
+          consultas: (s.consultasTalleres ?? []).map(sinAccesoPrivado).reverse(),
+          inscripciones: (s.inscripciones ?? []).map(sinAccesoPrivado).reverse(),
+          intereses: (s.intereses ?? []).toReversed(),
+          aviso: s.avisoTalleres,
+          talleres: s.entradas
+            .filter((e) => e.tipo === 'taller')
+            .map((e) => ({
+              id: e.id,
+              nombre: e.publicado?.nombre ?? e.borrador.nombre ?? e.borrador.titulo,
+              inscripcion: e.inscripcion,
+            })),
+          programas: s.entradas
+            .filter((e) => e.tipo === 'programa')
+            .map((e) => ({
+              id: e.id,
+              nombre: e.publicado?.nombre ?? e.borrador.nombre ?? e.borrador.titulo,
+            })),
+        };
+      }),
+    );
   });
   async function regenerar(res) {
     try {

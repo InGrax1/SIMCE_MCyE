@@ -167,6 +167,22 @@ try {
     .replaceAll('&amp;', '&');
   assert.equal(enlaceCorreo, enlacePrivado);
   assert.ok(copia.texto.includes('¿Qué materiales debo llevar al taller?'));
+  const consultaDuplicada = await contexto.request.post(
+    `${origen}/api/v1/publico/talleres/${taller.id}/consultas`,
+    {
+      headers: { Origin: origen },
+      data: {
+        nombre: 'Otra solicitud',
+        correo: ' CONSULTA@EXAMPLE.TEST ',
+        mensaje: 'Otra pregunta',
+        aceptoAviso: true,
+        versionAviso: avisoPrivacidad.version,
+      },
+    },
+  );
+  assert.equal(consultaDuplicada.status(), 409);
+  assert.equal((await consultaDuplicada.json()).error, 'CONSULTA_DUPLICADA');
+  assert.equal((await almacen.leer()).consultasTalleres.length, 1);
   await pagina.goto(`${origen}/#talleres`);
   await pagina.getByRole('heading', { name: 'Mis consultas de talleres', exact: true }).waitFor();
   await pagina
@@ -205,6 +221,35 @@ try {
   await seguimiento
     .getByText('El material está incluido. Puedes llevar una libreta.', { exact: true })
     .waitFor();
+  await seguimiento
+    .getByLabel('Continuar esta consulta', { exact: true })
+    .fill('¿A qué hora inicia el taller?');
+  await seguimiento
+    .getByRole('button', { name: 'Enviar mensaje de seguimiento', exact: true })
+    .click();
+  await seguimiento
+    .getByText('Tu consulta está pendiente de respuesta.', { exact: true })
+    .waitFor();
+  const solicitudesPanel = panel.locator('#solicitudes-panel');
+  await solicitudesPanel.getByRole('button', { name: /^Consultas de talleres/ }).click();
+  const fichaConsulta = solicitudesPanel
+    .locator('.cms-asistentes > li')
+    .filter({ hasText: consultaCreada.folio });
+  await fichaConsulta.getByText('¿A qué hora inicia el taller?', { exact: true }).waitFor();
+  await fichaConsulta
+    .getByLabel(`Respuesta para ${consultaCreada.folio}`, { exact: true })
+    .fill('El taller inicia a las nueve.');
+  await fichaConsulta.getByRole('button', { name: 'Publicar respuesta', exact: true }).click();
+  await solicitudesPanel
+    .getByText(`Respuesta publicada para ${consultaCreada.folio}.`, { exact: true })
+    .waitFor();
+  await solicitudesPanel.getByRole('button', { name: 'Cerrar solicitudes', exact: true }).click();
+  await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
+  await seguimiento.getByText('El taller inicia a las nueve.', { exact: true }).waitFor();
+  assert.equal((await almacen.leer()).consultasTalleres.length, 1);
+  reporte.flujo.push(
+    'Consulta duplicada bloqueada y mensajes adicionales atendidos desde el apartado central con el mismo folio',
+  );
   for (const ancho of [1440, 390]) {
     await seguimiento.setViewportSize({ width: ancho, height: 900 });
     assert.equal(
@@ -379,7 +424,14 @@ try {
   await inscripcion.getByLabel(/He leído y acepto/).check();
   await pagina.getByRole('button', { name: 'Confirmar inscripción', exact: true }).click();
   await pagina.getByRole('heading', { name: 'Inscripción confirmada', exact: true }).waitFor();
+  const enlaceInscripcion = await pagina
+    .getByRole('link', { name: 'Consultar mi inscripción', exact: true })
+    .getAttribute('href');
+  const folioInscripcion = (await almacen.leer()).inscripciones[0].folio;
   assert.match(await pagina.locator('.inscripcion-confirmada').textContent(), /INS-\d{4}-\d{8}/);
+  await pagina.waitForFunction(() =>
+    document.activeElement?.classList.contains('inscripcion-confirmada'),
+  );
   assert.equal(
     await pagina.locator('.inscripcion-confirmada').evaluate((e) => document.activeElement === e),
     true,
@@ -401,6 +453,61 @@ try {
   assert.equal((await duplicado.json()).error, 'INSCRIPCION_DUPLICADA');
   reporte.flujo.push(
     'Inscripción pública interna con consentimiento, folio, foco y bloqueo de duplicados',
+  );
+  const contextoInscrito = await browser.newContext({
+    reducedMotion: 'reduce',
+    viewport: { width: 1440, height: 1000 },
+  });
+  const inscrito = await contextoInscrito.newPage();
+  inscrito.on('pageerror', (e) => reporte.errores.push(e.message));
+  await inscrito.goto(enlaceInscripcion);
+  const miInscripcion = inscrito.locator('#consultar-inscripcion');
+  await miInscripcion.getByText('María López de la Cruz', { exact: true }).waitFor();
+  await miInscripcion
+    .getByLabel('Motivo', { exact: true })
+    .fill('Cambio de horario del participante');
+  await miInscripcion.getByRole('button', { name: 'Cancelar mi inscripción', exact: true }).click();
+  await miInscripcion
+    .getByText('Cancelaste tu inscripción. La plaza quedó disponible.', { exact: true })
+    .waitFor();
+  assert.equal((await almacen.leer()).inscripciones[0].estado, 'cancelada');
+  await miInscripcion.getByLabel('Motivo', { exact: true }).fill('El participante puede asistir');
+  await miInscripcion.getByRole('checkbox').check();
+  await miInscripcion
+    .getByRole('button', { name: 'Reactivar mi inscripción', exact: true })
+    .click();
+  await miInscripcion
+    .getByText('Tu inscripción fue reactivada con el mismo folio.', { exact: true })
+    .waitFor();
+  assert.equal((await almacen.leer()).inscripciones[0].folio, folioInscripcion);
+  assert.equal((await almacen.leer()).inscripciones.length, 1);
+  assert.equal(
+    await miInscripcion.getByRole('button', { name: 'Registrar asistencia' }).count(),
+    0,
+  );
+  for (const ancho of [1440, 390, 320]) {
+    await inscrito.setViewportSize({ width: ancho, height: 1000 });
+    assert.equal(
+      await inscrito.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+    if (ancho !== 320) await axe(inscrito, `Inscripción privada e historial ${ancho}px`);
+    await miInscripcion.scrollIntoViewIfNeeded();
+    await miInscripcion.screenshot({
+      path: join(artefactos, `inscripcion-privada-${ancho}.png`),
+    });
+  }
+  await inscrito.getByRole('link', { name: 'Volver a talleres', exact: true }).click();
+  await inscrito.reload();
+  await inscrito
+    .getByRole('heading', { name: 'Mis inscripciones a talleres', exact: true })
+    .waitFor();
+  await inscrito
+    .getByRole('link', { name: `Consultar estado de ${folioInscripcion}`, exact: true })
+    .click();
+  await miInscripcion.getByText('María López de la Cruz', { exact: true }).waitFor();
+  reporte.flujo.push(
+    'Participante consulta datos e historial, cancela, libera plaza y reactiva con el mismo folio y acceso guardado',
   );
   await pagina.reload();
   await pagina.locator('.taller-inscripcion summary').click();
@@ -439,6 +546,46 @@ try {
   await pagina.locator('.taller-inscripcion summary').click();
   await pagina.getByRole('button', { name: 'Confirmar inscripción', exact: true }).waitFor();
   reporte.flujo.push('Cupo agotado, lista privada, CSV/PDF y reapertura al cancelar');
+  await solicitudesPanel.getByRole('button', { name: /^Inscripciones \(/ }).click();
+  await solicitudesPanel
+    .getByLabel('Buscar por nombre, correo o folio', { exact: true })
+    .fill('PARTICIPANTE@example.test');
+  const fichaInscripcion = solicitudesPanel
+    .locator('.cms-asistentes > li')
+    .filter({ hasText: folioInscripcion });
+  await fichaInscripcion.getByText(`${folioInscripcion} · cancelada`, { exact: true }).waitFor();
+  await solicitudesPanel
+    .getByLabel('Motivo de la gestión de inscripción', { exact: true })
+    .fill('Reactivación revisada por la responsable');
+  await solicitudesPanel.getByRole('checkbox').check();
+  await fichaInscripcion
+    .getByRole('button', { name: 'Reactivar inscripción', exact: true })
+    .click();
+  await fichaInscripcion.getByText(`${folioInscripcion} · confirmada`, { exact: true }).waitFor();
+  await solicitudesPanel
+    .getByLabel('Motivo de la gestión de inscripción', { exact: true })
+    .fill('Asistencia verificada en la sede');
+  await fichaInscripcion.getByRole('button', { name: 'Registrar asistencia', exact: true }).click();
+  await fichaInscripcion.getByText(`${folioInscripcion} · asistio`, { exact: true }).waitFor();
+  for (const ancho of [1440, 390]) {
+    await panel.setViewportSize({ width: ancho, height: 1000 });
+    assert.equal(
+      await panel.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+    await axe(panel, `Solicitudes y participantes ${ancho}px`);
+    await solicitudesPanel.scrollIntoViewIfNeeded();
+    await solicitudesPanel.screenshot({ path: join(artefactos, `solicitudes-panel-${ancho}.png`) });
+  }
+  await inscrito.getByRole('button', { name: 'Actualizar inscripción', exact: true }).click();
+  await miInscripcion.getByText('Asistencia verificada en la sede', { exact: true }).waitFor();
+  await solicitudesPanel.getByRole('button', { name: /^Servicio social \(/ }).click();
+  await solicitudesPanel.getByText('Interés de servicio social', { exact: true }).waitFor();
+  await solicitudesPanel.getByRole('button', { name: 'Cerrar solicitudes', exact: true }).click();
+  await contextoInscrito.close();
+  reporte.flujo.push(
+    'Panel reúne talleres, inscritos y servicio social; registra asistencia y el participante ve el motivo en su historial',
+  );
   await almacen.cambiar((s) => {
     s.avisoTalleres = null;
   });

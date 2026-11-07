@@ -401,3 +401,56 @@
   padding-left: 16px;
   margin-block: 16px;
 }
+.cms-solicitudes {
+  padding: 24px;
+  margin-block: 24px 32px;
+  border: 1px solid #cfc5c3;
+  background: #fff;
+  border-radius: 12px;
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+.cms-solicitudes-cabecera,
+.cms-categorias-solicitudes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+.cms-solicitudes-cabecera {
+  justify-content: space-between;
+}
+.cms-solicitudes h2 {
+  margin: 0;
+}
+.cms-categorias-solicitudes {
+  margin-block: 24px;
+}
+.cms .cms-categorias-solicitudes button[aria-pressed='true'] {
+  background: #410000;
+  color: #fff;
+}
+.cms-solicitudes h4 {
+  font-weight: 600;
+}
+.cms-filtros-solicitudes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.cms-solicitudes .consulta-mensaje {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cms-solicitudes form {
+  margin-top: 24px;
+}
+@media (max-width: 600px) {
+  .cms-solicitudes {
+    padding: 20px 16px;
+  }
+  .cms-categorias-solicitudes > button {
+    width: 100%;
+  }
+}

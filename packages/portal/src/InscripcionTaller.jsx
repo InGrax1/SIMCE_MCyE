@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { enlaceConsulta, guardarConsulta } from './consultasGuardadas.js';
 
 const fecha = (valor) =>
   new Intl.DateTimeFormat('es-MX', {
@@ -14,8 +15,12 @@ export function InscripcionTaller({ taller }) {
   const [ocupado, cambiarOcupado] = useState(false);
   const [error, cambiarError] = useState('');
   const [folio, cambiarFolio] = useState('');
+  const [recibo, cambiarRecibo] = useState(null);
   const bloqueo = useRef(false);
   const confirmacion = useRef(null);
+  useEffect(() => {
+    if (folio) confirmacion.current?.focus();
+  }, [folio]);
   async function consultar() {
     cambiarActual(null);
     cambiarError('');
@@ -58,7 +63,15 @@ export function InscripcionTaller({ taller }) {
         throw new Error(resultado.mensaje ?? 'No fue posible completar la inscripción.');
       }
       cambiarFolio(resultado.folio);
-      requestAnimationFrame(() => confirmacion.current?.focus());
+      const guardado = guardarConsulta({
+        ...resultado,
+        tallerNombre: taller.nombre ?? taller.titulo,
+      });
+      cambiarRecibo({
+        ...resultado,
+        guardado,
+        enlace: `${location.origin}${enlaceConsulta(resultado)}`,
+      });
     } catch (e) {
       cambiarError(e.message);
     } finally {
@@ -66,7 +79,8 @@ export function InscripcionTaller({ taller }) {
       cambiarOcupado(false);
     }
   }
-  if (!taller.inscripcion) return null;
+  if (!taller.inscripcion)
+    return <p>Este taller todavía no tiene inscripción en línea. Puedes solicitar información.</p>;
   const inscripcion = actual?.inscripcion;
   return (
     <details
@@ -75,14 +89,34 @@ export function InscripcionTaller({ taller }) {
         if (e.currentTarget.open && !folio) consultar();
       }}
     >
-      <summary>Consultar inscripción</summary>
+      <summary>Inscribirme al taller</summary>
       {error && <p role="alert">{error}</p>}
       {folio ? (
         <div role="status" tabIndex={-1} ref={confirmacion} className="inscripcion-confirmada">
           <h4>Inscripción confirmada</h4>
           <p>
-            Tu folio es <strong>{folio}</strong>. Guárdalo para consultar tu registro con el módulo.
+            Tu folio es <strong>{folio}</strong>. Puedes consultar tu registro, cancelar o reactivar
+            tu inscripción y revisar el historial y la asistencia dentro del sitio.
           </p>
+          <p>
+            {recibo?.guardado
+              ? 'El acceso quedó guardado en «Mis inscripciones a talleres» en este navegador.'
+              : 'El navegador no permitió guardar el acceso. Conserva el enlace privado.'}
+          </p>
+          <p>
+            {recibo?.correo === 'enviado'
+              ? 'Enviamos una copia por correo con el botón para consultar tu estado.'
+              : recibo?.correo === 'fallido'
+                ? 'La inscripción está confirmada, pero falló el envío de la copia por correo.'
+                : 'La copia por correo todavía no está disponible.'}
+          </p>
+          <a href={recibo?.enlace}>Consultar mi inscripción</a>
+          {recibo && !recibo.guardado && (
+            <label>
+              Enlace privado de inscripción
+              <input readOnly value={recibo.enlace} onFocus={(e) => e.currentTarget.select()} />
+            </label>
+          )}
         </div>
       ) : !actual ? (
         <p role="status">

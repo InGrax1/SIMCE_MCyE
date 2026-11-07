@@ -135,9 +135,11 @@ describe('talleres e inscripciones', () => {
   it('entrega folio, normaliza correo y registra consentimiento sin publicar datos personales', async () => {
     const resultado = await inscribir(participante(' Participante@Example.test '));
     expect(resultado.status).toBe(201);
-    expect(resultado.body).toEqual({
+    expect(resultado.body).toMatchObject({
       folio: expect.stringMatching(/^INS-\d{4}-\d{8}$/),
       estado: 'confirmada',
+      acceso: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+      correo: 'no_disponible',
     });
     const estado = await new AlmacenCmsArchivo(almacen.archivo).leer();
     expect(estado.inscripciones[0]).toMatchObject({
@@ -146,6 +148,7 @@ describe('talleres e inscripciones', () => {
       avisoAceptadoEn: expect.any(String),
     });
     expect(JSON.stringify(estado.auditoria)).not.toContain('María');
+    expect(JSON.stringify(estado)).not.toContain(resultado.body.acceso);
     const publico = await request(app).get('/api/v1/publico/talleres');
     expect(publico.body.talleres[0].inscripcion.estadoInscripcion).toBe('cupo_lleno');
     expect(JSON.stringify(publico.body)).not.toMatch(/participante@example|María|avisoAceptadoEn/);
@@ -377,6 +380,201 @@ describe('talleres e inscripciones', () => {
       (await seguimiento({ ...acceso, acceso: randomBytes(32).toString('base64url') })).status,
     ).toBe(404);
     expect((await seguimiento({ ...acceso, folio: 'CT-2026-99999999' })).status).toBe(404);
+  });
+  it('bloquea consultas duplicadas normalizadas sin generar otro folio ni enviar otra copia', async () => {
+    const primera = await preguntar();
+    const segunda = await preguntar({
+      correo: ' PARTICIPANTE@EXAMPLE.TEST ',
+      mensaje: 'Otra pregunta',
+    });
+    expect(primera.status).toBe(201);
+    expect(segunda.status).toBe(409);
+    expect(segunda.body.error).toBe('CONSULTA_DUPLICADA');
+    expect(segunda.body.acceso).toBeUndefined();
+    expect(segunda.body.folio).toBeUndefined();
+    const s = await almacen.leer();
+    expect(s.consultasTalleres).toHaveLength(1);
+    expect(s.consecutivoConsultaTaller).toBe(1);
+  });
+  it('continúa una consulta con el mismo folio y reabre su atención sin revelar el acceso', async () => {
+    const recibo = (await preguntar()).body;
+    const c = (await almacen.leer()).consultasTalleres[0];
+    await api('admin', 'post', `/consultas-talleres/${c.id}/respuestas`, {
+      texto: 'Material incluido.',
+      version: 1,
+    });
+    const enviar = (datos) =>
+      request(app)
+        .post('/api/v1/publico/consultas-talleres/mensajes')
+        .set('Origin', origen)
+        .send(datos);
+    expect(
+      (
+        await enviar({
+          ...recibo,
+          acceso: randomBytes(32).toString('base64url'),
+          texto: 'Otra pregunta',
+          version: 2,
+        })
+      ).status,
+    ).toBe(404);
+    expect((await enviar({ ...recibo, texto: '¿A qué hora comienza?', version: 1 })).status).toBe(
+      409,
+    );
+    const seguimientoNuevo = await enviar({
+      ...recibo,
+      texto: '¿A qué hora comienza?',
+      version: 2,
+    });
+    expect(seguimientoNuevo.status).toBe(200);
+    expect(seguimientoNuevo.body).toMatchObject({
+      folio: recibo.folio,
+      estado: 'pendiente',
+      seguimientos: [{ texto: '¿A qué hora comienza?', momento: expect.any(String) }],
+    });
+    expect((await almacen.leer()).consultasTalleres).toHaveLength(1);
+    expect(JSON.stringify(seguimientoNuevo.body)).not.toMatch(/accesoHash|participante@example/);
+  });
+  it('permite al participante consultar, cancelar y reactivar su inscripción con historial y el mismo folio', async () => {
+    const recibo = (await inscribir()).body;
+    const leer = (datos) =>
+      request(app)
+        .post('/api/v1/publico/inscripciones/consultar')
+        .set('Origin', origen)
+        .send(datos);
+    const gestionar = (datos) =>
+      request(app).post('/api/v1/publico/inscripciones/acciones').set('Origin', origen).send(datos);
+    expect((await leer({ folio: recibo.folio })).status).toBe(404);
+    expect((await leer({ ...recibo, acceso: randomBytes(32).toString('base64url') })).status).toBe(
+      404,
+    );
+    const lectura = await leer(recibo);
+    expect(lectura.status).toBe(200);
+    expect(lectura.headers['cache-control']).toBe('no-store');
+    expect(lectura.body).toMatchObject({
+      nombre: 'María López',
+      correo: 'participante@example.test',
+      puedeCancelar: true,
+    });
+    expect(JSON.stringify(lectura.body)).not.toMatch(/usuarioId|accesoHash/);
+    const cancelar = await gestionar({
+      ...recibo,
+      accion: 'cancelar',
+      motivo: 'Cambio de horario',
+      version: 1,
+    });
+    expect(cancelar.status).toBe(200);
+    expect(cancelar.body.estado).toBe('cancelada');
+    expect(proyectarTaller(await almacen.leer(), tallerPrueba()).inscripcion.disponibles).toBe(1);
+    expect(
+      (await gestionar({ ...recibo, accion: 'reactivar', motivo: 'Puedo asistir', version: 2 }))
+        .status,
+    ).toBe(422);
+    const reactivar = await gestionar({
+      ...recibo,
+      accion: 'reactivar',
+      motivo: 'Puedo asistir',
+      version: 2,
+      aceptoAviso: true,
+      versionAviso: 'sintetico-v1',
+    });
+    expect(reactivar.status).toBe(200);
+    expect(reactivar.body).toMatchObject({ folio: recibo.folio, estado: 'confirmada' });
+    expect(reactivar.body.historial.map((h) => h.accion)).toEqual([
+      'INSCRIBIR',
+      'cancelar',
+      'reactivar',
+    ]);
+    expect(reactivar.body.historial[1]).toMatchObject({
+      motivo: 'Cambio de horario',
+      origen: 'Participante',
+    });
+    expect(
+      (await gestionar({ ...recibo, accion: 'asistencia', motivo: 'Intento propio', version: 3 }))
+        .status,
+    ).toBe(403);
+    const i = (await almacen.leer()).inscripciones[0];
+    await api('responsable', 'post', `/inscripciones/${i.id}/acciones`, {
+      accion: 'asistencia',
+      motivo: 'Verificada en sede',
+      version: 3,
+    });
+    const final = await leer(recibo);
+    expect(final.body).toMatchObject({ estado: 'asistio', puedeCancelar: false });
+    expect(final.body.historial.at(-1)).toMatchObject({
+      accion: 'asistencia',
+      origen: 'Personal del Módulo',
+      motivo: 'Verificada en sede',
+    });
+    expect((await almacen.leer()).inscripciones).toHaveLength(1);
+  });
+  it('rechaza reactivaciones propias sin cupo, fuera de periodo o con versión obsoleta', async () => {
+    const recibo = (await inscribir()).body;
+    const gestionar = (datos) =>
+      request(app).post('/api/v1/publico/inscripciones/acciones').set('Origin', origen).send(datos);
+    await gestionar({ ...recibo, accion: 'cancelar', motivo: 'Cambio', version: 1 });
+    await inscribir(participante('otra@example.test'));
+    const accion = {
+      ...recibo,
+      accion: 'reactivar',
+      motivo: 'Regresar',
+      version: 2,
+      aceptoAviso: true,
+      versionAviso: 'sintetico-v1',
+    };
+    expect((await gestionar(accion)).body.error).toBe('CUPO_AGOTADO');
+    await almacen.cambiar((s) => {
+      s.inscripciones[1].estado = 'cancelada';
+    });
+    expect((await gestionar({ ...accion, version: 1 })).body.error).toBe('VERSION_DESACTUALIZADA');
+    await almacen.cambiar((s) => {
+      s.entradas.find((e) => e.id === id).inscripcion.cierre = '2021-01-01T00:00:00.000Z';
+    });
+    expect((await gestionar(accion)).body.error).toBe('INSCRIPCION_CERRADA');
+    expect((await almacen.leer()).inscripciones[0].estado).toBe('cancelada');
+  });
+  it('reúne consultas, participantes y servicio social en el panel solo para responsable y administrador', async () => {
+    await preguntar();
+    await inscribir();
+    await almacen.cambiar((s) => {
+      s.intereses.push({
+        id: randomUUID(),
+        nombre: 'Interés de prueba',
+        correo: 'social@example.test',
+      });
+    });
+    await request(app).get('/api/v1/cms/solicitudes').expect(401);
+    for (const rol of ['editor', 'operador'])
+      expect((await api(rol, 'get', '/cms/solicitudes')).status).toBe(403);
+    for (const rol of ['admin', 'responsable']) {
+      const lista = await api(rol, 'get', '/cms/solicitudes');
+      expect(lista.status).toBe(200);
+      expect(lista.body.consultas).toHaveLength(1);
+      expect(lista.body.inscripciones).toHaveLength(1);
+      expect(lista.body.intereses).toHaveLength(1);
+      expect(JSON.stringify(lista.body)).not.toContain('accesoHash');
+    }
+  });
+  it('genera el respaldo de inscripción con su propio enlace privado sin confundirlo con una consulta', async () => {
+    const mensajes = [];
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      origenPublico: origen,
+      enviarCorreo: async (m) => {
+        mensajes.push(m);
+        return { modo: 'smtp' };
+      },
+    });
+    const recibo = await inscribir();
+    expect(recibo.body.correo).toBe('enviado');
+    expect(mensajes).toHaveLength(1);
+    expect(mensajes[0].texto).toContain(
+      `#inscripcion-taller=${recibo.body.folio}&acceso=${recibo.body.acceso}`,
+    );
+    expect(mensajes[0].html).toContain('Inscripción confirmada');
+    const duplicada = await inscribir();
+    expect(duplicada.status).toBe(409);
+    expect(mensajes).toHaveLength(1);
   });
   it('envía una copia con pregunta y botón privado desde el origen configurado y escapa el HTML', async () => {
     const correos = [];

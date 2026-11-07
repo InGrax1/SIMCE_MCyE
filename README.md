@@ -59,7 +59,7 @@ Para el desarrollo independiente de las vistas existen `dev:portal` y `dev:panel
 
 ## Estado
 
-Los talleres permiten [consultar y recibir respuestas dentro de la web](docs/fase-2/consultas-web.md): «Solicitar información» abre un formulario y entrega un enlace privado para el seguimiento; responsable/admin responde desde el panel. Los botones de servicio social llevan a su formulario con el programa elegido.
+Los talleres permiten [consultar y recibir respuestas dentro de la web](docs/fase-2/consultas-web.md): «Solicitar información» abre una conversación única por correo y taller, con seguimiento en el mismo folio. «Inscribirme al taller» reserva plaza y permite [consultar la inscripción, cancelarla o reactivarla y ver su historial](docs/fase-2/seguimiento-participantes.md). Ambos accesos quedan guardados en el navegador y tienen respaldo por correo cuando SMTP está habilitado. Responsable/admin dispone de «Solicitudes y participantes» al inicio del panel para atender talleres, inscritos y servicio social. Los botones de servicio social llevan a su formulario con el programa elegido.
 
 La Fase 2 incorpora inscripciones con consentimiento y folio, cupo concurrente, lista privada, exportación CSV/PDF y acciones con historial. El aviso y los roles fueron autorizados por el usuario. El entorno integrado, iniciado con `dev:fase1`, configura el aviso local y muestra el formulario para los talleres publicados dentro de periodo y con cupo. Consulte el [estado de Fase 2](docs/fase-2/estado.md) y la [guía de talleres](docs/fase-2/talleres-inscripciones.md).
 

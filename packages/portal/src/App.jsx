@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { InscripcionTaller } from './InscripcionTaller.jsx';
+import { SeguimientoInscripcion } from './SeguimientoInscripcion.jsx';
 import {
   ConsultaTaller,
   MisConsultasTaller,
@@ -1047,6 +1048,7 @@ function Talleres() {
           </p>
         )}
         <MisConsultasTaller />
+        <MisConsultasTaller tipo="INS" />
         {avisos.map((aviso) => (
           <article className="aviso" key={aviso.id}>
             <h3>{aviso.nombre ?? aviso.titulo}</h3>
@@ -1070,6 +1072,7 @@ function PaginaPortal() {
       <Encabezado />
       <main id="contenido-principal" tabIndex={-1} ref={contenido}>
         <SeguimientoConsultaTaller />
+        <SeguimientoInscripcion />
         <Inicio />
         <Separador
           archivo="PapelRasgadoHorizontalFigma1.svg"

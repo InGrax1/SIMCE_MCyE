@@ -14,13 +14,17 @@ import {
   consultarRespuesta,
   listarConsultas,
   responderConsulta,
+  agregarSeguimiento,
 } from './consultas.js';
+import { sinAccesoPrivado } from './accesoPrivado.js';
+import { consultarInscripcion, gestionarInscripcionPropia } from './seguimientoInscripciones.js';
 
 export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboConsulta }) {
   const router = express.Router();
   const cuotas = new Map();
   const cuotasConsultas = new Map();
   const cuotasLectura = new Map();
+  const cuotasAcciones = new Map();
   function limitar(cuotas, limite, req) {
     const ahora = Date.now();
     for (const [ip, cuota] of cuotas) if (cuota.hasta <= ahora) cuotas.delete(ip);
@@ -58,7 +62,8 @@ export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboCons
     const resultado = await almacen.cambiar((estado) =>
       registrarInscripcion(estado, req.params.id, req.body ?? {}),
     );
-    res.status(201).json(resultado);
+    const correo = enviarReciboConsulta ? await enviarReciboConsulta(resultado) : 'no_disponible';
+    res.status(201).json({ ...resultado, correo });
   });
   router.post('/publico/talleres/:id/consultas', auth.origen, async (req, res) => {
     limitar(cuotasConsultas, 5, req);
@@ -71,6 +76,18 @@ export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboCons
   router.post('/publico/consultas-talleres/consultar', auth.origen, async (req, res) => {
     limitar(cuotasLectura, 60, req);
     res.json(consultarRespuesta(await almacen.leer(), req.body ?? {}));
+  });
+  router.post('/publico/consultas-talleres/mensajes', auth.origen, async (req, res) => {
+    limitar(cuotasAcciones, 15, req);
+    res.json(await almacen.cambiar((estado) => agregarSeguimiento(estado, req.body ?? {})));
+  });
+  router.post('/publico/inscripciones/consultar', auth.origen, async (req, res) => {
+    limitar(cuotasLectura, 60, req);
+    res.json(consultarInscripcion(await almacen.leer(), req.body ?? {}));
+  });
+  router.post('/publico/inscripciones/acciones', auth.origen, async (req, res) => {
+    limitar(cuotasAcciones, 15, req);
+    res.json(await almacen.cambiar((estado) => gestionarInscripcionPropia(estado, req.body ?? {})));
   });
   router.use(
     ['/talleres', '/inscripciones', '/consultas-talleres'],
@@ -97,7 +114,9 @@ export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboCons
       throw new ErrorApi(422, 'FORMATO_INVALIDO', 'Selecciona CSV o PDF.');
     const resultado = await almacen.cambiar((estado) => {
       const taller = buscarTaller(estado, req.params.id);
-      const inscripciones = estado.inscripciones.filter((i) => i.tallerId === taller.id);
+      const inscripciones = estado.inscripciones
+        .filter((i) => i.tallerId === taller.id)
+        .map(sinAccesoPrivado);
       auditar(
         estado,
         req.usuario,

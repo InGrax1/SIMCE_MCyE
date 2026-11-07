@@ -15,6 +15,9 @@ export function ConsultaTaller({ taller }) {
   const [recibo, cambiarRecibo] = useState(null);
   const bloqueo = useRef(false);
   const confirmacion = useRef(null);
+  useEffect(() => {
+    if (recibo) confirmacion.current?.focus();
+  }, [recibo]);
   return (
     <details className="taller-consulta">
       <summary className="boton">Solicitar información</summary>
@@ -79,7 +82,6 @@ export function ConsultaTaller({ taller }) {
               });
               const enlace = `${location.origin}${enlaceConsulta(resultado)}`;
               cambiarRecibo({ folio: resultado.folio, enlace, guardado, correo: resultado.correo });
-              requestAnimationFrame(() => confirmacion.current?.focus());
             } catch (e) {
               cambiarError(e.message);
             } finally {
@@ -145,6 +147,10 @@ export function SeguimientoConsultaTaller() {
   const [ocupado, cambiarOcupado] = useState(false);
   const [revision, cambiarRevision] = useState(0);
   const region = useRef(null);
+  const mensajes = [
+    ...(consulta?.seguimientos ?? []).map((m) => ({ ...m, titulo: 'Tu mensaje de seguimiento' })),
+    ...(consulta?.respuestas ?? []).map((m) => ({ ...m, titulo: 'Respuesta del Módulo' })),
+  ].sort((a, b) => a.momento.localeCompare(b.momento));
   useEffect(() => {
     const leer = () => {
       const datos = new URLSearchParams(location.hash.slice(1));
@@ -202,7 +208,11 @@ export function SeguimientoConsultaTaller() {
       tabIndex={-1}
     >
       <div className="contenido contenido-estrecho">
-        <h2 id="titulo-seguimiento">Consulta del taller</h2>
+        <h2 id="titulo-seguimiento">Solicitud de información del taller</h2>
+        <p>
+          Este folio corresponde a tus preguntas sobre el taller. Para reservar un lugar, utiliza
+          «Inscribirme al taller».
+        </p>
         {error && <p role="alert">{error}</p>}
         {ocupado && <p role="status">Consultando tu solicitud…</p>}
         {consulta && (
@@ -213,19 +223,59 @@ export function SeguimientoConsultaTaller() {
             </p>
             <h4>Tu pregunta</h4>
             <p className="consulta-mensaje">{consulta.mensaje}</p>
-            {!consulta.respuestas.length ? (
-              <p role="status">Tu consulta está pendiente de respuesta.</p>
-            ) : (
-              <div className="consulta-respuestas">
-                {consulta.respuestas.map((r, i) => (
-                  <article key={i}>
-                    <h4>Respuesta del Módulo</h4>
-                    <time dateTime={r.momento}>{fecha(r.momento)}</time>
-                    <p className="consulta-mensaje">{r.texto}</p>
-                  </article>
-                ))}
-              </div>
-            )}
+            <p role="status">
+              {consulta.estado === 'pendiente'
+                ? 'Tu consulta está pendiente de respuesta.'
+                : 'Tu consulta fue respondida.'}
+            </p>
+            <div className="consulta-respuestas">
+              {mensajes.map((m, i) => (
+                <article key={i}>
+                  <h4>{m.titulo}</h4>
+                  <time dateTime={m.momento}>{fecha(m.momento)}</time>
+                  <p className="consulta-mensaje">{m.texto}</p>
+                </article>
+              ))}
+            </div>
+            <form
+              className="formulario-consulta"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (ocupado) return;
+                const formulario = e.currentTarget;
+                const texto = new FormData(formulario).get('texto');
+                cambiarOcupado(true);
+                cambiarError('');
+                try {
+                  const respuesta = await fetch('/api/v1/publico/consultas-talleres/mensajes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...acceso, texto, version: consulta.version }),
+                  });
+                  const datos = await respuesta.json();
+                  if (!respuesta.ok)
+                    throw new Error(datos.mensaje ?? 'No se pudo enviar el mensaje.');
+                  if (
+                    new URLSearchParams(location.hash.slice(1)).get('consulta-taller') ===
+                    acceso.folio
+                  )
+                    cambiarConsulta(datos);
+                  formulario.reset();
+                } catch (e) {
+                  cambiarError(e.message);
+                } finally {
+                  cambiarOcupado(false);
+                }
+              }}
+            >
+              <label>
+                Continuar esta consulta
+                <textarea name="texto" required maxLength={1000} rows={3} disabled={ocupado} />
+              </label>
+              <button className="boton" disabled={ocupado}>
+                Enviar mensaje de seguimiento
+              </button>
+            </form>
           </>
         )}
         <div className="consulta-acciones">
@@ -244,22 +294,25 @@ export function SeguimientoConsultaTaller() {
   );
 }
 
-export function MisConsultasTaller() {
+export function MisConsultasTaller({ tipo = 'CT' }) {
   const [consultas, cambiarConsultas] = useState([]);
   const [error, cambiarError] = useState('');
   useEffect(() => {
-    const actualizar = () => cambiarConsultas(leerConsultasGuardadas());
+    const actualizar = () => cambiarConsultas(leerConsultasGuardadas(tipo));
     actualizar();
     const eventos = [eventoConsultas, 'storage', 'focus', 'pageshow', 'hashchange'];
     for (const evento of eventos) window.addEventListener(evento, actualizar);
     return () => {
       for (const evento of eventos) window.removeEventListener(evento, actualizar);
     };
-  }, []);
+  }, [tipo]);
   if (!consultas.length) return null;
   return (
-    <div className="consultas-guardadas" id="mis-consultas-talleres">
-      <h3>Mis consultas de talleres</h3>
+    <div
+      className="consultas-guardadas"
+      id={tipo === 'INS' ? 'mis-inscripciones-talleres' : 'mis-consultas-talleres'}
+    >
+      <h3>{tipo === 'INS' ? 'Mis inscripciones a talleres' : 'Mis consultas de talleres'}</h3>
       <p>
         Estas solicitudes están guardadas en este navegador. Puedes quitar su acceso en un equipo
         compartido; tu consulta seguirá registrada en el Módulo.
@@ -288,7 +341,9 @@ export function MisConsultasTaller() {
                   }
                   cambiarError('');
                   if (
-                    new URLSearchParams(location.hash.slice(1)).get('consulta-taller') === c.folio
+                    new URLSearchParams(location.hash.slice(1)).get(
+                      tipo === 'INS' ? 'inscripcion-taller' : 'consulta-taller',
+                    ) === c.folio
                   )
                     location.hash = 'talleres';
                 }}

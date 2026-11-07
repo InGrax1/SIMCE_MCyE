@@ -215,57 +215,81 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
           <ul className="cms-asistentes">
             {lista.inscripciones.map((i) => (
               <li key={i.id}>
-                <h4>{i.nombre}</h4>
-                <p>
-                  {i.folio} · {i.estado}
-                </p>
-                <p>
-                  {i.correo} · {i.telefono}
-                </p>
-                <p>
-                  {i.procedencia}
-                  {i.licenciatura && ` · ${i.licenciatura} · ${i.numeroCuenta}`}
-                </p>
-                <div className="cms-acciones">
-                  {i.estado === 'confirmada' &&
-                    ['asistencia', 'cancelar'].map((a) => (
-                      <button
-                        type="button"
-                        className="secundario"
-                        key={a}
-                        disabled={ocupado || !motivo.trim()}
-                        onClick={() => ejecutar(() => accion(i, a))}
-                      >
-                        {a === 'asistencia' ? 'Registrar asistencia' : 'Cancelar inscripción'}
-                      </button>
-                    ))}
-                  {i.estado === 'cancelada' && !terminado && (
-                    <button
-                      type="button"
-                      className="secundario"
-                      disabled={ocupado || !consentimiento || !motivo.trim()}
-                      onClick={() => ejecutar(() => accion(i, 'reactivar'))}
-                    >
-                      Reactivar inscripción
-                    </button>
-                  )}
-                </div>
-                <details>
-                  <summary>Historial de inscripción</summary>
-                  <ul>
-                    {i.historial.map((h, indice) => (
-                      <li key={indice}>
-                        {h.momento} · {h.accion}
-                        {h.motivo && ` · ${h.motivo}`}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
+                <FichaParticipante
+                  i={i}
+                  ejecutar={ejecutar}
+                  ocupado={ocupado}
+                  motivo={motivo}
+                  consentimiento={consentimiento}
+                  terminado={terminado}
+                  accion={accion}
+                />
               </li>
             ))}
           </ul>
         </>
       )}
     </section>
+  );
+}
+
+export function FichaParticipante({
+  i,
+  ejecutar,
+  ocupado,
+  motivo,
+  consentimiento,
+  terminado,
+  accion,
+}) {
+  return (
+    <>
+      <h4>{i.nombre}</h4>
+      <p>
+        {i.folio} · {i.estado}
+      </p>
+      <p>
+        {i.correo} · {i.telefono}
+      </p>
+      <p>
+        {i.procedencia}
+        {i.licenciatura && ` · ${i.licenciatura} · ${i.numeroCuenta}`}
+      </p>
+      <div className="cms-acciones">
+        {i.estado === 'confirmada' &&
+          ['asistencia', 'cancelar'].map((a) => (
+            <button
+              type="button"
+              className="secundario"
+              key={a}
+              disabled={ocupado || !motivo.trim()}
+              onClick={() => ejecutar(() => accion(i, a))}
+            >
+              {a === 'asistencia' ? 'Registrar asistencia' : 'Cancelar inscripción'}
+            </button>
+          ))}
+        {i.estado === 'cancelada' && !terminado && (
+          <button
+            type="button"
+            className="secundario"
+            disabled={ocupado || !consentimiento || !motivo.trim()}
+            onClick={() => ejecutar(() => accion(i, 'reactivar'))}
+          >
+            Reactivar inscripción
+          </button>
+        )}
+      </div>
+      <details>
+        <summary>Historial de inscripción</summary>
+        <ul>
+          {i.historial.map((h, indice) => (
+            <li key={indice}>
+              {h.momento} · {h.accion}
+              {h.motivo && ` · ${h.motivo}`}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </>
   );
 }

@@ -1,14 +1,10 @@
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { ErrorApi } from '../errores.js';
 import { auditar } from '../cms/contenido.js';
 import { aceptarAviso, buscarTaller, textoInscripcion } from './reglas.js';
+import { buscarConAcceso, crearAccesoPrivado, sinAccesoPrivado } from './accesoPrivado.js';
 
-const huella = (acceso) => createHash('sha256').update(acceso).digest();
-const privada = (consulta) => {
-  const datos = { ...consulta };
-  delete datos.accesoHash;
-  return datos;
-};
+const privada = sinAccesoPrivado;
 
 export function registrarConsulta(estado, tallerId, datos, ahora = new Date()) {
   const taller = buscarTaller(estado, tallerId);
@@ -19,11 +15,21 @@ export function registrarConsulta(estado, tallerId, datos, ahora = new Date()) {
   const mensaje = textoInscripcion(datos.mensaje, 'consulta', 1000, true);
   if (!/^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(correo))
     throw new ErrorApi(422, 'DATOS_INVALIDOS', 'Revisa el correo de contacto.');
+  if (
+    (estado.consultasTalleres ?? []).some(
+      (c) => c.tallerId === tallerId && c.correo.trim().toLowerCase() === correo,
+    )
+  )
+    throw new ErrorApi(
+      409,
+      'CONSULTA_DUPLICADA',
+      'Ya existe una consulta para este correo y taller. Ábrela en «Mis consultas de talleres» o desde tu correo para continuar en el mismo folio.',
+    );
   const consecutivo = (estado.consecutivoConsultaTaller ?? 0) + 1;
   if (consecutivo > 99999999)
     throw new ErrorApi(409, 'LIMITE_FOLIOS', 'Contacta al administrador.');
   estado.consecutivoConsultaTaller = consecutivo;
-  const acceso = randomBytes(32).toString('base64url');
+  const { acceso, accesoHash } = crearAccesoPrivado();
   const consulta = {
     id: randomUUID(),
     tallerId,
@@ -32,13 +38,14 @@ export function registrarConsulta(estado, tallerId, datos, ahora = new Date()) {
     nombre,
     correo,
     mensaje,
-    accesoHash: huella(acceso).toString('hex'),
+    accesoHash,
     versionAviso: estado.avisoTalleres.version,
     creadoEn: ahora.toISOString(),
     avisoAceptadoEn: ahora.toISOString(),
     estado: 'pendiente',
     version: 1,
     respuestas: [],
+    seguimientos: [],
   };
   (estado.consultasTalleres ??= []).push(consulta);
   auditar(estado, { id: 'visitante' }, 'REGISTRAR_CONSULTA_TALLER', consulta.id);
@@ -46,22 +53,7 @@ export function registrarConsulta(estado, tallerId, datos, ahora = new Date()) {
 }
 
 export function consultarRespuesta(estado, datos) {
-  const noEncontrada = () =>
-    new ErrorApi(
-      404,
-      'CONSULTA_NO_ENCONTRADA',
-      'No encontramos la consulta. Revisa tu enlace privado.',
-    );
-  if (
-    typeof datos.folio !== 'string' ||
-    !/^CT-\d{4}-\d{8}$/.test(datos.folio) ||
-    typeof datos.acceso !== 'string' ||
-    !/^[A-Za-z0-9_-]{43}$/.test(datos.acceso)
-  )
-    throw noEncontrada();
-  const consulta = (estado.consultasTalleres ?? []).find((c) => c.folio === datos.folio);
-  const esperado = Buffer.from(consulta?.accesoHash ?? '0'.repeat(64), 'hex');
-  if (!timingSafeEqual(huella(datos.acceso), esperado) || !consulta) throw noEncontrada();
+  const consulta = buscarConAcceso(estado.consultasTalleres, datos, 'CT');
   return {
     folio: consulta.folio,
     tallerNombre: consulta.tallerNombre,
@@ -69,7 +61,25 @@ export function consultarRespuesta(estado, datos) {
     estado: consulta.estado,
     creadoEn: consulta.creadoEn,
     respuestas: consulta.respuestas,
+    seguimientos: consulta.seguimientos ?? [],
+    version: consulta.version,
   };
+}
+
+export function agregarSeguimiento(estado, datos, ahora = new Date()) {
+  const consulta = buscarConAcceso(estado.consultasTalleres, datos, 'CT');
+  if (!Number.isInteger(datos.version) || consulta.version !== datos.version)
+    throw new ErrorApi(
+      409,
+      'VERSION_DESACTUALIZADA',
+      'La consulta cambió. Actualiza la respuesta antes de enviar.',
+    );
+  const texto = textoInscripcion(datos.texto, 'mensaje', 1000, true);
+  (consulta.seguimientos ??= []).push({ texto, momento: ahora.toISOString() });
+  consulta.estado = 'pendiente';
+  consulta.version++;
+  auditar(estado, { id: 'visitante' }, 'CONTINUAR_CONSULTA_TALLER', consulta.id);
+  return consultarRespuesta(estado, datos);
 }
 
 export function listarConsultas(estado, tallerId, usuario) {

@@ -1,6 +1,6 @@
 # Consultas y respuestas de talleres dentro de la web
 
-El botón «Solicitar información» de cada taller abre un formulario en la propia tarjeta. El visitante escribe nombre, correo de contacto y pregunta, acepta el aviso y recibe un folio. El acceso queda guardado en el navegador y se prepara una copia por correo con botón privado de seguimiento. La consulta no ocupa una plaza; la inscripción conserva su formulario y su control de cupo independientes.
+El botón «Solicitar información» de cada taller abre un formulario en la propia tarjeta. El visitante escribe nombre, correo de contacto y pregunta, acepta el aviso y recibe un folio CT. El acceso queda guardado en el navegador y se prepara una copia por correo con botón privado de seguimiento. Se admite una consulta por taller y correo normalizado; las preguntas adicionales se envían desde «Continuar esta consulta», sin otro folio. La consulta no ocupa una plaza; «Inscribirme al taller» usa su formulario, folio INS y control de cupo. El [seguimiento de participantes](seguimiento-participantes.md) describe los datos, cancelación, reactivación e historial privados de la inscripción.
 
 ## Recorrido del visitante
 
@@ -25,7 +25,7 @@ El enlace contiene una clave aleatoria y es personal: quien lo tenga podrá leer
 
 ## Atención por la responsable
 
-Entrar al panel con rol responsable o administrador, seleccionar «Talleres» y abrir la entrada correspondiente. En «Solicitudes de información del taller», pulsar «Consultar solicitudes de información», leer la pregunta, escribir la respuesta y pulsar «Publicar respuesta». La respuesta aparece al visitante en su enlace privado. Se conserva la fecha, la versión del registro y la auditoría de la cuenta que respondió.
+Entrar al panel con rol responsable o administrador. En «Solicitudes y participantes», al inicio del gestor, pulsar «Consultas de talleres», leer la pregunta y los mensajes adicionales, escribir la respuesta y pulsar «Publicar respuesta». La respuesta aparece al visitante en su enlace privado. También están disponibles las consultas dentro de la edición del taller. Se conserva la fecha, la versión del registro y la auditoría de la cuenta que respondió. El apartado central permite buscar por nombre, correo o folio y filtrar por taller, junto con las categorías de inscripciones y servicio social.
 
 La respuesta admite hasta 2000 caracteres y texto sin HTML. Los estados son pendiente y respondida. El control de versiones rechaza respuestas basadas en una versión anterior para que se recargue la consulta. Un taller con consultas no puede eliminarse; puede despublicarse y conservar su historial.
 
@@ -44,7 +44,7 @@ Los botones «Solicitar Información» de las tarjetas llevan al formulario de s
 
 Los datos se guardan en el mismo estado transaccional del gestor, en archivos para la revisión de una sola instancia y en `cms_estado` con MySQL. La adaptación de estados anteriores añade la colección sin alterar cuentas, contenido ni inscripciones existentes. La prueba MySQL comprueba la conservación de una respuesta al recrear el repositorio. Los límites de tasa conservan el alcance de un único proceso.
 
-La versión de aviso `simce-2026-11-06-v3` incorpora el guardado del acceso en el navegador y la copia por correo solicitados por el usuario. Los HTML v1 y v2 se mantienen sin cambios para los registros históricos. La depuración de contactos y consultas a los plazos previstos continúa pendiente de implementación, como se documenta en el estado de la fase.
+La versión de aviso `simce-2026-11-06-v4` incorpora el acceso privado de inscripción, su copia por correo, el historial y las acciones propias solicitados por el usuario. Los HTML v1, v2 y v3 se mantienen sin cambios para los registros históricos. La depuración de contactos y consultas a los plazos previstos continúa pendiente de implementación, como se documenta en el estado de la fase.
 
 ## Comprobaciones
 

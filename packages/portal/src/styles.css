@@ -4363,12 +4363,53 @@ button:not(:disabled):active,
   border-left: 4px solid #84271f;
 }
 .consulta-recibo a,
+.inscripcion-confirmada a,
 .consulta-acciones a {
   color: #84271f;
   text-decoration: underline;
   min-height: 48px;
   display: inline-flex;
   align-items: center;
+}
+.inscripcion-datos {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  gap: 12px 20px;
+}
+.inscripcion-datos dt {
+  font-weight: 600;
+}
+.inscripcion-datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.inscripcion-historial {
+  padding-left: 24px;
+}
+.inscripcion-historial li {
+  margin-bottom: 20px;
+}
+.inscripcion-historial p {
+  margin-block: 4px;
+}
+.inscripcion-confirmada input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  font-size: 16px;
+}
+.seguimiento-consulta .cms-respuesta {
+  border-left: 3px solid #b9aaaa;
+  padding-left: 16px;
+}
+@media (max-width: 480px) {
+  .inscripcion-datos {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .inscripcion-datos dd {
+    margin-bottom: 12px;
+  }
 }
 .consulta-recibo label {
   display: grid;

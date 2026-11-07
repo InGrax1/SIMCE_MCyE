@@ -4,6 +4,10 @@ import { crearConexionBaseDatos } from '../src/infra/baseDatos.js';
 import { AlmacenCmsMysql } from '../src/cms/almacen.js';
 import { registrarInscripcion, cambiarInscripcion } from '../src/talleres/servicio.js';
 import {
+  consultarInscripcion,
+  gestionarInscripcionPropia,
+} from '../src/talleres/seguimientoInscripciones.js';
+import {
   registrarConsulta,
   responderConsulta,
   consultarRespuesta,
@@ -37,6 +41,71 @@ conMysql('gestor persistente MySQL', () => {
     );
     const recuperado = await new AlmacenCmsMysql(db).leer();
     expect(recuperado.auditoria.find((a) => a.id === id).cantidad).toBe(5);
+  });
+  it('bloquea consultas duplicadas concurrentes y conserva el seguimiento privado de la inscripción', async () => {
+    const id = randomUUID();
+    const avisoAnterior = (await almacen.leer()).avisoTalleres;
+    const ahora = new Date('2026-11-06T18:00:00.000Z');
+    const datos = {
+      nombre: 'Participante sintético',
+      correo: 'unico@example.test',
+      telefono: '5500000000',
+      procedencia: 'externa',
+      mensaje: 'Pregunta inicial',
+      aceptoAviso: true,
+      versionAviso: 'prueba-seguimiento',
+    };
+    try {
+      await almacen.cambiar((s) => {
+        s.avisoTalleres = { url: 'https://example.test/aviso', version: 'prueba-seguimiento' };
+        s.entradas.push({
+          id,
+          tipo: 'taller',
+          publicado: { nombre: 'Prueba privada MySQL' },
+          version: 1,
+          inscripcion: {
+            cupo: 1,
+            estado: 'programado',
+            apertura: '2026-11-01T00:00:00.000Z',
+            cierre: '2026-11-09T00:00:00.000Z',
+          },
+        });
+      });
+      const otro = new AlmacenCmsMysql(db);
+      const consultas = await Promise.allSettled([
+        almacen.cambiar((s) => registrarConsulta(s, id, datos)),
+        otro.cambiar((s) => registrarConsulta(s, id, { ...datos, correo: ' UNICO@EXAMPLE.TEST ' })),
+      ]);
+      expect(consultas.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(consultas.find((r) => r.status === 'rejected').reason.codigo).toBe(
+        'CONSULTA_DUPLICADA',
+      );
+      const recibo = await almacen.cambiar((s) => registrarInscripcion(s, id, datos, ahora));
+      await otro.cambiar((s) =>
+        gestionarInscripcionPropia(
+          s,
+          { ...recibo, accion: 'cancelar', motivo: 'Cancelación propia', version: 1 },
+          ahora,
+        ),
+      );
+      const recuperada = consultarInscripcion(await new AlmacenCmsMysql(db).leer(), recibo, ahora);
+      expect(recuperada).toMatchObject({
+        folio: recibo.folio,
+        estado: 'cancelada',
+        puedeReactivar: true,
+      });
+      expect(recuperada.historial.at(-1)).toMatchObject({
+        motivo: 'Cancelación propia',
+        origen: 'Participante',
+      });
+    } finally {
+      await almacen.cambiar((s) => {
+        s.entradas = s.entradas.filter((t) => t.id !== id);
+        s.consultasTalleres = s.consultasTalleres.filter((c) => c.tallerId !== id);
+        s.inscripciones = s.inscripciones.filter((i) => i.tallerId !== id);
+        s.avisoTalleres = avisoAnterior;
+      });
+    }
   });
   it('conserva consultas y respuestas privadas al recrear el repositorio MySQL', async () => {
     const id = randomUUID();

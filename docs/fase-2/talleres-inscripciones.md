@@ -14,7 +14,7 @@ Una edición del contenido continúa siendo borrador hasta publicarla. Los cambi
 
 ## Configurar el aviso
 
-El aviso inicial `simce-2026-11-06-v1` fue autorizado por el usuario. La versión vigente es `simce-2026-11-06-v3`, disponible en `/privacidad/simce-2026-11-06-v3.html`, e incorpora las consultas y respuestas de talleres, el guardado de su acceso en el navegador y la copia por correo solicitados después. El pie del portal y los formularios permiten consultar el aviso sin sesión ni JavaScript. Los HTML v1 y v2 se conservan sin cambios para acreditar los consentimientos anteriores.
+El aviso inicial `simce-2026-11-06-v1` fue autorizado por el usuario. La versión vigente es `simce-2026-11-06-v4`, disponible en `/privacidad/simce-2026-11-06-v4.html`, e incorpora las consultas y respuestas de talleres, el guardado de accesos, la copia por correo y el seguimiento privado de la inscripción con historial y acciones propias. El pie del portal y los formularios permiten consultar el aviso sin sesión ni JavaScript. Los HTML v1, v2 y v3 se conservan sin cambios para acreditar los consentimientos anteriores.
 
 El lanzador `dev:fase1` usa la versión vigente por defecto para interés, consultas e inscripciones. `AVISO_TALLERES_URL` y `AVISO_TALLERES_VERSION` permiten sobrescribirla. Las rutas relativas se admiten únicamente con su respectiva versión incluida; los avisos externos mantienen la exigencia de HTTPS y no pueden contener credenciales. Una versión no puede reutilizarse con otra URL.
 

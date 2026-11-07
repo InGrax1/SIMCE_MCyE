@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { ErrorApi } from '../errores.js';
 import { auditar } from '../cms/contenido.js';
+import { crearAccesoPrivado, sinAccesoPrivado } from './accesoPrivado.js';
 import {
   aceptarAviso,
   buscarTaller,
@@ -91,7 +92,7 @@ export function registrarInscripcion(estado, id, datos, ahora = new Date()) {
     throw new ErrorApi(
       409,
       'INSCRIPCION_DUPLICADA',
-      'Este correo ya está registrado. Contacta al módulo para revisarlo.',
+      'Este correo ya tiene una inscripción en el taller. Revísala en «Mis inscripciones a talleres» o desde tu correo para consultar su estado o reactivarla.',
     );
   exigirPlaza(estado, taller, ahora);
   const consecutivo = (estado.consecutivoInscripcion ?? 0) + 1;
@@ -99,10 +100,15 @@ export function registrarInscripcion(estado, id, datos, ahora = new Date()) {
     throw new ErrorApi(409, 'LIMITE_FOLIOS', 'Contacta al administrador.');
   estado.consecutivoInscripcion = consecutivo;
   const momento = ahora.toISOString();
+  const { acceso, accesoHash } = crearAccesoPrivado();
   const inscripcion = {
     ...participante,
     id: randomUUID(),
     tallerId: id,
+    tallerNombre: taller.publicado.nombre ?? taller.publicado.titulo,
+    inicio: taller.publicado.inicio,
+    fin: taller.publicado.fin,
+    accesoHash,
     folio: `INS-${ahora.getUTCFullYear()}-${String(consecutivo).padStart(8, '0')}`,
     estado: 'confirmada',
     version: 1,
@@ -120,7 +126,7 @@ export function registrarInscripcion(estado, id, datos, ahora = new Date()) {
   };
   estado.inscripciones.push(inscripcion);
   auditar(estado, { id: 'visitante' }, 'REGISTRAR_INSCRIPCION', inscripcion.id);
-  return { folio: inscripcion.folio, estado: inscripcion.estado };
+  return { folio: inscripcion.folio, estado: inscripcion.estado, acceso };
 }
 
 export function cambiarInscripcion(estado, id, datos, usuario, ahora = new Date()) {
@@ -153,7 +159,7 @@ export function cambiarInscripcion(estado, id, datos, usuario, ahora = new Date(
     ...(datos.accion === 'reactivar' ? { versionAviso: inscripcion.versionAviso } : {}),
   });
   auditar(estado, usuario, 'CAMBIAR_INSCRIPCION', id);
-  return inscripcion;
+  return sinAccesoPrivado(inscripcion);
 }
 
 export function cambiarEstadoTaller(estado, id, datos, usuario, ahora = new Date()) {
