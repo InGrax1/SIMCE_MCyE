@@ -1,11 +1,11 @@
 # Consultas y respuestas de talleres dentro de la web
 
-El botón «Solicitar información» de cada taller abre un formulario en la propia tarjeta. El visitante escribe nombre, correo de contacto y pregunta, acepta el aviso y recibe un folio CT. El acceso queda guardado en el navegador y se prepara una copia por correo con botón privado de seguimiento. Se admite una consulta por taller y correo normalizado; las preguntas adicionales se envían desde «Continuar esta consulta», sin otro folio. La consulta no ocupa una plaza; «Inscribirme al taller» usa su formulario, folio INS y control de cupo. El [seguimiento de participantes](seguimiento-participantes.md) describe los datos, cancelación, reactivación e historial privados de la inscripción.
+El botón «Solicitar información» de cada taller abre un formulario en la propia tarjeta. El visitante escribe nombre y correo de contacto, acepta el aviso y recibe un folio CT. Puede dejar la pregunta en blanco. El acceso queda guardado en el navegador y se prepara una copia por correo con botón privado de seguimiento. Se admite una consulta por taller y correo normalizado; las preguntas adicionales se envían desde «Continuar esta consulta», sin otro folio. La consulta no ocupa una plaza; «Inscribirme al taller» usa su formulario, folio INS y control de cupo. El [seguimiento de participantes](seguimiento-participantes.md) describe los datos, cancelación, reactivación e historial privados de la inscripción.
 
 ## Recorrido del visitante
 
 1. Abrir un taller publicado y pulsar «Solicitar información».
-2. Completar el formulario y aceptar el aviso vigente. La pregunta admite hasta 1000 caracteres.
+2. Completar nombre y correo y aceptar el aviso vigente. Si se añade una pregunta, admite hasta 1000 caracteres.
 3. Enviar. La confirmación informa si se guardó el acceso en este navegador y el resultado de la copia por correo. No se abre una aplicación externa.
 4. Al regresar al sitio, ir a Talleres → «Mis consultas de talleres» y pulsar «Consultar estado» junto al folio. También se puede abrir «Consultar mi solicitud» inmediatamente después de enviar.
 5. Si se borran los datos del sitio o se cambia de navegador o equipo, abrir «Consulta tu estado» desde el correo. Una consulta válida vuelve a guardarse automáticamente en ese navegador.
@@ -15,7 +15,7 @@ El almacenamiento es `localStorage`, separado de la caché HTTP. Conserva hasta 
 
 ## Copia por correo
 
-El adaptador compartido con la recuperación de cuentas genera versiones de texto y HTML, con nombre, taller, folio, pregunta y botón «Consulta tu estado». Los valores se escapan en HTML y el enlace usa el origen configurado mediante `PORTAL_ORIGEN_PUBLICO`, sin confiar en la cabecera Host de la solicitud. Se acepta HTTPS o loopback en desarrollo. La respuesta de alta añade `correo`: `enviado` (aceptado por SMTP), `archivo` (buzón local), `no_disponible` o `fallido`. La interfaz nunca presenta el modo archivo como correo enviado.
+El adaptador compartido con la recuperación de cuentas genera versiones de texto y HTML, con nombre, taller, folio, la pregunta si se escribió y el botón «Consulta tu estado». Los valores se escapan en HTML y el enlace usa el origen configurado mediante `PORTAL_ORIGEN_PUBLICO`, sin confiar en la cabecera Host de la solicitud. Se acepta HTTPS o loopback en desarrollo. La respuesta de alta añade `correo`: `enviado` (aceptado por SMTP), `archivo` (buzón local), `no_disponible` o `fallido`. La interfaz nunca presenta el modo archivo como correo enviado.
 
 Con `CORREO_MODO=smtp`, configure `SMTP_HOST`, `SMTP_PORT` 465/587, `SMTP_FROM` y las credenciales aplicables. El envío usa TLS. `npm run dev:fase1` carga automáticamente el `.env` de la raíz; las variables ya presentes en el proceso tienen prioridad. El puerto es `PORT` o, si se omite, 3080. Se debe detener la instancia anterior y volver a ejecutar el comando después de editar la configuración. El arranque indica SMTP o buzón local sin mostrar credenciales. Si falta `CORREO_MODO`, su valor por defecto sigue siendo `archivo`, sin correo externo, aunque existan datos SMTP. Las copias locales quedan en `.local/cms/correos/`, fuera de Git; contienen un enlace privado y deben tratarse como datos de acceso. Se ha comprobado la conexión y autenticación del SMTP configurado localmente el 6 de noviembre de 2026, sin enviar mensajes de prueba; la entrega real sigue pendiente de comprobar con una consulta.
 

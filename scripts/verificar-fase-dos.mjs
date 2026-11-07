@@ -167,7 +167,7 @@ try {
     .getByLabel('Correo de contacto', { exact: true })
     .fill('consulta@example.test');
   await formularioConsulta
-    .getByLabel('¿Qué te gustaría saber?', { exact: true })
+    .getByLabel('¿Qué te gustaría saber? (opcional)', { exact: true })
     .fill('¿Qué materiales debo llevar al taller?');
   await formularioConsulta.getByRole('checkbox').check();
   await pagina.setViewportSize({ width: 390, height: 844 });
@@ -189,7 +189,9 @@ try {
     'consulta@example.test',
   );
   assert.equal(
-    await formularioConsulta.getByLabel('¿Qué te gustaría saber?', { exact: true }).inputValue(),
+    await formularioConsulta
+      .getByLabel('¿Qué te gustaría saber? (opcional)', { exact: true })
+      .inputValue(),
     '¿Qué materiales debo llevar al taller?',
   );
   reporte.flujo.push(
@@ -396,9 +398,12 @@ try {
   await formularioBloqueado
     .getByLabel('Correo de contacto', { exact: true })
     .fill('sin-almacenamiento@example.test');
-  await formularioBloqueado
-    .getByLabel('¿Qué te gustaría saber?', { exact: true })
-    .fill('¿Hay material de consulta?');
+  assert.equal(
+    await formularioBloqueado
+      .getByLabel('¿Qué te gustaría saber? (opcional)', { exact: true })
+      .inputValue(),
+    '',
+  );
   await formularioBloqueado.getByRole('checkbox').check();
   await formularioBloqueado.getByRole('button', { name: 'Enviar consulta', exact: true }).click();
   await bloqueada.getByText(/Este navegador no permitió guardar el acceso/).waitFor();
@@ -409,9 +414,12 @@ try {
   );
   await bloqueada.getByRole('link', { name: 'Consultar mi solicitud', exact: true }).click();
   await bloqueada.getByText('Tu consulta está pendiente de respuesta.', { exact: true }).waitFor();
+  await bloqueada
+    .getByText('Solicitaste información sin agregar un mensaje inicial.', { exact: true })
+    .waitFor();
   await contextoBloqueado.close();
   reporte.flujo.push(
-    'Almacenamiento bloqueado conserva el envío y ofrece un enlace privado de respaldo',
+    'Consulta sin pregunta genera folio y enlace privado aunque el almacenamiento esté bloqueado',
   );
   await pagina.setViewportSize({ width: 1440, height: 1000 });
   const programaElegido = (await almacen.leer()).entradas.filter(

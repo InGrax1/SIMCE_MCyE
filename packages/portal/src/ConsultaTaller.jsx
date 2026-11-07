@@ -68,6 +68,7 @@ export function ConsultaTaller({ taller }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   ...datos,
+                  mensaje: datos.mensaje.trim(),
                   aceptoAviso: datos.aceptoAviso === 'on',
                   versionAviso: avisoTalleres.version,
                 }),
@@ -93,7 +94,7 @@ export function ConsultaTaller({ taller }) {
           }}
         >
           <p>
-            Envíanos tu pregunta sobre este taller. Para reservar un lugar, utiliza la inscripción
+            Solicita información sobre este taller. Para reservar un lugar, utiliza la inscripción
             del taller.
           </p>
           <p>
@@ -111,8 +112,8 @@ export function ConsultaTaller({ taller }) {
               <input name="correo" type="email" autoComplete="email" maxLength={160} required />
             </label>
             <label>
-              ¿Qué te gustaría saber?
-              <textarea name="mensaje" maxLength={1000} rows={4} required />
+              ¿Qué te gustaría saber? (opcional)
+              <textarea name="mensaje" maxLength={1000} rows={4} />
             </label>
             <label className="inscripcion-consentimiento">
               <input name="aceptoAviso" type="checkbox" required />

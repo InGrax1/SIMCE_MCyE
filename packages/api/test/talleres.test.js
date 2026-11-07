@@ -348,6 +348,30 @@ describe('talleres e inscripciones', () => {
     const publico = await request(app).get('/api/v1/publico/contenido');
     expect(JSON.stringify(publico.body)).not.toMatch(/materiales|accesoHash|participante@example/);
   });
+  it.each([undefined, ''])(
+    'emite folio y copia para una consulta sin pregunta (%j)',
+    async (mensaje) => {
+      const correos = [];
+      enviarReciboConsulta = crearCorreoConsultas({
+        almacen,
+        origenPublico: origen,
+        enviarCorreo: async (correo) => {
+          correos.push(correo);
+          return { modo: 'smtp' };
+        },
+      });
+      const respuesta = await preguntar({ mensaje });
+      expect(respuesta.status).toBe(201);
+      expect(respuesta.body.folio).toMatch(/^CT-/);
+      expect((await seguimiento(respuesta.body)).body).toMatchObject({
+        mensaje: '',
+        estado: 'pendiente',
+      });
+      expect(correos).toHaveLength(1);
+      expect(correos[0].texto).toContain('Sin mensaje inicial.');
+      expect(correos[0].html).toContain('Consulta tu estado');
+    },
+  );
   it('permite responder dentro del panel y consultar la respuesta solo con el enlace privado correcto', async () => {
     const acceso = (await preguntar()).body;
     const lista = await api('responsable', 'get', `/talleres/${id}/consultas`);
@@ -830,7 +854,8 @@ describe('talleres e inscripciones', () => {
       .set('Origin', 'https://ajeno.example.test')
       .send(participante())
       .expect(403);
-    for (let n = 0; n < 5; n++) expect((await preguntar({ mensaje: '' })).status).toBe(422);
+    for (let n = 0; n < 5; n++)
+      expect((await preguntar({ mensaje: '<inválido>' })).status).toBe(422);
     expect((await preguntar()).status).toBe(429);
     expect((await almacen.leer()).consultasTalleres).toHaveLength(0);
   });

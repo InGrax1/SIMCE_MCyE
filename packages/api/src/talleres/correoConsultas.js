@@ -30,12 +30,15 @@ export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, pro
         ? 'Recibimos tu solicitud de servicio social'
         : 'Recibimos tu consulta';
     const actividad = `${social ? 'Programa' : 'Taller'}: ${consulta.programaNombre ?? consulta.tallerNombre}`;
+    const mensaje =
+      consulta.mensaje ||
+      (social ? 'Solicito información sobre este programa.' : 'Sin mensaje inicial.');
     const detalleTexto = inscripcion
       ? 'Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.'
-      : `Tu pregunta:\n${consulta.mensaje || 'Solicito información sobre este programa.'}`;
+      : `Tu pregunta:\n${mensaje}`;
     const detalleHtml = inscripcion
       ? '<p>Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.</p>'
-      : `<h2>Tu pregunta</h2><p style="white-space:pre-wrap">${escapar(consulta.mensaje || 'Solicito información sobre este programa.')}</p>`;
+      : `<h2>Tu pregunta</h2><p style="white-space:pre-wrap">${escapar(mensaje)}</p>`;
     const nota = inscripcion
       ? 'La asistencia la registra el personal del Módulo.'
       : social

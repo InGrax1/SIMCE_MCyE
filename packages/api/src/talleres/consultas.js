@@ -42,7 +42,10 @@ export function registrarConsulta(estado, tallerId, datos, ahora = new Date()) {
   aceptarAviso(estado, datos);
   const nombre = textoInscripcion(datos.nombre, 'nombre', 160);
   const correo = textoInscripcion(datos.correo, 'correo', 160).toLowerCase();
-  const mensaje = textoInscripcion(datos.mensaje, 'consulta', 1000, true);
+  const mensaje =
+    datos.mensaje === '' || datos.mensaje === undefined
+      ? ''
+      : textoInscripcion(datos.mensaje, 'consulta', 1000, true);
   if (!/^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(correo))
     throw new ErrorApi(422, 'DATOS_INVALIDOS', 'Revisa el correo de contacto.');
   if (
