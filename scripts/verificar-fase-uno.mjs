@@ -207,12 +207,25 @@ try {
     .getByRole('button', { name: 'Contenido', exact: true })
     .click();
   await pagina.getByLabel('Tipo de contenido').waitFor();
+  const seccionesEntrada = pagina.getByRole('navigation', { name: 'Secciones de la entrada' });
+  const seccion = (name) => seccionesEntrada.getByRole('button', { name, exact: true });
   reporte.flujo.push(
     'Volver al login desde el cambio inicial',
     'Recuperar el login al vencer la sesión',
     'Corregir contraseña actual errónea sin perder la sesión',
     'Cerrar sesión y acceder con la contraseña nueva',
   );
+  await pagina.getByLabel('Nombre o título', { exact: true }).fill('Área de prueba');
+  await seccion('Imágenes').click();
+  await pagina.getByRole('heading', { name: 'Imágenes de la entrada' }).waitFor();
+  await pagina.getByLabel('Imagen asociada').waitFor();
+  assert.equal(await pagina.getByLabel('Nombre o título', { exact: true }).count(), 0);
+  await seccion('Ficha').click();
+  assert.equal(
+    await pagina.getByLabel('Nombre o título', { exact: true }).inputValue(),
+    'Área de prueba',
+  );
+  pagina.once('dialog', (dialog) => dialog.accept());
   await pagina.getByLabel('Tipo de contenido').selectOption('aviso');
   const titulo = `Aviso técnico ${randomUUID().slice(0, 8)}`;
   await pagina.getByLabel('Nombre o título', { exact: true }).fill(titulo);
@@ -223,9 +236,14 @@ try {
   await pagina.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
   await pagina.getByRole('status').filter({ hasText: 'Borrador guardado' }).waitFor();
   assert.ok(!(await (await fetch(`${origen}/`)).text()).includes(titulo));
+  await pagina.getByLabel('Descripción').fill('Segunda versión del aviso de prueba.');
+  await pagina.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  await pagina.getByRole('status').filter({ hasText: 'Borrador guardado' }).waitFor();
   await pagina.getByRole('button', { name: 'Vista previa', exact: true }).click();
   await pagina.frameLocator('iframe').getByRole('heading', { name: titulo, exact: true }).waitFor();
+  assert.equal(await pagina.getByLabel('Nombre o título').count(), 0);
   await pagina.getByRole('button', { name: 'Cerrar vista previa', exact: true }).click();
+  await seccion('Publicación').click();
   await pagina
     .getByLabel('Revisé el texto, las imágenes y la información antes de publicar.')
     .check();
@@ -241,6 +259,17 @@ try {
   await pagina.getByRole('button', { name: 'Despublicar', exact: true }).click();
   await pagina.getByRole('status').filter({ hasText: 'ya no aparece' }).waitFor();
   assert.ok(!(await (await fetch(`${origen}/`)).text()).includes(titulo));
+  await seccion('Historial').click();
+  assert.equal(await pagina.getByRole('button', { name: 'Publicar', exact: true }).count(), 0);
+  await pagina
+    .getByRole('button', { name: /Restaurar versión/ })
+    .first()
+    .click();
+  await pagina.getByRole('status').filter({ hasText: 'Versión restaurada' }).waitFor();
+  assert.equal(
+    await pagina.getByLabel('Descripción').inputValue(),
+    'Contenido sintético para verificar el flujo de publicación.',
+  );
   reporte.flujo.push(
     'Acceso y cambio inicial de contraseña',
     'Guardar borrador sin filtrarlo al visitante',
@@ -262,6 +291,7 @@ try {
   await pagina.getByLabel('Fecha de conclusión').fill('2026-11-02');
   await pagina.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
   await pagina.getByRole('status').filter({ hasText: 'Borrador guardado' }).waitFor();
+  await seccion('Publicación').click();
   await pagina
     .getByLabel('Revisé el texto, las imágenes y la información antes de publicar.')
     .check();

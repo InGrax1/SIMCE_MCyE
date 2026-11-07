@@ -119,15 +119,12 @@
 }
 .cms-resumen {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 32px;
-}
-.cms-resumen p {
-  flex: 1;
-  min-width: 240px;
-  max-width: 72ch;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e3dcd8;
 }
 .cms-actualizado {
   color: #24613c;
@@ -151,6 +148,24 @@
   border-radius: 16px;
   background: white;
   min-width: 0;
+}
+.cms-editor h2 {
+  margin-bottom: 16px;
+  overflow-wrap: anywhere;
+}
+.cms-editor h3 {
+  margin: 0 0 8px;
+}
+.cms-editor-navegacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e3dcd8;
+}
+.cms-editor-navegacion button {
+  padding-inline: 12px;
 }
 .cms label,
 .cms-acceso label {
@@ -231,13 +246,7 @@
   flex-wrap: wrap;
   gap: 16px;
 }
-.cms-publicar {
-  border-top: 1px solid #d4c8c5;
-  margin-top: 32px;
-  padding-top: 24px;
-}
 .cms-medios,
-.cms-historial,
 .cms-bitacora {
   border: 1px solid #d4c8c5;
   border-radius: 8px;
@@ -273,9 +282,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
-.cms-previa {
-  margin-top: 32px;
-}
 .cms-previa iframe {
   width: 100%;
   height: 640px;
@@ -287,9 +293,6 @@
 .cms-bitacora li {
   overflow-wrap: anywhere;
   margin-bottom: 8px;
-}
-.cms-historial button {
-  margin: 8px;
 }
 .cms-error,
 .cms-exito {
@@ -358,18 +361,21 @@
     flex: 1 1 160px;
   }
 }
-.cms-inscripciones {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #cfc5c3;
-}
 .cms-inscripciones fieldset {
   min-width: 0;
   border: 0;
   padding: 0;
-  margin-bottom: 24px;
+  margin: 0;
 }
-.cms-inscripciones label {
+.cms-inscripciones > p {
+  margin-bottom: 16px;
+}
+.cms-inscripciones legend {
+  padding: 0;
+  font-weight: 600;
+}
+.cms-inscripciones label,
+.cms-operacion-taller label {
   margin: 16px 0;
 }
 .cms-shell {

@@ -96,6 +96,8 @@ try {
   await panel.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
   const navegacionPanel = panel.getByRole('navigation', { name: 'Navegación del panel' });
   await navegacionPanel.getByRole('button', { name: 'Talleres', exact: true }).click();
+  const seccionesEntrada = panel.getByRole('navigation', { name: 'Secciones de la entrada' });
+  const seccion = (name) => seccionesEntrada.getByRole('button', { name, exact: true });
   await panel.getByLabel('Nombre o título').fill('Taller de elaboración de embutidos · prueba');
   await panel
     .getByLabel('Descripción', { exact: true })
@@ -106,6 +108,18 @@ try {
   await panel
     .getByText('Borrador guardado. Los cambios aún no están publicados.', { exact: true })
     .waitFor();
+  assert.equal(await panel.getByLabel('Cupo', { exact: true }).count(), 0);
+  await seccion('Inscripciones').click();
+  assert.equal(await panel.getByLabel('Nombre o título').count(), 0);
+  assert.equal(await panel.getByRole('button', { name: 'Exportar CSV' }).count(), 0);
+  await panel.getByLabel('Sede', { exact: true }).fill('Borrador de sede');
+  panel.once('dialog', (dialog) => dialog.dismiss());
+  await seccion('Ficha').click();
+  assert.equal(await panel.getByLabel('Sede', { exact: true }).inputValue(), 'Borrador de sede');
+  panel.once('dialog', (dialog) => dialog.accept());
+  await seccion('Ficha').click();
+  await seccion('Inscripciones').click();
+  assert.equal(await panel.getByLabel('Sede', { exact: true }).inputValue(), '');
   await panel
     .getByLabel('Contenido temático', { exact: true })
     .fill('Higiene y formulación.\nElaboración de embutidos.');
@@ -115,6 +129,21 @@ try {
   await panel.getByLabel('Cierre de inscripción', { exact: true }).fill('2099-11-09T18:00');
   await panel.getByRole('button', { name: 'Guardar inscripción', exact: true }).click();
   await panel.getByText('Inscripción del taller actualizada.', { exact: true }).waitFor();
+  assert.equal(await seccion('Inscripciones').getAttribute('aria-current'), 'page');
+  await axe(panel, 'Configuración de inscripciones escritorio');
+  await panel.screenshot({ path: join(artefactos, 'configuracion-inscripciones.png') });
+  await panel.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await panel.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+    false,
+  );
+  await axe(panel, 'Configuración de inscripciones móvil');
+  await panel.screenshot({
+    path: join(artefactos, 'configuracion-inscripciones-movil.png'),
+    fullPage: true,
+  });
+  await panel.setViewportSize({ width: 1440, height: 1000 });
+  await seccion('Publicación').click();
   await panel
     .getByLabel('Revisé el texto, las imágenes y la información antes de publicar.')
     .check();
@@ -625,6 +654,8 @@ try {
   await pagina.getByText('Cupo agotado.', { exact: true }).waitFor();
   assert.equal(await pagina.locator('.formulario-inscripcion').count(), 0);
   await navegacionPanel.getByRole('button', { name: 'Talleres', exact: true }).click();
+  await seccion('Operación').click();
+  assert.equal(await panel.getByLabel('Cupo', { exact: true }).count(), 0);
   for (const formato of ['CSV', 'PDF']) {
     const descarga = panel.waitForEvent('download');
     await panel.getByRole('button', { name: `Exportar ${formato}`, exact: true }).click();

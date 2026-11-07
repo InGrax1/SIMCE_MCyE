@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesion.js';
 import { Prototipo } from './Prototipo.jsx';
-import { InscripcionesTaller } from './InscripcionesTaller.jsx';
+import { InscripcionesTaller, OperacionTaller } from './InscripcionesTaller.jsx';
 import { SolicitudesPanel } from './SolicitudesPanel.jsx';
 import { PanelMarco } from './PanelMarco.jsx';
 import { fechaPanel } from './DetalleAtencion.jsx';
@@ -315,14 +315,18 @@ export function GestorContenido() {
   const [previa, cambiarPrevia] = useState('');
   const [auditoria, cambiarAuditoria] = useState(null);
   const [vista, cambiarVista] = useState(null);
+  const [espacio, cambiarEspacio] = useState('ficha');
   const [motivoFechas, cambiarMotivoFechas] = useState('');
   const bloqueo = useRef(false);
   const editado = useRef(false);
+  const inscripcionEditada = useRef(false);
+  const tituloEditor = useRef(null);
   function recibir(valor) {
     establecerSesion(valor?.token, recibir);
     cambiarSesion(valor);
     if (!valor) {
       editado.current = false;
+      inscripcionEditada.current = false;
       cambiarContenido(null);
       cambiarEntrada(null);
       cambiarTipo('area');
@@ -330,6 +334,7 @@ export function GestorContenido() {
       cambiarPrevia('');
       cambiarAuditoria(null);
       cambiarVista(null);
+      cambiarEspacio('ficha');
       confirmarRevision(false);
     }
   }
@@ -379,7 +384,7 @@ export function GestorContenido() {
   }, [sesion?.usuario?.id]);
   useEffect(() => {
     const avisar = (e) => {
-      if (editado.current) {
+      if (editado.current || inscripcionEditada.current) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -413,7 +418,10 @@ export function GestorContenido() {
   }
   function cerrarSesion() {
     return ejecutar(async () => {
-      if (editado.current && !window.confirm('¿Cerrar sesión y descartar los cambios sin guardar?'))
+      if (
+        (editado.current || inscripcionEditada.current) &&
+        !window.confirm('¿Cerrar sesión y descartar los cambios sin guardar?')
+      )
         return;
       try {
         await consultarApi('/auth/salir', { metodo: 'POST', reintentar: false });
@@ -423,10 +431,29 @@ export function GestorContenido() {
       }
     });
   }
-  function seleccionar(item, nuevoTipo = tipo) {
+  function descartarInscripcion() {
+    if (
+      inscripcionEditada.current &&
+      !window.confirm('Hay cambios sin guardar en las inscripciones. ¿Quieres descartarlos?')
+    )
+      return false;
+    inscripcionEditada.current = false;
+    return true;
+  }
+  function mostrarEspacio(destino) {
+    if (destino === espacio && !previa) return;
+    if (!descartarInscripcion()) return;
+    cambiarEspacio(destino);
+    cambiarPrevia('');
+    cambiarError('');
+    cambiarMensaje('');
+  }
+  function seleccionar(item, nuevoTipo = tipo, destino = 'ficha') {
     if (editado.current && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?'))
       return false;
+    if (!descartarInscripcion()) return false;
     cambiarTipo(nuevoTipo);
+    cambiarEspacio(destino);
     cambiarMotivoFechas('');
     cambiarEntrada(item);
     cambiarDatos(
@@ -447,6 +474,10 @@ export function GestorContenido() {
     cambiarDatos((actual) => ({ ...actual, [nombre]: valor }));
     confirmarRevision(false);
   }
+  function abrirEditor(item) {
+    if (seleccionar(item) && matchMedia('(max-width: 800px)').matches)
+      requestAnimationFrame(() => tituloEditor.current?.focus());
+  }
   async function guardar() {
     const item = await consultarApi(entrada ? `/cms/entradas/${entrada.id}` : '/cms/entradas', {
       metodo: entrada ? 'PUT' : 'POST',
@@ -459,7 +490,30 @@ export function GestorContenido() {
     cambiarMensaje('Borrador guardado. Los cambios aún no están publicados.');
     return item;
   }
+  async function actualizarTaller() {
+    inscripcionEditada.current = false;
+    const actual = await cargar();
+    seleccionar(
+      actual.entradas.find((e) => e.id === entrada.id),
+      tipo,
+      espacio,
+    );
+    cambiarMensaje('Inscripción del taller actualizada.');
+  }
   const publica = ['responsable', 'admin'].includes(sesion?.usuario?.rol);
+  const gestionaTaller = tipo === 'taller' && publica;
+  const espacios = [
+    ['ficha', 'Ficha'],
+    ...(imagenTipos.includes(tipo) ? [['imagenes', 'Imágenes']] : []),
+    ...(gestionaTaller
+      ? [
+          ['inscripciones', 'Inscripciones'],
+          ['operacion', 'Operación'],
+        ]
+      : []),
+    ...(publica ? [['publicacion', 'Publicación']] : []),
+    ['historial', 'Historial'],
+  ];
   const vistaActual =
     sesion?.usuario?.rol === 'operador'
       ? 'operacion'
@@ -470,8 +524,11 @@ export function GestorContenido() {
           : 'contenido';
   function navegar(destino) {
     if (destino === vistaActual) return;
-    if (destino === 'talleres' && tipo !== 'taller' && !seleccionar(null, 'taller')) return;
-    if (destino === 'contenido' && tipo === 'taller' && !seleccionar(null, 'area')) return;
+    if (destino === 'talleres' && tipo !== 'taller') {
+      if (!seleccionar(null, 'taller')) return;
+    } else if (destino === 'contenido' && tipo === 'taller') {
+      if (!seleccionar(null, 'area')) return;
+    } else if (!descartarInscripcion()) return;
     cambiarVista(destino);
     cambiarError('');
     cambiarMensaje('');
@@ -629,231 +686,231 @@ export function GestorContenido() {
           )}
         </section>
       ) : (
-        <>
-          <div className="cms-resumen">
-            <p>
-              Prepara un borrador, revisa la vista previa y publica cuando la información esté
-              validada.
-            </p>
-            {contenido && (
-              <span
-                className={
-                  contenido.revisionPortal === contenido.revisionHtml
-                    ? 'cms-actualizado'
-                    : 'cms-pendiente'
-                }
-              >
-                {contenido.revisionPortal === contenido.revisionHtml
-                  ? 'Portal actualizado'
-                  : 'Publicación pendiente'}
-              </span>
+        <div className="cms-columnas">
+          <aside className="cms-listado">
+            {vistaActual === 'talleres' ? (
+              <h2>Convocatorias</h2>
+            ) : (
+              <label>
+                Tipo de contenido
+                <select
+                  value={tipo}
+                  disabled={ocupado}
+                  onChange={(e) => seleccionar(null, e.target.value)}
+                >
+                  {Object.entries(nombres)
+                    .filter(([clave]) => clave !== 'taller')
+                    .map(([clave, nombre]) => (
+                      <option value={clave} key={clave}>
+                        {nombre}
+                      </option>
+                    ))}
+                </select>
+              </label>
             )}
-            {publica && (
-              <button
-                type="button"
-                className="secundario"
-                disabled={ocupado}
-                onClick={() =>
-                  ejecutar(async () => {
-                    await consultarApi('/cms/regenerar', { metodo: 'POST' });
-                    await cargar();
-                    cambiarMensaje('Portal regenerado.');
-                  })
-                }
-              >
-                Regenerar portal
-              </button>
-            )}
-          </div>
-          <div className="cms-columnas">
-            <aside className="cms-listado">
-              {vistaActual === 'talleres' ? (
-                <h2>Convocatorias</h2>
-              ) : (
-                <label>
-                  Tipo de contenido
-                  <select value={tipo} onChange={(e) => seleccionar(null, e.target.value)}>
-                    {Object.entries(nombres)
-                      .filter(([clave]) => clave !== 'taller')
-                      .map(([clave, nombre]) => (
-                        <option value={clave} key={clave}>
-                          {nombre}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              )}
-              <button type="button" disabled={ocupado} onClick={() => seleccionar(null)}>
-                {vistaActual === 'talleres' ? 'Crear taller' : 'Crear entrada'}
-              </button>
-              <ul>
-                {contenido?.entradas
-                  .filter((e) => e.tipo === tipo)
-                  .sort((a, b) => a.orden - b.orden)
-                  .map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        className="cms-entrada"
-                        aria-pressed={entrada?.id === item.id}
-                        onClick={() => seleccionar(item)}
-                      >
-                        <strong>{item.borrador.nombre ?? item.borrador.titulo}</strong>
-                        <span>
-                          {item.publicado ? 'Publicado' : 'Borrador'}
-                          {item.publicado &&
-                          JSON.stringify(item.borrador) !== JSON.stringify(item.publicado)
-                            ? ' · cambios pendientes'
-                            : ''}
-                        </span>
-                        <span>
-                          {item.validacion === 'referencia'
-                            ? 'Contenido de referencia por validar'
-                            : ''}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-              </ul>
-            </aside>
-            <section className="cms-editor" aria-labelledby="cms-titulo-editor">
-              <h2 id="cms-titulo-editor">
-                {entrada ? 'Editar entrada' : 'Nueva entrada'} · {nombres[tipo]}
-              </h2>
+            <button type="button" disabled={ocupado} onClick={() => abrirEditor(null)}>
+              {vistaActual === 'talleres' ? 'Crear taller' : 'Crear entrada'}
+            </button>
+            <ul>
+              {contenido?.entradas
+                .filter((e) => e.tipo === tipo)
+                .sort((a, b) => a.orden - b.orden)
+                .map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className="cms-entrada"
+                      aria-pressed={entrada?.id === item.id}
+                      disabled={ocupado}
+                      onClick={() => abrirEditor(item)}
+                    >
+                      <strong>{item.borrador.nombre ?? item.borrador.titulo}</strong>
+                      <span>
+                        {item.publicado ? 'Publicado' : 'Borrador'}
+                        {item.publicado &&
+                        JSON.stringify(item.borrador) !== JSON.stringify(item.publicado)
+                          ? ' · cambios pendientes'
+                          : ''}
+                      </span>
+                      <span>
+                        {item.validacion === 'referencia'
+                          ? 'Contenido de referencia por validar'
+                          : ''}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </aside>
+          <section className="cms-editor" aria-labelledby="cms-titulo-editor">
+            <h2 id="cms-titulo-editor" ref={tituloEditor} tabIndex={-1}>
+              {entrada
+                ? (entrada.borrador.nombre ?? entrada.borrador.titulo)
+                : tipo === 'taller'
+                  ? 'Nuevo taller'
+                  : `Nueva entrada · ${nombres[tipo]}`}
+            </h2>
+            <nav className="cms-editor-navegacion" aria-label="Secciones de la entrada">
+              {espacios.map(([id, etiqueta]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={espacio === id && !previa ? undefined : 'secundario'}
+                  aria-current={espacio === id && !previa ? 'page' : undefined}
+                  disabled={ocupado}
+                  onClick={() => mostrarEspacio(id)}
+                >
+                  {etiqueta}
+                </button>
+              ))}
+            </nav>
+            {!previa && ['ficha', 'imagenes'].includes(espacio) && (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   ejecutar(guardar);
                 }}
               >
-                {['nombre', 'descripcion', ...(especificos[tipo] ?? [])].map((nombre) => {
-                  const valor = datos[nombre] ?? '';
-                  if (nombre === 'areaId')
-                    return (
-                      <label key={nombre}>
-                        {etiquetas[nombre]}
-                        <select value={valor} onChange={(e) => campo(nombre, e.target.value)}>
-                          <option value="">Galería general (sin área)</option>
-                          {contenido?.entradas
-                            .filter((e) => e.tipo === 'area')
-                            .map((area) => (
-                              <option key={area.id} value={area.id}>
-                                {area.borrador.nombre}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    );
-                  if (nombre === 'mostrarPrecio')
-                    return (
-                      <label className="cms-check" key={nombre}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(valor)}
-                          onChange={(e) => campo(nombre, e.target.checked)}
-                        />
-                        {etiquetas[nombre]}
-                      </label>
-                    );
-                  if (nombre === 'areas')
-                    return (
-                      <fieldset key={nombre}>
-                        <legend>{etiquetas[nombre]}</legend>
-                        {contenido?.entradas
-                          .filter((e) => e.tipo === 'area')
-                          .map((area) => (
-                            <label className="cms-check" key={area.id}>
-                              <input
-                                type="checkbox"
-                                checked={
-                                  (datos.areas ?? []).includes(area.id) ||
-                                  (datos.areas ?? []).includes(area.borrador.nombre)
-                                }
-                                onChange={(e) =>
-                                  campo(
-                                    'areas',
-                                    e.target.checked
-                                      ? [...(datos.areas ?? []), area.id]
-                                      : (datos.areas ?? []).filter(
-                                          (id) => id !== area.id && id !== area.borrador.nombre,
-                                        ),
-                                  )
-                                }
-                              />
-                              {area.borrador.nombre}
-                            </label>
-                          ))}
-                      </fieldset>
-                    );
-                  if (nombre === 'estadoTaller')
-                    if (entrada?.inscripcion)
-                      return (
-                        <p key={nombre}>
-                          El estado y la disponibilidad se gestionan en «Inscripciones del taller».
-                        </p>
-                      );
-                    else
+                <h3>
+                  {espacio === 'ficha'
+                    ? tipo === 'taller'
+                      ? 'Ficha del taller'
+                      : 'Ficha de contenido'
+                    : 'Imágenes de la entrada'}
+                </h3>
+                {espacio === 'ficha' &&
+                  ['nombre', 'descripcion', ...(especificos[tipo] ?? [])].map((nombre) => {
+                    const valor = datos[nombre] ?? '';
+                    if (nombre === 'areaId')
                       return (
                         <label key={nombre}>
                           {etiquetas[nombre]}
-                          <select
-                            value={valor || 'informativo'}
-                            onChange={(e) => campo(nombre, e.target.value)}
-                          >
-                            {[
-                              ['informativo', 'Información'],
-                              ['abierto', 'Convocatoria abierta'],
-                              ['cerrado', 'Cerrado'],
-                              ['concluido', 'Concluido'],
-                            ].map(([id, texto]) => (
-                              <option key={id} value={id}>
-                                {texto}
-                              </option>
-                            ))}
+                          <select value={valor} onChange={(e) => campo(nombre, e.target.value)}>
+                            <option value="">Galería general (sin área)</option>
+                            {contenido?.entradas
+                              .filter((e) => e.tipo === 'area')
+                              .map((area) => (
+                                <option key={area.id} value={area.id}>
+                                  {area.borrador.nombre}
+                                </option>
+                              ))}
                           </select>
                         </label>
                       );
-                  const multilinea =
-                    listas.includes(nombre) ||
-                    ['descripcion', 'objetivo', 'requisitos'].includes(nombre);
-                  return (
-                    <label key={nombre}>
-                      {etiquetas[nombre]}
-                      {multilinea ? (
-                        <textarea
-                          rows={4}
-                          value={Array.isArray(valor) ? valor.join('\n') : valor}
-                          maxLength={4000}
-                          onChange={(e) =>
-                            campo(
-                              nombre,
-                              listas.includes(nombre) ? e.target.value.split('\n') : e.target.value,
-                            )
-                          }
-                        />
-                      ) : (
-                        <input
-                          type={
-                            ['inicio', 'fin', 'fecha'].includes(nombre)
-                              ? 'date'
-                              : nombre === 'correo'
-                                ? 'email'
-                                : nombre === 'precio'
-                                  ? 'number'
-                                  : 'text'
-                          }
-                          step={nombre === 'precio' ? '0.01' : undefined}
-                          min={nombre === 'precio' ? 0 : undefined}
-                          value={valor}
-                          maxLength={nombre === 'nombre' ? 160 : 1000}
-                          required={nombre === 'nombre'}
-                          onChange={(e) => campo(nombre, e.target.value)}
-                        />
-                      )}
-                    </label>
-                  );
-                })}
-                {imagenTipos.includes(tipo) && (
+                    if (nombre === 'mostrarPrecio')
+                      return (
+                        <label className="cms-check" key={nombre}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(valor)}
+                            onChange={(e) => campo(nombre, e.target.checked)}
+                          />
+                          {etiquetas[nombre]}
+                        </label>
+                      );
+                    if (nombre === 'areas')
+                      return (
+                        <fieldset key={nombre}>
+                          <legend>{etiquetas[nombre]}</legend>
+                          {contenido?.entradas
+                            .filter((e) => e.tipo === 'area')
+                            .map((area) => (
+                              <label className="cms-check" key={area.id}>
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    (datos.areas ?? []).includes(area.id) ||
+                                    (datos.areas ?? []).includes(area.borrador.nombre)
+                                  }
+                                  onChange={(e) =>
+                                    campo(
+                                      'areas',
+                                      e.target.checked
+                                        ? [...(datos.areas ?? []), area.id]
+                                        : (datos.areas ?? []).filter(
+                                            (id) => id !== area.id && id !== area.borrador.nombre,
+                                          ),
+                                    )
+                                  }
+                                />
+                                {area.borrador.nombre}
+                              </label>
+                            ))}
+                        </fieldset>
+                      );
+                    if (nombre === 'estadoTaller')
+                      if (entrada?.inscripcion)
+                        return (
+                          <p key={nombre}>
+                            {gestionaTaller
+                              ? 'El cupo y el periodo se gestionan en «Inscripciones» y el cierre del taller en «Operación».'
+                              : 'La cuenta responsable gestiona el estado y la disponibilidad del taller.'}
+                          </p>
+                        );
+                      else
+                        return (
+                          <label key={nombre}>
+                            {etiquetas[nombre]}
+                            <select
+                              value={valor || 'informativo'}
+                              onChange={(e) => campo(nombre, e.target.value)}
+                            >
+                              {[
+                                ['informativo', 'Información'],
+                                ['abierto', 'Convocatoria abierta'],
+                                ['cerrado', 'Cerrado'],
+                                ['concluido', 'Concluido'],
+                              ].map(([id, texto]) => (
+                                <option key={id} value={id}>
+                                  {texto}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        );
+                    const multilinea =
+                      listas.includes(nombre) ||
+                      ['descripcion', 'objetivo', 'requisitos'].includes(nombre);
+                    return (
+                      <label key={nombre}>
+                        {etiquetas[nombre]}
+                        {multilinea ? (
+                          <textarea
+                            rows={4}
+                            value={Array.isArray(valor) ? valor.join('\n') : valor}
+                            maxLength={4000}
+                            onChange={(e) =>
+                              campo(
+                                nombre,
+                                listas.includes(nombre)
+                                  ? e.target.value.split('\n')
+                                  : e.target.value,
+                              )
+                            }
+                          />
+                        ) : (
+                          <input
+                            type={
+                              ['inicio', 'fin', 'fecha'].includes(nombre)
+                                ? 'date'
+                                : nombre === 'correo'
+                                  ? 'email'
+                                  : nombre === 'precio'
+                                    ? 'number'
+                                    : 'text'
+                            }
+                            step={nombre === 'precio' ? '0.01' : undefined}
+                            min={nombre === 'precio' ? 0 : undefined}
+                            value={valor}
+                            maxLength={nombre === 'nombre' ? 160 : 1000}
+                            required={nombre === 'nombre'}
+                            onChange={(e) => campo(nombre, e.target.value)}
+                          />
+                        )}
+                      </label>
+                    );
+                  })}
+                {espacio === 'imagenes' && (
                   <>
                     <label>
                       Imagen asociada
@@ -899,19 +956,21 @@ export function GestorContenido() {
                     />
                   </>
                 )}
-                <label>
-                  Orden en la lista
-                  <input
-                    type="number"
-                    min={0}
-                    max={10000}
-                    value={orden}
-                    onChange={(e) => {
-                      cambiarOrden(e.target.value);
-                      editado.current = true;
-                    }}
-                  />
-                </label>
+                {espacio === 'ficha' && (
+                  <label>
+                    Orden en la lista
+                    <input
+                      type="number"
+                      min={0}
+                      max={10000}
+                      value={orden}
+                      onChange={(e) => {
+                        cambiarOrden(e.target.value);
+                        editado.current = true;
+                      }}
+                    />
+                  </label>
+                )}
                 <div className="cms-acciones">
                   <button disabled={ocupado}>Guardar borrador</button>
                   <button
@@ -932,154 +991,227 @@ export function GestorContenido() {
                   </button>
                 </div>
               </form>
-              {entrada && publica && (
-                <div className="cms-publicar">
-                  {tipo === 'taller' && entrada.inscripcion && (
-                    <label>
-                      Motivo de los cambios de fechas al publicar
+            )}
+            {espacio === 'publicacion' && (
+              <>
+                <h3>Publicación de la entrada</h3>
+                {!entrada && <p>Guarda el borrador desde «Ficha» para poder publicarlo.</p>}
+                {entrada && (
+                  <div>
+                    {tipo === 'taller' && entrada.inscripcion && (
+                      <label>
+                        Motivo de los cambios de fechas al publicar
+                        <input
+                          value={motivoFechas}
+                          onChange={(e) => cambiarMotivoFechas(e.target.value)}
+                          maxLength={500}
+                        />
+                      </label>
+                    )}
+                    <label className="cms-check">
                       <input
-                        value={motivoFechas}
-                        onChange={(e) => cambiarMotivoFechas(e.target.value)}
-                        maxLength={500}
+                        type="checkbox"
+                        checked={confirmar}
+                        onChange={(e) => confirmarRevision(e.target.checked)}
                       />
+                      Revisé el texto, las imágenes y la información antes de publicar.
                     </label>
-                  )}
-                  <label className="cms-check">
-                    <input
-                      type="checkbox"
-                      checked={confirmar}
-                      onChange={(e) => confirmarRevision(e.target.checked)}
-                    />
-                    Revisé el texto, las imágenes y la información antes de publicar.
-                  </label>
-                  <div className="cms-acciones">
-                    <button
-                      type="button"
-                      disabled={ocupado || !confirmar || editado.current}
-                      onClick={() =>
-                        ejecutar(async () => {
-                          await consultarApi(`/cms/entradas/${entrada.id}/publicar`, {
-                            metodo: 'POST',
-                            datos: {
-                              version: entrada.version,
-                              confirmarRevision: true,
-                              motivo: motivoFechas,
-                            },
-                          });
-                          editado.current = false;
-                          const actual = await cargar();
-                          seleccionar(actual.entradas.find((e) => e.id === entrada.id));
-                          cambiarMensaje(
-                            'Entrada publicada. El portal público ya está actualizado.',
-                          );
-                        })
-                      }
-                    >
-                      Publicar
-                    </button>
-                    <button
-                      type="button"
-                      className="secundario"
-                      disabled={ocupado || !entrada.publicado || editado.current}
-                      onClick={() =>
-                        ejecutar(async () => {
-                          await consultarApi(`/cms/entradas/${entrada.id}/despublicar`, {
-                            metodo: 'POST',
-                            datos: { version: entrada.version },
-                          });
-                          const actual = await cargar();
-                          seleccionar(actual.entradas.find((e) => e.id === entrada.id));
-                          cambiarMensaje('La entrada ya no aparece en el portal.');
-                        })
-                      }
-                    >
-                      Despublicar
-                    </button>
-                    <button
-                      type="button"
-                      className="peligro"
-                      disabled={ocupado}
-                      onClick={() =>
-                        ejecutar(async () => {
-                          if (
-                            !window.confirm(
-                              '¿Eliminar esta entrada? Se conservará el registro de la acción en la bitácora.',
+                    <div className="cms-acciones">
+                      <button
+                        type="button"
+                        disabled={ocupado || !confirmar || editado.current}
+                        onClick={() =>
+                          ejecutar(async () => {
+                            await consultarApi(`/cms/entradas/${entrada.id}/publicar`, {
+                              metodo: 'POST',
+                              datos: {
+                                version: entrada.version,
+                                confirmarRevision: true,
+                                motivo: motivoFechas,
+                              },
+                            });
+                            editado.current = false;
+                            const actual = await cargar();
+                            seleccionar(
+                              actual.entradas.find((e) => e.id === entrada.id),
+                              tipo,
+                              espacio,
+                            );
+                            cambiarMensaje(
+                              'Entrada publicada. El portal público ya está actualizado.',
+                            );
+                          })
+                        }
+                      >
+                        Publicar
+                      </button>
+                      <button
+                        type="button"
+                        className="secundario"
+                        disabled={ocupado || !entrada.publicado || editado.current}
+                        onClick={() =>
+                          ejecutar(async () => {
+                            await consultarApi(`/cms/entradas/${entrada.id}/despublicar`, {
+                              metodo: 'POST',
+                              datos: { version: entrada.version },
+                            });
+                            const actual = await cargar();
+                            seleccionar(
+                              actual.entradas.find((e) => e.id === entrada.id),
+                              tipo,
+                              espacio,
+                            );
+                            cambiarMensaje('La entrada ya no aparece en el portal.');
+                          })
+                        }
+                      >
+                        Despublicar
+                      </button>
+                      <button
+                        type="button"
+                        className="peligro"
+                        disabled={ocupado}
+                        onClick={() =>
+                          ejecutar(async () => {
+                            if (
+                              !window.confirm(
+                                '¿Eliminar esta entrada? Se conservará el registro de la acción en la bitácora.',
+                              )
                             )
-                          )
-                            return;
-                          await consultarApi(`/cms/entradas/${entrada.id}`, {
-                            metodo: 'DELETE',
-                            datos: { version: entrada.version },
-                          });
-                          editado.current = false;
-                          await cargar();
-                          seleccionar(null);
-                          cambiarMensaje('Entrada eliminada.');
-                        })
-                      }
-                    >
-                      Eliminar entrada
-                    </button>
+                              return;
+                            await consultarApi(`/cms/entradas/${entrada.id}`, {
+                              metodo: 'DELETE',
+                              datos: { version: entrada.version },
+                            });
+                            editado.current = false;
+                            await cargar();
+                            seleccionar(null);
+                            cambiarMensaje('Entrada eliminada.');
+                          })
+                        }
+                      >
+                        Eliminar entrada
+                      </button>
+                    </div>
+                    {editado.current && <p>Guarda el borrador antes de publicar o despublicar.</p>}
                   </div>
-                  {editado.current && <p>Guarda el borrador antes de publicar o despublicar.</p>}
-                </div>
-              )}
-              {tipo === 'taller' && entrada && publica && (
-                <InscripcionesTaller
-                  key={`${entrada.id}-${entrada.version}`}
-                  entrada={entrada}
-                  ejecutar={ejecutar}
-                  ocupado={ocupado || editado.current}
-                  actualizar={async () => {
-                    const actual = await cargar();
-                    seleccionar(actual.entradas.find((e) => e.id === entrada.id));
-                    cambiarMensaje('Inscripción del taller actualizada.');
-                  }}
-                />
-              )}
-              {entrada?.historial.length > 0 && (
-                <details className="cms-historial">
-                  <summary>Versiones anteriores</summary>
-                  {entrada.historial.map((v) => (
-                    <button
-                      type="button"
-                      className="secundario"
-                      disabled={ocupado || editado.current}
-                      key={v.version}
-                      onClick={() =>
-                        ejecutar(async () => {
-                          const item = await consultarApi(
-                            `/cms/entradas/${entrada.id}/restaurar/${v.version}`,
-                            { metodo: 'POST', datos: { version: entrada.version } },
-                          );
-                          editado.current = false;
-                          await cargar();
-                          seleccionar(item);
-                          cambiarMensaje('Versión restaurada como borrador.');
-                        })
+                )}
+                <div className="cms-resumen">
+                  {contenido && (
+                    <span
+                      className={
+                        contenido.revisionPortal === contenido.revisionHtml
+                          ? 'cms-actualizado'
+                          : 'cms-pendiente'
                       }
                     >
-                      Restaurar versión {v.version}
-                    </button>
-                  ))}
-                </details>
-              )}
-              {previa && (
-                <section className="cms-previa">
-                  <h3>Vista previa · sin publicar</h3>
-                  <button type="button" className="secundario" onClick={() => cambiarPrevia('')}>
-                    Cerrar vista previa
+                      {contenido.revisionPortal === contenido.revisionHtml
+                        ? 'Portal actualizado'
+                        : 'Publicación pendiente'}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="secundario"
+                    disabled={ocupado}
+                    onClick={() =>
+                      ejecutar(async () => {
+                        await consultarApi('/cms/regenerar', { metodo: 'POST' });
+                        await cargar();
+                        cambiarMensaje('Portal regenerado.');
+                      })
+                    }
+                  >
+                    Regenerar portal
                   </button>
-                  <iframe
-                    title="Vista previa del portal"
-                    srcDoc={previa}
-                    sandbox="allow-same-origin"
-                  />
-                </section>
+                </div>
+              </>
+            )}
+            {['inscripciones', 'operacion'].includes(espacio) && !entrada && (
+              <>
+                <h3>
+                  {espacio === 'inscripciones'
+                    ? 'Inscripciones del taller'
+                    : 'Operación del taller'}
+                </h3>
+                <p>Guarda el borrador desde «Ficha» para habilitar esta sección.</p>
+              </>
+            )}
+            {espacio === 'inscripciones' && entrada && (
+              <InscripcionesTaller
+                key={`${entrada.id}-${entrada.version}`}
+                entrada={entrada}
+                ejecutar={ejecutar}
+                ocupado={ocupado || editado.current}
+                alEditar={() => (inscripcionEditada.current = true)}
+                actualizar={actualizarTaller}
+              />
+            )}
+            {espacio === 'operacion' && entrada && (
+              <OperacionTaller
+                key={`${entrada.id}-${entrada.version}`}
+                entrada={entrada}
+                ejecutar={ejecutar}
+                ocupado={ocupado || editado.current}
+                actualizar={actualizarTaller}
+              />
+            )}
+            {['inscripciones', 'operacion', 'historial'].includes(espacio) &&
+              entrada &&
+              editado.current && (
+                <p>
+                  Guarda el borrador desde «Ficha»
+                  {imagenTipos.includes(tipo) ? ' o «Imágenes»' : ''} para continuar.
+                </p>
               )}
-            </section>
-          </div>
-        </>
+            {espacio === 'historial' && (
+              <>
+                <h3>Versiones anteriores</h3>
+                {entrada?.historial.length ? (
+                  <div className="cms-acciones">
+                    {entrada.historial.map((v) => (
+                      <button
+                        type="button"
+                        className="secundario"
+                        disabled={ocupado || editado.current}
+                        key={v.version}
+                        onClick={() =>
+                          ejecutar(async () => {
+                            const item = await consultarApi(
+                              `/cms/entradas/${entrada.id}/restaurar/${v.version}`,
+                              { metodo: 'POST', datos: { version: entrada.version } },
+                            );
+                            editado.current = false;
+                            await cargar();
+                            seleccionar(item);
+                            cambiarMensaje('Versión restaurada como borrador.');
+                          })
+                        }
+                      >
+                        Restaurar versión {v.version}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p>Esta entrada todavía no tiene versiones anteriores.</p>
+                )}
+              </>
+            )}
+            {previa && (
+              <section className="cms-previa">
+                <h3>Vista previa · sin publicar</h3>
+                <button type="button" className="secundario" onClick={() => cambiarPrevia('')}>
+                  Cerrar vista previa
+                </button>
+                <iframe
+                  title="Vista previa del portal"
+                  srcDoc={previa}
+                  sandbox="allow-same-origin"
+                />
+              </section>
+            )}
+          </section>
+        </div>
       )}
     </PanelMarco>
   );

@@ -18,19 +18,9 @@ const local = (iso) =>
     : '';
 const utc = (valor) => new Date(`${valor}:00-06:00`).toISOString();
 
-export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) {
-  const [motivo, cambiarMotivo] = useState('');
+export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar, alEditar }) {
   const configuracion = entrada.inscripcion;
   const terminado = configuracion && configuracion.estado !== 'programado';
-  async function descargar(formato) {
-    const archivo = await consultarApi(`/talleres/${entrada.id}/inscripciones?formato=${formato}`);
-    const url = URL.createObjectURL(archivo);
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = `inscripciones-${entrada.id}.${formato}`;
-    enlace.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
   return (
     <section className="cms-inscripciones" aria-labelledby="titulo-inscripciones">
       <h3 id="titulo-inscripciones">Inscripciones del taller</h3>
@@ -39,6 +29,7 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
         taller y disponer del aviso autorizado.
       </p>
       <form
+        onChange={alEditar}
         onSubmit={(e) => {
           e.preventDefault();
           const datos = Object.fromEntries(new FormData(e.currentTarget));
@@ -111,10 +102,31 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
           <button disabled={ocupado || terminado}>Guardar inscripción</button>
         </fieldset>
       </form>
-      {configuracion && (
+    </section>
+  );
+}
+
+export function OperacionTaller({ entrada, ejecutar, ocupado, actualizar }) {
+  const [motivo, cambiarMotivo] = useState('');
+  const configuracion = entrada.inscripcion;
+  async function descargar(formato) {
+    const archivo = await consultarApi(`/talleres/${entrada.id}/inscripciones?formato=${formato}`);
+    const url = URL.createObjectURL(archivo);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `inscripciones-${entrada.id}.${formato}`;
+    enlace.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  return (
+    <section className="cms-operacion-taller" aria-labelledby="titulo-operacion-taller">
+      <h3 id="titulo-operacion-taller">Operación del taller</h3>
+      {configuracion ? (
         <p>
           Estado operativo: <strong>{configuracion.estado}</strong>.
         </p>
+      ) : (
+        <p>Configura el cupo y el periodo en «Inscripciones» para gestionar el taller.</p>
       )}
       <div className="cms-acciones">
         {['csv', 'pdf'].map((formato) => (
@@ -129,38 +141,40 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
           </button>
         ))}
       </div>
-      <label>
-        Motivo de la acción del taller
-        <input value={motivo} onChange={(e) => cambiarMotivo(e.target.value)} maxLength={500} />
-      </label>
-      {configuracion && !terminado && (
-        <div className="cms-acciones">
-          {['concluir', 'cancelar'].map((accion) => (
-            <button
-              type="button"
-              className="secundario"
-              key={accion}
-              disabled={ocupado || !motivo.trim()}
-              onClick={() =>
-                ejecutar(async () => {
-                  if (
-                    !window.confirm(
-                      `¿${accion === 'cancelar' ? 'Cancelar' : 'Concluir'} el taller?${accion === 'cancelar' ? ' Se cancelarán las inscripciones confirmadas.' : ''}`,
+      {configuracion?.estado === 'programado' && (
+        <>
+          <label>
+            Motivo de la acción del taller
+            <input value={motivo} onChange={(e) => cambiarMotivo(e.target.value)} maxLength={500} />
+          </label>
+          <div className="cms-acciones">
+            {['concluir', 'cancelar'].map((accion) => (
+              <button
+                type="button"
+                className="secundario"
+                key={accion}
+                disabled={ocupado || !motivo.trim()}
+                onClick={() =>
+                  ejecutar(async () => {
+                    if (
+                      !window.confirm(
+                        `¿${accion === 'cancelar' ? 'Cancelar' : 'Concluir'} el taller?${accion === 'cancelar' ? ' Se cancelarán las inscripciones confirmadas.' : ''}`,
+                      )
                     )
-                  )
-                    return;
-                  await consultarApi(`/talleres/${entrada.id}/acciones`, {
-                    metodo: 'POST',
-                    datos: { accion, motivo, version: entrada.version },
-                  });
-                  await actualizar();
-                })
-              }
-            >
-              {accion === 'cancelar' ? 'Cancelar taller' : 'Concluir taller'}
-            </button>
-          ))}
-        </div>
+                      return;
+                    await consultarApi(`/talleres/${entrada.id}/acciones`, {
+                      metodo: 'POST',
+                      datos: { accion, motivo, version: entrada.version },
+                    });
+                    await actualizar();
+                  })
+                }
+              >
+                {accion === 'cancelar' ? 'Cancelar taller' : 'Concluir taller'}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
