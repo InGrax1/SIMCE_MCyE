@@ -1,6 +1,6 @@
 # Registro de publicación por la responsable
 
-Estado al 6 de noviembre de 2026: pendiente de ejecución, a petición del usuario, quien indicó que la prueba se realizará después. Este registro queda preparado; no acredita una publicación realizada sin asistencia.
+Estado al 7 de noviembre de 2026. El usuario reporta que se probó la publicación en local. Quedan por documentar la entrada publicada, la cuenta usada, la observación sobre asistencia y las evidencias del ensayo.
 
 ## Preparación por el observador
 
@@ -19,25 +19,25 @@ Accede al gestor con tu cuenta, crea y publica una entrada de aviso con el texto
 
 | Dato                                                          | Registro                                                        |
 | ------------------------------------------------------------- | --------------------------------------------------------------- |
-| Fecha y hora, America/Mexico_City                             | Pendiente de ejecución.                                         |
+| Fecha y hora, America/Mexico_City                             | Fecha y hora del ensayo por documentar.                         |
 | Persona participante                                          | Pendiente de registrar al iniciar.                              |
 | Persona observadora                                           | Pendiente de registrar al iniciar.                              |
 | Versión del código, obtenida con `git rev-parse --short HEAD` | Pendiente de registrar al iniciar.                              |
 | Origen y entorno                                              | Local integrado; dirección y puerto por registrar.              |
 | Identificador de la cuenta y rol                              | Pendiente; se requiere rol `responsable`. No anotar contraseña. |
-| Título e identificador de la entrada                          | Pendientes de creación durante el ensayo.                       |
-| Inicio y término                                              | Pendientes; no se establece un límite de tiempo de aprobación.  |
+| Título e identificador de la entrada                          | Por documentar.                                                 |
+| Inicio y término                                              | Por documentar.                                                 |
 
 ## Resultado por paso
 
-| Paso observado                                                | Resultado     | Ayuda o incidencia |
-| ------------------------------------------------------------- | ------------- | ------------------ |
-| Inicia sesión y cambia la contraseña inicial, si corresponde. | No ejecutado. | Por registrar.     |
-| Crea el aviso y guarda el borrador.                           | No ejecutado. | Por registrar.     |
-| Comprueba que el borrador no se muestra al público.           | No ejecutado. | Por registrar.     |
-| Revisa la vista previa y publica el aviso.                    | No ejecutado. | Por registrar.     |
-| Comprueba el contenido publicado en una ventana pública.      | No ejecutado. | Por registrar.     |
-| Cierra sesión y verifica que el panel solicita autenticación. | No ejecutado. | Por registrar.     |
+| Paso observado                                                | Resultado       | Ayuda o incidencia |
+| ------------------------------------------------------------- | --------------- | ------------------ |
+| Inicia sesión y cambia la contraseña inicial, si corresponde. | Por documentar. | Por registrar.     |
+| Crea el aviso y guarda el borrador.                           | Por documentar. | Por registrar.     |
+| Comprueba que el borrador no se muestra al público.           | Por documentar. | Por registrar.     |
+| Revisa la vista previa y publica el aviso.                    | Por documentar. | Por registrar.     |
+| Comprueba el contenido publicado en una ventana pública.      | Por documentar. | Por registrar.     |
+| Cierra sesión y verifica que el panel solicita autenticación. | Por documentar. | Por registrar.     |
 
 ## Evidencia y conclusión
 
@@ -47,7 +47,7 @@ Accede al gestor con tu cuenta, crea y publica una entrada de aviso con el texto
 | Captura autorizada del aviso publicado, sin cuenta ni credenciales visibles | Pendiente.                                                                              |
 | Declaración de la participante de que realizó la publicación sin ayuda      | Pendiente.                                                                              |
 | Observaciones y correcciones necesarias                                     | Pendientes del ensayo.                                                                  |
-| Resultado final                                                             | Pendiente: no ejecutado.                                                                |
+| Resultado final                                                             | Prueba local reportada por el usuario.                                                  |
 | Confirmación de la responsable y de quien observa                           | Pendiente.                                                                              |
 | Destino del aviso de prueba al finalizar                                    | Despublicar con autorización y dejar constancia; no eliminar la evidencia de auditoría. |
 

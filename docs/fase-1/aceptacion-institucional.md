@@ -2,7 +2,7 @@
 
 Estado al 6 de noviembre de 2026: contenido aceptado por la institución, según confirmación expresa del usuario en esta conversación. La confirmación comprende textos, fotografías, identidad, contactos, asignaturas, programas y convocatorias del material presentado. Referencia del código del portal en este corte: `ab55cab`. Se registra la comunicación recibida; no se añade una firma ni un nombre de funcionario que no se haya proporcionado.
 
-El usuario autoriza después el aviso y los roles mediante el mensaje «autorizo el aviso y los roles». El aviso final `simce-2026-11-06-v1` se incorpora al portal y al entorno local. Por instrucción adicional se crea un administrador de pruebas local; la identidad del administrador institucional definitivo sigue pendiente. La prueba de publicación por la responsable se realizará después y no se registra como ejecutada. Las pruebas del alojamiento continúan diferidas hasta disponer de servidor.
+El usuario autoriza después el aviso y los roles mediante el mensaje «autorizo el aviso y los roles». El aviso `simce-2026-11-06-v1` se incorpora al portal y al entorno local. Por instrucción adicional se crea un administrador de pruebas local. La identidad del administrador institucional definitivo sigue pendiente. El 7 de noviembre, el usuario reporta que se probó la publicación en local y difiere el despliegue hasta completar el proyecto.
 
 ## Aceptación del contenido y seguimiento
 
@@ -26,7 +26,7 @@ Documentos preparados: [aviso de privacidad](../privacidad/aviso-privacidad-simc
 
 ## Prueba por la responsable sin asistencia
 
-El usuario confirma que el recorrido puede hacerse localmente y decide realizarlo después. Se ha preparado [un registro para el hito de publicación autónoma de una entrada](registro-publicacion-responsable.md), con consigna, evidencias y criterio de aprobación. El recorrido ampliado siguiente se conserva para capacitación y revisión. Cuando exista servidor, se repite sobre su dirección HTTPS:
+El [registro de publicación](registro-publicacion-responsable.md) recoge la confirmación del usuario y conserva la consigna, las evidencias y el criterio de aprobación. El recorrido ampliado siguiente se conserva para capacitación y revisión. Se repetirá en el alojamiento institucional mediante HTTPS.
 
 1. Iniciar sesión, cambiar la contraseña inicial y reconocer la diferencia entre borrador y versión publicada.
 2. Crear un aviso, guardar un borrador y comprobar desde una ventana pública que todavía no aparece.
@@ -54,6 +54,6 @@ La persona que observa no debe dirigir las acciones. Si necesita ayuda, registre
 | Evidencias autorizadas, sin credenciales ni datos personales | Pendiente                                                           |
 | Observaciones y correcciones                                 | Pendiente                                                           |
 | Aprobación institucional del contenido                       | Aceptado según confirmación del usuario del 6 de noviembre de 2026. |
-| Resultado del recorrido humano                               | Pendiente: se realizará después.                                    |
+| Resultado del recorrido humano                               | Prueba local reportada por el usuario el 7 de noviembre de 2026.    |
 
 Las pruebas locales de MySQL, respaldo, accesibilidad y publicación se generan con [los comandos de validación](validacion-local.md). No sustituyen este recorrido humano. Antes de la entrega institucional se adjuntará también evidencia del origen HTTPS, cookies seguras, permisos, correo y respaldos del alojamiento y los informes del pipeline de esa versión. Alojamiento, subdominio/TLS y la báscula mantienen sus propios pendientes de Fase 0.

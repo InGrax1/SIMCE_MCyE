@@ -32,4 +32,4 @@ La entrega privada del administrador de pruebas está en `.local/cms/acceso-admi
 
 Antes del recorrido humano se prepara una cuenta individual de rol `responsable` en el entorno local. Puede utilizarse una dirección sintética identificada como ensayo, sin enviar mensajes externos, si aún no se ha autorizado el alta del correo real. El observador conserva el identificador de cuenta en el registro de prueba y no conoce ni registra la contraseña elegida por la participante.
 
-La creación de la cuenta de rol `responsable` se realizará al programar el ensayo, sin requerir otra aprobación del rol ya autorizado. La cuenta administradora de pruebas no sustituye la publicación autónoma por la responsable, que sigue pendiente para después.
+El rol `responsable` ya está autorizado. El usuario reportó la prueba de publicación local el 7 de noviembre de 2026. El [registro del ensayo](../fase-1/registro-publicacion-responsable.md) conserva esa confirmación y los datos que se pueden adjuntar como evidencia.

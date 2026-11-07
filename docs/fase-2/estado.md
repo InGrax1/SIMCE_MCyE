@@ -1,6 +1,6 @@
 # Estado de Fase 2
 
-Inicio técnico: 6 de noviembre de 2026, por instrucción del usuario. Alcance de referencia: §15.1 y requisitos M de RF-3 en `Especificacion_SIMCE_MCyE_v0.2.docx`. El contenido está aceptado según comunicación del usuario, quien también autoriza el aviso y los roles. El aviso se integra al portal y a la revisión local. La publicación autónoma por la responsable y las pruebas de alojamiento siguen pendientes.
+Inicio técnico: 6 de noviembre de 2026, por instrucción del usuario. Alcance de referencia: §15.1 y requisitos M de RF-3 en `Especificacion_SIMCE_MCyE_v0.2.docx`. El contenido está aceptado según comunicación del usuario, quien también autoriza el aviso y los roles. El aviso se integra al portal y a la revisión local. El usuario difiere el despliegue a producción hasta completar el proyecto.
 
 ## Avance implementado
 
@@ -49,12 +49,13 @@ Mensajes de conexión: los formularios y el panel muestran un aviso en español 
 
 Actualización de atención: el [panel reorganizado](atencion-solicitudes.md) separa Solicitudes, Participantes, Talleres, Contenido y Bitácora. Solicitudes tiene lista filtrable y detalle, cancelación y reapertura con motivo. Servicio social tiene folio SS, mensajes y respuestas privadas, almacenamiento en navegador y respaldo por correo. Los registros anteriores conservan sus datos y permiten enviar su primer enlace desde el panel. Aviso vigente v5. Se aprobaron 94 pruebas generales, cinco de MySQL, la compilación, dieciséis flujos de Fase 2 y dieciséis controles de accesibilidad sin incidencias graves o críticas. La regresión de Fase 1 aprobó sus trece flujos y nueve revisiones de accesibilidad. El correo se verificó con el buzón local de pruebas, sin enviar mensajes a solicitantes reales.
 
+El 7 de noviembre de 2026, el usuario reporta que se probó la publicación en local y confirma el funcionamiento en teléfono y de los correos. El [registro de publicación](../fase-1/registro-publicacion-responsable.md) distingue el resultado comunicado de la evidencia del ensayo. Las comprobaciones en el alojamiento institucional quedan pendientes.
+
 ## Pendientes para aceptar la fase
 
 - DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.
-- Con el contenido y las convocatorias presentados ya aceptados según confirmación del usuario, ejecutar el ciclo desde un dispositivo externo en el alojamiento institucional. Las nuevas convocatorias se revisarán al publicarlas.
-- Revisar el formulario con teclado y navegador del teléfono físico. La emulación y axe no sustituyen esa prueba.
+- Ejecutar el ciclo desde un dispositivo externo cuando se disponga del alojamiento institucional. Las nuevas convocatorias se revisarán al publicarlas.
 - Implementar y verificar la depuración correspondiente a los plazos del aviso autorizado, junto con el tratamiento de exportaciones y respaldos y los instrumentos archivísticos aplicables, antes de operar con datos reales.
-- Comprobar la recepción real del correo de inscripción; las copias de consultas ya funcionan según confirmación del usuario. La conexión y autenticación SMTP local se verificaron. Continuar RF-3.7 con notificaciones de cambios/respuestas y decidir si se incluye RF-3.10 (lista de espera). Las copias iniciales de consulta e inscripción no equivalen a notificaciones posteriores.
+- Continuar RF-3.7 con notificaciones de cambios y respuestas, y decidir si se incluye RF-3.10 (lista de espera).
 
 El avance técnico inicia la fase; no acredita su aceptación institucional ni su disponibilidad en producción. La operación local se explica en [la guía de talleres e inscripciones](talleres-inscripciones.md).
