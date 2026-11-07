@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesion.js';
 import { Prototipo } from './Prototipo.jsx';
 import { InscripcionesTaller } from './InscripcionesTaller.jsx';
-import { ConsultasTaller } from './ConsultasTaller.jsx';
 import { SolicitudesPanel } from './SolicitudesPanel.jsx';
+import { PanelMarco } from './PanelMarco.jsx';
+import { fechaPanel } from './DetalleAtencion.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
 
@@ -313,7 +314,7 @@ export function GestorContenido() {
   const [confirmar, confirmarRevision] = useState(false);
   const [previa, cambiarPrevia] = useState('');
   const [auditoria, cambiarAuditoria] = useState(null);
-  const [intereses, cambiarIntereses] = useState(null);
+  const [vista, cambiarVista] = useState(null);
   const [motivoFechas, cambiarMotivoFechas] = useState('');
   const bloqueo = useRef(false);
   const editado = useRef(false);
@@ -324,10 +325,11 @@ export function GestorContenido() {
       editado.current = false;
       cambiarContenido(null);
       cambiarEntrada(null);
+      cambiarTipo('area');
       cambiarDatos({});
       cambiarPrevia('');
       cambiarAuditoria(null);
-      cambiarIntereses(null);
+      cambiarVista(null);
       confirmarRevision(false);
     }
   }
@@ -423,7 +425,7 @@ export function GestorContenido() {
   }
   function seleccionar(item, nuevoTipo = tipo) {
     if (editado.current && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?'))
-      return;
+      return false;
     cambiarTipo(nuevoTipo);
     cambiarMotivoFechas('');
     cambiarEntrada(item);
@@ -438,6 +440,7 @@ export function GestorContenido() {
     cambiarPrevia('');
     cambiarError('');
     cambiarMensaje('');
+    return true;
   }
   function campo(nombre, valor) {
     editado.current = true;
@@ -457,6 +460,25 @@ export function GestorContenido() {
     return item;
   }
   const publica = ['responsable', 'admin'].includes(sesion?.usuario?.rol);
+  const vistaActual =
+    sesion?.usuario?.rol === 'operador'
+      ? 'operacion'
+      : publica
+        ? (vista ?? 'solicitudes')
+        : vista === 'talleres'
+          ? 'talleres'
+          : 'contenido';
+  function navegar(destino) {
+    if (destino === vistaActual) return;
+    if (destino === 'talleres' && tipo !== 'taller' && !seleccionar(null, 'taller')) return;
+    if (destino === 'contenido' && tipo === 'taller' && !seleccionar(null, 'area')) return;
+    cambiarVista(destino);
+    cambiarError('');
+    cambiarMensaje('');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (destino === 'bitacora')
+      ejecutar(async () => cambiarAuditoria(await consultarApi('/cms/auditoria')));
+  }
   const estado = (
     <>
       {error && (
@@ -553,540 +575,512 @@ export function GestorContenido() {
       </>
     );
   return (
-    <div className="cms">
-      <header className="cms-cabecera">
-        <div>
-          <p className="cms-marca">SIMCE · CEA</p>
-          <h1>Gestión de contenido</h1>
-        </div>
-        <div className="cms-cuenta">
-          <span>
-            {sesion.usuario.correo} · {sesion.usuario.rol}
-          </span>
-          <a href="/" target="_blank" rel="noreferrer">
-            Ver portal
-          </a>
-          <button type="button" className="secundario" disabled={ocupado} onClick={cerrarSesion}>
-            Cerrar sesión
-          </button>
-        </div>
-      </header>
-      <main className="cms-marco">
-        {estado}
-        {sesion.usuario.rol === 'operador' ? (
-          <p>
-            Tu cuenta tiene acceso a la operación.{' '}
-            <a href="/panel/prototipo">Abrir prototipo operativo</a>
-          </p>
-        ) : (
-          <>
-            <div className="cms-resumen">
-              <p>
-                Prepara un borrador, revisa la vista previa y publica cuando la información esté
-                validada.
-              </p>
-              {contenido && (
-                <span
-                  className={
-                    contenido.revisionPortal === contenido.revisionHtml
-                      ? 'cms-actualizado'
-                      : 'cms-pendiente'
-                  }
-                >
-                  {contenido.revisionPortal === contenido.revisionHtml
-                    ? 'Portal actualizado'
-                    : 'Publicación pendiente'}
-                </span>
-              )}
-              {publica && (
-                <button
-                  type="button"
-                  className="secundario"
-                  disabled={ocupado}
-                  onClick={() =>
-                    ejecutar(async () => {
-                      await consultarApi('/cms/regenerar', { metodo: 'POST' });
-                      await cargar();
-                      cambiarMensaje('Portal regenerado.');
-                    })
-                  }
-                >
-                  Regenerar portal
-                </button>
-              )}
-            </div>
-            {publica && <SolicitudesPanel ejecutar={ejecutar} ocupado={ocupado} />}
-            <div className="cms-columnas">
-              <aside className="cms-listado">
+    <PanelMarco
+      usuario={sesion.usuario}
+      vista={vistaActual}
+      navegar={navegar}
+      ocupado={ocupado}
+      cerrarSesion={cerrarSesion}
+    >
+      {estado}
+      {vistaActual === 'operacion' ? (
+        <p>
+          Tu cuenta tiene acceso a la operación.{' '}
+          <a href="/panel/prototipo">Abrir prototipo operativo</a>
+        </p>
+      ) : ['solicitudes', 'participantes'].includes(vistaActual) ? (
+        <SolicitudesPanel
+          key={vistaActual}
+          ejecutar={ejecutar}
+          ocupado={ocupado}
+          participantes={vistaActual === 'participantes'}
+        />
+      ) : vistaActual === 'bitacora' ? (
+        <section className="cms-auditoria" aria-labelledby="titulo-auditoria">
+          <div className="cms-bandeja-barra">
+            <h2 id="titulo-auditoria">Actividad reciente</h2>
+            <button
+              type="button"
+              className="secundario"
+              disabled={ocupado}
+              onClick={() =>
+                ejecutar(async () => cambiarAuditoria(await consultarApi('/cms/auditoria')))
+              }
+            >
+              Actualizar bitácora
+            </button>
+          </div>
+          {auditoria?.length ? (
+            <ol>
+              {auditoria.map((evento) => (
+                <li key={evento.id}>
+                  <time dateTime={evento.momento}>{fechaPanel(evento.momento)}</time>
+                  <strong>{evento.accion.toLowerCase().replaceAll('_', ' ')}</strong>
+                  <small>
+                    Recurso: {evento.recurso} · Cuenta: {evento.usuarioId}
+                  </small>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p role="status">
+              {ocupado ? 'Cargando actividad…' : 'No hay movimientos para mostrar.'}
+            </p>
+          )}
+        </section>
+      ) : (
+        <>
+          <div className="cms-resumen">
+            <p>
+              Prepara un borrador, revisa la vista previa y publica cuando la información esté
+              validada.
+            </p>
+            {contenido && (
+              <span
+                className={
+                  contenido.revisionPortal === contenido.revisionHtml
+                    ? 'cms-actualizado'
+                    : 'cms-pendiente'
+                }
+              >
+                {contenido.revisionPortal === contenido.revisionHtml
+                  ? 'Portal actualizado'
+                  : 'Publicación pendiente'}
+              </span>
+            )}
+            {publica && (
+              <button
+                type="button"
+                className="secundario"
+                disabled={ocupado}
+                onClick={() =>
+                  ejecutar(async () => {
+                    await consultarApi('/cms/regenerar', { metodo: 'POST' });
+                    await cargar();
+                    cambiarMensaje('Portal regenerado.');
+                  })
+                }
+              >
+                Regenerar portal
+              </button>
+            )}
+          </div>
+          <div className="cms-columnas">
+            <aside className="cms-listado">
+              {vistaActual === 'talleres' ? (
+                <h2>Convocatorias</h2>
+              ) : (
                 <label>
                   Tipo de contenido
                   <select value={tipo} onChange={(e) => seleccionar(null, e.target.value)}>
-                    {Object.entries(nombres).map(([clave, nombre]) => (
-                      <option value={clave} key={clave}>
-                        {nombre}
-                      </option>
-                    ))}
+                    {Object.entries(nombres)
+                      .filter(([clave]) => clave !== 'taller')
+                      .map(([clave, nombre]) => (
+                        <option value={clave} key={clave}>
+                          {nombre}
+                        </option>
+                      ))}
                   </select>
                 </label>
-                <button type="button" disabled={ocupado} onClick={() => seleccionar(null)}>
-                  Crear entrada
-                </button>
-                <ul>
-                  {contenido?.entradas
-                    .filter((e) => e.tipo === tipo)
-                    .sort((a, b) => a.orden - b.orden)
-                    .map((item) => (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          className="cms-entrada"
-                          aria-pressed={entrada?.id === item.id}
-                          onClick={() => seleccionar(item)}
-                        >
-                          <strong>{item.borrador.nombre ?? item.borrador.titulo}</strong>
-                          <span>
-                            {item.publicado ? 'Publicado' : 'Borrador'}
-                            {item.publicado &&
-                            JSON.stringify(item.borrador) !== JSON.stringify(item.publicado)
-                              ? ' · cambios pendientes'
-                              : ''}
-                          </span>
-                          <span>
-                            {item.validacion === 'referencia'
-                              ? 'Contenido de referencia por validar'
-                              : ''}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-              </aside>
-              <section className="cms-editor" aria-labelledby="cms-titulo-editor">
-                <h2 id="cms-titulo-editor">
-                  {entrada ? 'Editar entrada' : 'Nueva entrada'} · {nombres[tipo]}
-                </h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    ejecutar(guardar);
-                  }}
-                >
-                  {['nombre', 'descripcion', ...(especificos[tipo] ?? [])].map((nombre) => {
-                    const valor = datos[nombre] ?? '';
-                    if (nombre === 'areaId')
-                      return (
-                        <label key={nombre}>
-                          {etiquetas[nombre]}
-                          <select value={valor} onChange={(e) => campo(nombre, e.target.value)}>
-                            <option value="">Galería general (sin área)</option>
-                            {contenido?.entradas
-                              .filter((e) => e.tipo === 'area')
-                              .map((area) => (
-                                <option key={area.id} value={area.id}>
-                                  {area.borrador.nombre}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-                      );
-                    if (nombre === 'mostrarPrecio')
-                      return (
-                        <label className="cms-check" key={nombre}>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(valor)}
-                            onChange={(e) => campo(nombre, e.target.checked)}
-                          />
-                          {etiquetas[nombre]}
-                        </label>
-                      );
-                    if (nombre === 'areas')
-                      return (
-                        <fieldset key={nombre}>
-                          <legend>{etiquetas[nombre]}</legend>
-                          {contenido?.entradas
-                            .filter((e) => e.tipo === 'area')
-                            .map((area) => (
-                              <label className="cms-check" key={area.id}>
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    (datos.areas ?? []).includes(area.id) ||
-                                    (datos.areas ?? []).includes(area.borrador.nombre)
-                                  }
-                                  onChange={(e) =>
-                                    campo(
-                                      'areas',
-                                      e.target.checked
-                                        ? [...(datos.areas ?? []), area.id]
-                                        : (datos.areas ?? []).filter(
-                                            (id) => id !== area.id && id !== area.borrador.nombre,
-                                          ),
-                                    )
-                                  }
-                                />
-                                {area.borrador.nombre}
-                              </label>
-                            ))}
-                        </fieldset>
-                      );
-                    if (nombre === 'estadoTaller')
-                      if (entrada?.inscripcion)
-                        return (
-                          <p key={nombre}>
-                            El estado y la disponibilidad se gestionan en «Inscripciones del
-                            taller».
-                          </p>
-                        );
-                      else
-                        return (
-                          <label key={nombre}>
-                            {etiquetas[nombre]}
-                            <select
-                              value={valor || 'informativo'}
-                              onChange={(e) => campo(nombre, e.target.value)}
-                            >
-                              {[
-                                ['informativo', 'Información'],
-                                ['abierto', 'Convocatoria abierta'],
-                                ['cerrado', 'Cerrado'],
-                                ['concluido', 'Concluido'],
-                              ].map(([id, texto]) => (
-                                <option key={id} value={id}>
-                                  {texto}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        );
-                    const multilinea =
-                      listas.includes(nombre) ||
-                      ['descripcion', 'objetivo', 'requisitos'].includes(nombre);
+              )}
+              <button type="button" disabled={ocupado} onClick={() => seleccionar(null)}>
+                {vistaActual === 'talleres' ? 'Crear taller' : 'Crear entrada'}
+              </button>
+              <ul>
+                {contenido?.entradas
+                  .filter((e) => e.tipo === tipo)
+                  .sort((a, b) => a.orden - b.orden)
+                  .map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className="cms-entrada"
+                        aria-pressed={entrada?.id === item.id}
+                        onClick={() => seleccionar(item)}
+                      >
+                        <strong>{item.borrador.nombre ?? item.borrador.titulo}</strong>
+                        <span>
+                          {item.publicado ? 'Publicado' : 'Borrador'}
+                          {item.publicado &&
+                          JSON.stringify(item.borrador) !== JSON.stringify(item.publicado)
+                            ? ' · cambios pendientes'
+                            : ''}
+                        </span>
+                        <span>
+                          {item.validacion === 'referencia'
+                            ? 'Contenido de referencia por validar'
+                            : ''}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </aside>
+            <section className="cms-editor" aria-labelledby="cms-titulo-editor">
+              <h2 id="cms-titulo-editor">
+                {entrada ? 'Editar entrada' : 'Nueva entrada'} · {nombres[tipo]}
+              </h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  ejecutar(guardar);
+                }}
+              >
+                {['nombre', 'descripcion', ...(especificos[tipo] ?? [])].map((nombre) => {
+                  const valor = datos[nombre] ?? '';
+                  if (nombre === 'areaId')
                     return (
                       <label key={nombre}>
                         {etiquetas[nombre]}
-                        {multilinea ? (
-                          <textarea
-                            rows={4}
-                            value={Array.isArray(valor) ? valor.join('\n') : valor}
-                            maxLength={4000}
-                            onChange={(e) =>
-                              campo(
-                                nombre,
-                                listas.includes(nombre)
-                                  ? e.target.value.split('\n')
-                                  : e.target.value,
-                              )
-                            }
-                          />
-                        ) : (
-                          <input
-                            type={
-                              ['inicio', 'fin', 'fecha'].includes(nombre)
-                                ? 'date'
-                                : nombre === 'correo'
-                                  ? 'email'
-                                  : nombre === 'precio'
-                                    ? 'number'
-                                    : 'text'
-                            }
-                            step={nombre === 'precio' ? '0.01' : undefined}
-                            min={nombre === 'precio' ? 0 : undefined}
-                            value={valor}
-                            maxLength={nombre === 'nombre' ? 160 : 1000}
-                            required={nombre === 'nombre'}
-                            onChange={(e) => campo(nombre, e.target.value)}
-                          />
-                        )}
-                      </label>
-                    );
-                  })}
-                  {imagenTipos.includes(tipo) && (
-                    <>
-                      <label>
-                        Imagen asociada
-                        <select
-                          value={datos.foto ?? ''}
-                          onChange={(e) => {
-                            const medio = contenido.medios.find((m) => m.ruta === e.target.value);
-                            campo('foto', e.target.value);
-                            if (medio) campo('alt', medio.alt);
-                          }}
-                        >
-                          <option value="">Sin imagen</option>
-                          {datos.foto && !contenido?.medios.some((m) => m.ruta === datos.foto) && (
-                            <option value={datos.foto}>Imagen actual del diseño</option>
-                          )}
-                          {contenido?.medios.map((m) => (
-                            <option key={m.id} value={m.ruta}>
-                              {m.alt}
-                            </option>
-                          ))}
+                        <select value={valor} onChange={(e) => campo(nombre, e.target.value)}>
+                          <option value="">Galería general (sin área)</option>
+                          {contenido?.entradas
+                            .filter((e) => e.tipo === 'area')
+                            .map((area) => (
+                              <option key={area.id} value={area.id}>
+                                {area.borrador.nombre}
+                              </option>
+                            ))}
                         </select>
                       </label>
-                      <label>
-                        Texto alternativo de esta imagen
+                    );
+                  if (nombre === 'mostrarPrecio')
+                    return (
+                      <label className="cms-check" key={nombre}>
                         <input
-                          value={datos.alt ?? ''}
-                          maxLength={300}
-                          onChange={(e) => campo('alt', e.target.value)}
-                          required={Boolean(datos.foto)}
+                          type="checkbox"
+                          checked={Boolean(valor)}
+                          onChange={(e) => campo(nombre, e.target.checked)}
                         />
+                        {etiquetas[nombre]}
                       </label>
-                      <SubirImagen
-                        ejecutar={ejecutar}
-                        ocupado={ocupado}
-                        alSubir={async (medio) => {
-                          await cargar();
-                          campo('foto', medio.ruta);
-                          campo('alt', medio.alt);
-                          cambiarMensaje(
-                            'Imagen validada y comprimida. Guarda el borrador para asociarla.',
-                          );
+                    );
+                  if (nombre === 'areas')
+                    return (
+                      <fieldset key={nombre}>
+                        <legend>{etiquetas[nombre]}</legend>
+                        {contenido?.entradas
+                          .filter((e) => e.tipo === 'area')
+                          .map((area) => (
+                            <label className="cms-check" key={area.id}>
+                              <input
+                                type="checkbox"
+                                checked={
+                                  (datos.areas ?? []).includes(area.id) ||
+                                  (datos.areas ?? []).includes(area.borrador.nombre)
+                                }
+                                onChange={(e) =>
+                                  campo(
+                                    'areas',
+                                    e.target.checked
+                                      ? [...(datos.areas ?? []), area.id]
+                                      : (datos.areas ?? []).filter(
+                                          (id) => id !== area.id && id !== area.borrador.nombre,
+                                        ),
+                                  )
+                                }
+                              />
+                              {area.borrador.nombre}
+                            </label>
+                          ))}
+                      </fieldset>
+                    );
+                  if (nombre === 'estadoTaller')
+                    if (entrada?.inscripcion)
+                      return (
+                        <p key={nombre}>
+                          El estado y la disponibilidad se gestionan en «Inscripciones del taller».
+                        </p>
+                      );
+                    else
+                      return (
+                        <label key={nombre}>
+                          {etiquetas[nombre]}
+                          <select
+                            value={valor || 'informativo'}
+                            onChange={(e) => campo(nombre, e.target.value)}
+                          >
+                            {[
+                              ['informativo', 'Información'],
+                              ['abierto', 'Convocatoria abierta'],
+                              ['cerrado', 'Cerrado'],
+                              ['concluido', 'Concluido'],
+                            ].map(([id, texto]) => (
+                              <option key={id} value={id}>
+                                {texto}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      );
+                  const multilinea =
+                    listas.includes(nombre) ||
+                    ['descripcion', 'objetivo', 'requisitos'].includes(nombre);
+                  return (
+                    <label key={nombre}>
+                      {etiquetas[nombre]}
+                      {multilinea ? (
+                        <textarea
+                          rows={4}
+                          value={Array.isArray(valor) ? valor.join('\n') : valor}
+                          maxLength={4000}
+                          onChange={(e) =>
+                            campo(
+                              nombre,
+                              listas.includes(nombre) ? e.target.value.split('\n') : e.target.value,
+                            )
+                          }
+                        />
+                      ) : (
+                        <input
+                          type={
+                            ['inicio', 'fin', 'fecha'].includes(nombre)
+                              ? 'date'
+                              : nombre === 'correo'
+                                ? 'email'
+                                : nombre === 'precio'
+                                  ? 'number'
+                                  : 'text'
+                          }
+                          step={nombre === 'precio' ? '0.01' : undefined}
+                          min={nombre === 'precio' ? 0 : undefined}
+                          value={valor}
+                          maxLength={nombre === 'nombre' ? 160 : 1000}
+                          required={nombre === 'nombre'}
+                          onChange={(e) => campo(nombre, e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+                {imagenTipos.includes(tipo) && (
+                  <>
+                    <label>
+                      Imagen asociada
+                      <select
+                        value={datos.foto ?? ''}
+                        onChange={(e) => {
+                          const medio = contenido.medios.find((m) => m.ruta === e.target.value);
+                          campo('foto', e.target.value);
+                          if (medio) campo('alt', medio.alt);
                         }}
+                      >
+                        <option value="">Sin imagen</option>
+                        {datos.foto && !contenido?.medios.some((m) => m.ruta === datos.foto) && (
+                          <option value={datos.foto}>Imagen actual del diseño</option>
+                        )}
+                        {contenido?.medios.map((m) => (
+                          <option key={m.id} value={m.ruta}>
+                            {m.alt}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Texto alternativo de esta imagen
+                      <input
+                        value={datos.alt ?? ''}
+                        maxLength={300}
+                        onChange={(e) => campo('alt', e.target.value)}
+                        required={Boolean(datos.foto)}
                       />
-                    </>
-                  )}
-                  <label>
-                    Orden en la lista
-                    <input
-                      type="number"
-                      min={0}
-                      max={10000}
-                      value={orden}
-                      onChange={(e) => {
-                        cambiarOrden(e.target.value);
-                        editado.current = true;
+                    </label>
+                    <SubirImagen
+                      ejecutar={ejecutar}
+                      ocupado={ocupado}
+                      alSubir={async (medio) => {
+                        await cargar();
+                        campo('foto', medio.ruta);
+                        campo('alt', medio.alt);
+                        cambiarMensaje(
+                          'Imagen validada y comprimida. Guarda el borrador para asociarla.',
+                        );
                       }}
                     />
+                  </>
+                )}
+                <label>
+                  Orden en la lista
+                  <input
+                    type="number"
+                    min={0}
+                    max={10000}
+                    value={orden}
+                    onChange={(e) => {
+                      cambiarOrden(e.target.value);
+                      editado.current = true;
+                    }}
+                  />
+                </label>
+                <div className="cms-acciones">
+                  <button disabled={ocupado}>Guardar borrador</button>
+                  <button
+                    type="button"
+                    className="secundario"
+                    disabled={ocupado}
+                    onClick={() =>
+                      ejecutar(async () => {
+                        const html = await consultarApi('/cms/vista-previa', {
+                          metodo: 'POST',
+                          datos: { id: entrada?.id, tipo, datos },
+                        });
+                        cambiarPrevia(html);
+                      })
+                    }
+                  >
+                    Vista previa
+                  </button>
+                </div>
+              </form>
+              {entrada && publica && (
+                <div className="cms-publicar">
+                  {tipo === 'taller' && entrada.inscripcion && (
+                    <label>
+                      Motivo de los cambios de fechas al publicar
+                      <input
+                        value={motivoFechas}
+                        onChange={(e) => cambiarMotivoFechas(e.target.value)}
+                        maxLength={500}
+                      />
+                    </label>
+                  )}
+                  <label className="cms-check">
+                    <input
+                      type="checkbox"
+                      checked={confirmar}
+                      onChange={(e) => confirmarRevision(e.target.checked)}
+                    />
+                    Revisé el texto, las imágenes y la información antes de publicar.
                   </label>
                   <div className="cms-acciones">
-                    <button disabled={ocupado}>Guardar borrador</button>
                     <button
                       type="button"
-                      className="secundario"
-                      disabled={ocupado}
+                      disabled={ocupado || !confirmar || editado.current}
                       onClick={() =>
                         ejecutar(async () => {
-                          const html = await consultarApi('/cms/vista-previa', {
+                          await consultarApi(`/cms/entradas/${entrada.id}/publicar`, {
                             metodo: 'POST',
-                            datos: { id: entrada?.id, tipo, datos },
+                            datos: {
+                              version: entrada.version,
+                              confirmarRevision: true,
+                              motivo: motivoFechas,
+                            },
                           });
-                          cambiarPrevia(html);
+                          editado.current = false;
+                          const actual = await cargar();
+                          seleccionar(actual.entradas.find((e) => e.id === entrada.id));
+                          cambiarMensaje(
+                            'Entrada publicada. El portal público ya está actualizado.',
+                          );
                         })
                       }
                     >
-                      Vista previa
+                      Publicar
                     </button>
-                  </div>
-                </form>
-                {entrada && publica && (
-                  <div className="cms-publicar">
-                    {tipo === 'taller' && entrada.inscripcion && (
-                      <label>
-                        Motivo de los cambios de fechas al publicar
-                        <input
-                          value={motivoFechas}
-                          onChange={(e) => cambiarMotivoFechas(e.target.value)}
-                          maxLength={500}
-                        />
-                      </label>
-                    )}
-                    <label className="cms-check">
-                      <input
-                        type="checkbox"
-                        checked={confirmar}
-                        onChange={(e) => confirmarRevision(e.target.checked)}
-                      />
-                      Revisé el texto, las imágenes y la información antes de publicar.
-                    </label>
-                    <div className="cms-acciones">
-                      <button
-                        type="button"
-                        disabled={ocupado || !confirmar || editado.current}
-                        onClick={() =>
-                          ejecutar(async () => {
-                            await consultarApi(`/cms/entradas/${entrada.id}/publicar`, {
-                              metodo: 'POST',
-                              datos: {
-                                version: entrada.version,
-                                confirmarRevision: true,
-                                motivo: motivoFechas,
-                              },
-                            });
-                            editado.current = false;
-                            const actual = await cargar();
-                            seleccionar(actual.entradas.find((e) => e.id === entrada.id));
-                            cambiarMensaje(
-                              'Entrada publicada. El portal público ya está actualizado.',
-                            );
-                          })
-                        }
-                      >
-                        Publicar
-                      </button>
-                      <button
-                        type="button"
-                        className="secundario"
-                        disabled={ocupado || !entrada.publicado || editado.current}
-                        onClick={() =>
-                          ejecutar(async () => {
-                            await consultarApi(`/cms/entradas/${entrada.id}/despublicar`, {
-                              metodo: 'POST',
-                              datos: { version: entrada.version },
-                            });
-                            const actual = await cargar();
-                            seleccionar(actual.entradas.find((e) => e.id === entrada.id));
-                            cambiarMensaje('La entrada ya no aparece en el portal.');
-                          })
-                        }
-                      >
-                        Despublicar
-                      </button>
-                      <button
-                        type="button"
-                        className="peligro"
-                        disabled={ocupado}
-                        onClick={() =>
-                          ejecutar(async () => {
-                            if (
-                              !window.confirm(
-                                '¿Eliminar esta entrada? Se conservará el registro de la acción en la bitácora.',
-                              )
+                    <button
+                      type="button"
+                      className="secundario"
+                      disabled={ocupado || !entrada.publicado || editado.current}
+                      onClick={() =>
+                        ejecutar(async () => {
+                          await consultarApi(`/cms/entradas/${entrada.id}/despublicar`, {
+                            metodo: 'POST',
+                            datos: { version: entrada.version },
+                          });
+                          const actual = await cargar();
+                          seleccionar(actual.entradas.find((e) => e.id === entrada.id));
+                          cambiarMensaje('La entrada ya no aparece en el portal.');
+                        })
+                      }
+                    >
+                      Despublicar
+                    </button>
+                    <button
+                      type="button"
+                      className="peligro"
+                      disabled={ocupado}
+                      onClick={() =>
+                        ejecutar(async () => {
+                          if (
+                            !window.confirm(
+                              '¿Eliminar esta entrada? Se conservará el registro de la acción en la bitácora.',
                             )
-                              return;
-                            await consultarApi(`/cms/entradas/${entrada.id}`, {
-                              metodo: 'DELETE',
-                              datos: { version: entrada.version },
-                            });
-                            editado.current = false;
-                            await cargar();
-                            seleccionar(null);
-                            cambiarMensaje('Entrada eliminada.');
-                          })
-                        }
-                      >
-                        Eliminar entrada
-                      </button>
-                    </div>
-                    {editado.current && <p>Guarda el borrador antes de publicar o despublicar.</p>}
-                  </div>
-                )}
-                {tipo === 'taller' && entrada && publica && (
-                  <ConsultasTaller
-                    key={entrada.id}
-                    entrada={entrada}
-                    ejecutar={ejecutar}
-                    ocupado={ocupado}
-                  />
-                )}
-                {tipo === 'taller' && entrada && publica && (
-                  <InscripcionesTaller
-                    key={`${entrada.id}-${entrada.version}`}
-                    entrada={entrada}
-                    ejecutar={ejecutar}
-                    ocupado={ocupado || editado.current}
-                    actualizar={async () => {
-                      const actual = await cargar();
-                      seleccionar(actual.entradas.find((e) => e.id === entrada.id));
-                      cambiarMensaje('Inscripción del taller actualizada.');
-                    }}
-                  />
-                )}
-                {entrada?.historial.length > 0 && (
-                  <details className="cms-historial">
-                    <summary>Versiones anteriores</summary>
-                    {entrada.historial.map((v) => (
-                      <button
-                        type="button"
-                        className="secundario"
-                        disabled={ocupado || editado.current}
-                        key={v.version}
-                        onClick={() =>
-                          ejecutar(async () => {
-                            const item = await consultarApi(
-                              `/cms/entradas/${entrada.id}/restaurar/${v.version}`,
-                              { metodo: 'POST', datos: { version: entrada.version } },
-                            );
-                            editado.current = false;
-                            await cargar();
-                            seleccionar(item);
-                            cambiarMensaje('Versión restaurada como borrador.');
-                          })
-                        }
-                      >
-                        Restaurar versión {v.version}
-                      </button>
-                    ))}
-                  </details>
-                )}
-                {previa && (
-                  <section className="cms-previa">
-                    <h3>Vista previa · sin publicar</h3>
-                    <button type="button" className="secundario" onClick={() => cambiarPrevia('')}>
-                      Cerrar vista previa
+                          )
+                            return;
+                          await consultarApi(`/cms/entradas/${entrada.id}`, {
+                            metodo: 'DELETE',
+                            datos: { version: entrada.version },
+                          });
+                          editado.current = false;
+                          await cargar();
+                          seleccionar(null);
+                          cambiarMensaje('Entrada eliminada.');
+                        })
+                      }
+                    >
+                      Eliminar entrada
                     </button>
-                    <iframe
-                      title="Vista previa del portal"
-                      srcDoc={previa}
-                      sandbox="allow-same-origin"
-                    />
-                  </section>
-                )}
-              </section>
-            </div>
-            {publica && (
-              <details
-                className="cms-bitacora"
-                onToggle={(e) => {
-                  if (e.currentTarget.open)
-                    ejecutar(async () => cambiarIntereses(await consultarApi('/cms/intereses')));
-                }}
-              >
-                <summary>Solicitudes de servicio social</summary>
-                {intereses?.length ? (
-                  <ul>
-                    {intereses.map((item) => (
-                      <li key={item.id}>
-                        <strong>{item.nombre}</strong> · {item.correo}
-                        <p>{item.mensaje}</p>
-                        <small>
-                          Programa:{' '}
-                          {contenido?.entradas.find((e) => e.id === item.programaId)?.borrador
-                            .nombre ?? item.programaId}{' '}
-                          · Aviso aceptado: {item.versionAviso} ·{' '}
-                          {new Date(item.momento).toLocaleString('es-MX')}
-                        </small>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No hay solicitudes registradas.</p>
-                )}
-              </details>
-            )}
-            {publica && (
-              <details
-                className="cms-bitacora"
-                onToggle={(e) => {
-                  if (e.currentTarget.open)
-                    ejecutar(async () => cambiarAuditoria(await consultarApi('/cms/auditoria')));
-                }}
-              >
-                <summary>Bitácora reciente</summary>
-                <ul>
-                  {auditoria?.map((evento) => (
-                    <li key={evento.id}>
-                      <time>{new Date(evento.momento).toLocaleString('es-MX')}</time> ·{' '}
-                      {evento.accion} · {evento.recurso} · usuario {evento.usuarioId}
-                    </li>
+                  </div>
+                  {editado.current && <p>Guarda el borrador antes de publicar o despublicar.</p>}
+                </div>
+              )}
+              {tipo === 'taller' && entrada && publica && (
+                <InscripcionesTaller
+                  key={`${entrada.id}-${entrada.version}`}
+                  entrada={entrada}
+                  ejecutar={ejecutar}
+                  ocupado={ocupado || editado.current}
+                  actualizar={async () => {
+                    const actual = await cargar();
+                    seleccionar(actual.entradas.find((e) => e.id === entrada.id));
+                    cambiarMensaje('Inscripción del taller actualizada.');
+                  }}
+                />
+              )}
+              {entrada?.historial.length > 0 && (
+                <details className="cms-historial">
+                  <summary>Versiones anteriores</summary>
+                  {entrada.historial.map((v) => (
+                    <button
+                      type="button"
+                      className="secundario"
+                      disabled={ocupado || editado.current}
+                      key={v.version}
+                      onClick={() =>
+                        ejecutar(async () => {
+                          const item = await consultarApi(
+                            `/cms/entradas/${entrada.id}/restaurar/${v.version}`,
+                            { metodo: 'POST', datos: { version: entrada.version } },
+                          );
+                          editado.current = false;
+                          await cargar();
+                          seleccionar(item);
+                          cambiarMensaje('Versión restaurada como borrador.');
+                        })
+                      }
+                    >
+                      Restaurar versión {v.version}
+                    </button>
                   ))}
-                </ul>
-              </details>
-            )}
-          </>
-        )}
-      </main>
-    </div>
+                </details>
+              )}
+              {previa && (
+                <section className="cms-previa">
+                  <h3>Vista previa · sin publicar</h3>
+                  <button type="button" className="secundario" onClick={() => cambiarPrevia('')}>
+                    Cerrar vista previa
+                  </button>
+                  <iframe
+                    title="Vista previa del portal"
+                    srcDoc={previa}
+                    sandbox="allow-same-origin"
+                  />
+                </section>
+              )}
+            </section>
+          </div>
+        </>
+      )}
+    </PanelMarco>
   );
 }

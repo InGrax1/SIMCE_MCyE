@@ -404,6 +404,69 @@ describe('gestión de contenido y sesiones', () => {
       JSON.stringify((await request(app).get('/api/v1/publico/contenido')).body),
     ).not.toContain(datos.correo);
   });
+  it('da a servicio social un folio, respuestas y mensajes privados, y conserva el historial al cancelar', async () => {
+    const programa = (await almacen.leer()).entradas.find((e) => e.tipo === 'programa');
+    await almacen.cambiar((s) => {
+      s.avisoInteres = { url: 'https://example.test/aviso', version: 'prueba' };
+    });
+    const datos = {
+      nombre: 'Persona de prueba',
+      correo: 'persona@example.test',
+      mensaje: '¿Qué requisitos hay?',
+      aceptoAviso: true,
+      versionAviso: 'prueba',
+    };
+    const registrar = (cuerpo) =>
+      request(app)
+        .post(`/api/v1/publico/programas/${programa.id}/intereses`)
+        .set('Origin', origen)
+        .send(cuerpo);
+    const registro = await registrar(datos).expect(201);
+    expect(registro.body.folio).toMatch(/^SS-\d{4}-\d{8}$/);
+    expect((await registrar({ ...datos, correo: ' PERSONA@EXAMPLE.TEST ' })).body.error).toBe(
+      'SOLICITUD_DUPLICADA',
+    );
+    const leer = (acceso) =>
+      request(app)
+        .post('/api/v1/publico/servicio-social/consultar')
+        .set('Origin', origen)
+        .send(acceso);
+    expect((await leer({ folio: registro.body.folio })).status).toBe(404);
+    expect((await leer(registro.body)).body.mensaje).toBe(datos.mensaje);
+    const s = (await almacen.leer()).intereses[0];
+    const ruta = `/cms/intereses/${s.id}`;
+    expect(
+      (await api('editor', 'post', `${ruta}/respuestas`, { texto: 'Sin permiso', version: 1 }))
+        .status,
+    ).toBe(403);
+    expect(
+      (
+        await api('responsable', 'post', `${ruta}/respuestas`, {
+          texto: 'Revisa el programa.',
+          version: 1,
+        })
+      ).status,
+    ).toBe(200);
+    expect((await leer(registro.body)).body.respuestas[0].texto).toBe('Revisa el programa.');
+    const mensaje = await request(app)
+      .post('/api/v1/publico/servicio-social/mensajes')
+      .set('Origin', origen)
+      .send({ ...registro.body, version: 2, texto: '¿Cuál es el horario?' });
+    expect(mensaje.body).toMatchObject({
+      estado: 'pendiente',
+      seguimientos: [{ texto: '¿Cuál es el horario?' }],
+    });
+    await api('responsable', 'post', `${ruta}/acciones`, {
+      accion: 'cancelar',
+      motivo: 'Cierre solicitado',
+      version: 3,
+    });
+    const cancelada = await leer(registro.body);
+    expect(cancelada.body).toMatchObject({ folio: registro.body.folio, estado: 'cancelada' });
+    expect(cancelada.body.historial.at(-1).motivo).toBe('Cierre solicitado');
+    expect(JSON.stringify(cancelada.body)).not.toMatch(/accesoHash|usuarioId|persona@example/);
+    expect((await almacen.leer()).intereses).toHaveLength(1);
+  });
   it('mantiene privadas las galerías por área hasta publicar y protege sus asociaciones', async () => {
     const area = await api('editor', 'post', '/cms/entradas', {
       tipo: 'area',

@@ -1,24 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { consultarApi } from '../servicios/sesion.js';
-import { FichaConsulta } from './ConsultasTaller.jsx';
-import { FichaParticipante } from './InscripcionesTaller.jsx';
+import {
+  DetalleParticipante,
+  DetalleSolicitud,
+  EstadoSolicitud,
+  etiquetasEstado,
+  fechaPanel,
+} from './DetalleAtencion.jsx';
 
-const tipos = {
-  consultas: 'Consultas de talleres',
-  inscripciones: 'Inscripciones',
-  intereses: 'Servicio social',
-};
+const titulos = { consultas: 'Consultas de talleres', intereses: 'Servicio social' };
 
-export function SolicitudesPanel({ ejecutar, ocupado }) {
+export function SolicitudesPanel({ ejecutar, ocupado, participantes = false }) {
   const [datos, cambiarDatos] = useState(null);
   const [error, cambiarError] = useState('');
-  const [categoria, cambiarCategoria] = useState('consultas');
+  const [categoria, cambiarCategoria] = useState(participantes ? 'inscripciones' : 'consultas');
   const [busqueda, cambiarBusqueda] = useState('');
-  const [taller, cambiarTaller] = useState('');
-  const [motivo, cambiarMotivo] = useState('');
-  const [consentimiento, cambiarConsentimiento] = useState(false);
-  const [mensaje, cambiarMensaje] = useState('');
-  const [abierto, cambiarAbierto] = useState(false);
+  const [actividad, cambiarActividad] = useState('');
+  const [estado, cambiarEstado] = useState('');
+  const [seleccion, seleccionar] = useState(null);
+  const [detalleMovil, mostrarDetalle] = useState(false);
+  const encabezado = useRef(null);
+  const listado = useRef(null);
+  const termino = useDeferredValue(busqueda.trim().toLowerCase());
+  const social = categoria === 'intereses';
   async function cargar() {
     cambiarDatos(await consultarApi('/cms/solicitudes'));
     cambiarError('');
@@ -36,202 +40,243 @@ export function SolicitudesPanel({ ejecutar, ocupado }) {
       activo = false;
     };
   }, []);
+  useEffect(() => {
+    if (detalleMovil && matchMedia('(max-width: 760px)').matches) encabezado.current?.focus();
+  }, [detalleMovil, seleccion]);
+  const actividades = (social ? datos?.programas : datos?.talleres) ?? [];
+  const nombreActividad = (r) =>
+    r.programaNombre ??
+    r.tallerNombre ??
+    actividades.find((a) => a.id === (social ? r.programaId : r.tallerId))?.nombre ??
+    'Actividad del Módulo';
   const filas = (datos?.[categoria] ?? []).filter(
     (r) =>
-      (!taller || categoria === 'intereses' || r.tallerId === taller) &&
-      [r.nombre, r.correo, r.folio, r.tallerNombre].some((v) =>
-        v?.toLowerCase().includes(busqueda.trim().toLowerCase()),
+      (!actividad || (social ? r.programaId : r.tallerId) === actividad) &&
+      (!estado || r.estado === estado) &&
+      [r.nombre, r.correo, r.folio, nombreActividad(r)].some((v) =>
+        v?.toLowerCase().includes(termino),
       ),
   );
-  async function accion(i, accion) {
-    await consultarApi(`/inscripciones/${i.id}/acciones`, {
-      metodo: 'POST',
-      datos: {
-        accion,
-        version: i.version,
-        motivo,
-        aceptoAviso: consentimiento,
-        versionAviso: datos.aviso?.version,
-      },
-    });
+  const registro = (datos?.[categoria] ?? []).find((r) => r.id === seleccion) ?? filas[0];
+  function reiniciarSeleccion() {
+    seleccionar(null);
+    mostrarDetalle(false);
+  }
+  async function actualizarDetalle() {
+    seleccionar(registro.id);
     await cargar();
-    cambiarConsentimiento(false);
-    cambiarMensaje(`Inscripción ${i.folio} actualizada.`);
+  }
+  const estadosFiltro = participantes
+    ? ['confirmada', 'cancelada', 'asistio']
+    : ['pendiente', 'respondida', 'cancelada'];
+  function elegirCategoria(clave) {
+    cambiarCategoria(clave);
+    cambiarBusqueda('');
+    cambiarActividad('');
+    cambiarEstado('');
+    seleccionar(null);
+    mostrarDetalle(false);
+    ejecutar(cargar);
   }
   return (
     <section
-      className="cms-solicitudes"
+      className="cms-bandeja"
       id="solicitudes-panel"
-      aria-labelledby="titulo-solicitudes-panel"
+      aria-label={participantes ? 'Gestión de participantes' : 'Bandeja de solicitudes'}
     >
-      <div className="cms-solicitudes-cabecera">
-        <div>
-          <h2 id="titulo-solicitudes-panel">Solicitudes y participantes</h2>
-          <p>
-            Atiende las consultas de talleres, administra inscripciones y revisa el interés en
-            servicio social.
-          </p>
-        </div>
+      <div className="cms-bandeja-barra">
+        {participantes ? (
+          <strong>Inscripciones {datos ? `· ${datos.inscripciones.length}` : ''}</strong>
+        ) : (
+          <nav className="cms-categorias" aria-label="Tipos de solicitudes">
+            {Object.entries(titulos).map(([clave, titulo]) => (
+              <button
+                type="button"
+                key={clave}
+                aria-pressed={categoria === clave}
+                disabled={ocupado}
+                onClick={() => elegirCategoria(clave)}
+              >
+                {titulo} {datos && <span>{datos[clave].length}</span>}
+              </button>
+            ))}
+          </nav>
+        )}
         <button
           type="button"
           className="secundario"
           disabled={ocupado}
           onClick={() => ejecutar(cargar)}
         >
-          Actualizar solicitudes
+          Actualizar
         </button>
       </div>
-      {error && <p role="alert">{error}</p>}
-      {!datos && !error && <p role="status">Cargando solicitudes…</p>}
+      {error && (
+        <p className="cms-error" role="alert">
+          {error}
+        </p>
+      )}
+      {!datos && !error && (
+        <p className="cms-bandeja-espera" role="status">
+          Cargando {participantes ? 'inscripciones' : 'solicitudes'}…
+        </p>
+      )}
       {datos && (
-        <>
-          <nav className="cms-categorias-solicitudes" aria-label="Tipos de solicitudes">
-            {Object.entries(tipos).map(([tipo, titulo]) => (
-              <button
-                type="button"
-                key={tipo}
-                disabled={ocupado}
-                aria-pressed={abierto && categoria === tipo}
-                className="secundario"
-                onClick={() => {
-                  cambiarCategoria(tipo);
-                  cambiarBusqueda('');
-                  cambiarTaller('');
-                  cambiarMensaje('');
-                  cambiarAbierto(true);
-                  ejecutar(cargar);
-                }}
-              >
-                {titulo} ({datos[tipo].length})
-              </button>
-            ))}
-          </nav>
-          {abierto && (
-            <>
-              <button type="button" className="secundario" onClick={() => cambiarAbierto(false)}>
-                Cerrar solicitudes
-              </button>
-              <div className="cms-filtros-solicitudes">
+        <div className="cms-bandeja-columnas" data-detalle={detalleMovil && Boolean(registro)}>
+          <section className="cms-bandeja-listado" aria-label="Listado de registros">
+            <div className="cms-bandeja-filtros">
+              <label>
+                Buscar por nombre, correo o folio
+                <input
+                  type="search"
+                  placeholder="Nombre, correo o folio"
+                  value={busqueda}
+                  onChange={(e) => {
+                    cambiarBusqueda(e.target.value);
+                    reiniciarSeleccion();
+                  }}
+                  disabled={ocupado}
+                  maxLength={160}
+                />
+              </label>
+              <div className="cms-filtros-fila">
                 <label>
-                  Buscar por nombre, correo o folio
-                  <input
-                    type="search"
-                    value={busqueda}
-                    onChange={(e) => cambiarBusqueda(e.target.value)}
-                    maxLength={160}
-                  />
+                  Estado
+                  <select
+                    value={estado}
+                    onChange={(e) => {
+                      cambiarEstado(e.target.value);
+                      reiniciarSeleccion();
+                    }}
+                    disabled={ocupado}
+                  >
+                    <option value="">Todos</option>
+                    {estadosFiltro.map((clave) => (
+                      <option key={clave} value={clave}>
+                        {etiquetasEstado[clave]}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-                {categoria !== 'intereses' && (
-                  <label>
-                    Filtrar solicitudes por taller
-                    <select value={taller} onChange={(e) => cambiarTaller(e.target.value)}>
-                      <option value="">Todos los talleres</option>
-                      {datos.talleres.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
+                <label>
+                  {social ? 'Programa' : 'Taller'}
+                  <select
+                    value={actividad}
+                    onChange={(e) => {
+                      cambiarActividad(e.target.value);
+                      reiniciarSeleccion();
+                    }}
+                    disabled={ocupado}
+                  >
+                    <option value="">
+                      {social ? 'Todos los programas' : 'Todos los talleres'}
+                    </option>
+                    {actividades.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              <h3>{tipos[categoria]}</h3>
-              {mensaje && <p role="status">{mensaje}</p>}
-              {categoria === 'inscripciones' &&
-                filas.some(
-                  (r) =>
-                    r.estado === 'confirmada' ||
-                    (r.estado === 'cancelada' &&
-                      datos.talleres.find((t) => t.id === r.tallerId)?.inscripcion?.estado ===
-                        'programado'),
-                ) && (
-                  <>
-                    <label>
-                      Motivo de la gestión de inscripción
-                      <input
-                        value={motivo}
-                        onChange={(e) => cambiarMotivo(e.target.value)}
-                        maxLength={500}
-                      />
-                    </label>
-                    {datos.aviso && filas.some((r) => r.estado === 'cancelada') && (
-                      <label className="cms-check">
-                        <input
-                          type="checkbox"
-                          checked={consentimiento}
-                          onChange={(e) => cambiarConsentimiento(e.target.checked)}
-                        />
-                        <span>
-                          Confirmo que el participante aceptó el{' '}
-                          <a href={datos.aviso.url} target="_blank" rel="noreferrer">
-                            aviso vigente
-                          </a>{' '}
-                          para reactivar su inscripción.
-                        </span>
-                      </label>
-                    )}
-                  </>
+              <p ref={listado} tabIndex={-1} className="cms-resultado-cantidad">
+                {filas.length} {filas.length === 1 ? 'registro' : 'registros'}
+              </p>
+            </div>
+            {filas.length ? (
+              <ul className="cms-bandeja-registros">
+                {filas.map((r) => (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      className="cms-bandeja-fila"
+                      aria-pressed={registro?.id === r.id}
+                      disabled={ocupado}
+                      onClick={() => {
+                        seleccionar(r.id);
+                        mostrarDetalle(true);
+                      }}
+                    >
+                      <span className="cms-bandeja-fila-cabecera">
+                        <strong>{r.nombre}</strong>
+                        <EstadoSolicitud estado={r.estado} />
+                      </span>
+                      <span className="cms-bandeja-asunto">{nombreActividad(r)}</span>
+                      <span className="cms-bandeja-meta">
+                        {r.folio} · {fechaPanel(r.creadoEn ?? r.momento, true)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="cms-vacio">
+                <strong>
+                  {(datos[categoria] ?? []).length
+                    ? 'Sin resultados'
+                    : `Todavía no hay ${participantes ? 'inscripciones' : 'solicitudes'}`}
+                </strong>
+                <p>
+                  {(datos[categoria] ?? []).length
+                    ? 'Cambia la búsqueda o los filtros.'
+                    : 'Los registros aparecerán aquí cuando se envíen desde el portal.'}
+                </p>
+              </div>
+            )}
+          </section>
+          <section className="cms-bandeja-detalle" aria-label="Detalle del registro">
+            {registro ? (
+              <>
+                <button
+                  type="button"
+                  className="secundario cms-volver-lista"
+                  onClick={() => {
+                    mostrarDetalle(false);
+                    requestAnimationFrame(() => listado.current?.focus());
+                  }}
+                >
+                  Volver a la lista
+                </button>
+                <div ref={encabezado} tabIndex={-1} className="cms-detalle-encabezado">
+                  <div className="cms-detalle-folio">
+                    <span>{registro.folio}</span>
+                    <EstadoSolicitud estado={registro.estado} />
+                  </div>
+                  <h2>{registro.nombre}</h2>
+                  <p className="cms-detalle-asunto">{nombreActividad(registro)}</p>
+                  <p>
+                    {registro.correo} · {fechaPanel(registro.creadoEn ?? registro.momento)}
+                  </p>
+                </div>
+                {participantes ? (
+                  <DetalleParticipante
+                    key={registro.id}
+                    registro={registro}
+                    taller={datos.talleres.find((t) => t.id === registro.tallerId)}
+                    aviso={datos.aviso}
+                    ejecutar={ejecutar}
+                    ocupado={ocupado}
+                    cargar={actualizarDetalle}
+                  />
+                ) : (
+                  <DetalleSolicitud
+                    key={registro.id}
+                    registro={registro}
+                    social={social}
+                    ejecutar={ejecutar}
+                    ocupado={ocupado}
+                    cargar={actualizarDetalle}
+                  />
                 )}
-              {filas.length ? (
-                <ul className="cms-asistentes">
-                  {filas.map((r) => (
-                    <li key={r.id}>
-                      {categoria !== 'intereses' && (
-                        <p>
-                          <strong>
-                            {r.tallerNombre ??
-                              datos.talleres.find((t) => t.id === r.tallerId)?.nombre}
-                          </strong>
-                        </p>
-                      )}
-                      {categoria === 'consultas' ? (
-                        <FichaConsulta
-                          c={r}
-                          ejecutar={ejecutar}
-                          ocupado={ocupado}
-                          cargar={cargar}
-                          cambiarMensaje={cambiarMensaje}
-                        />
-                      ) : categoria === 'inscripciones' ? (
-                        <FichaParticipante
-                          i={r}
-                          ejecutar={ejecutar}
-                          ocupado={ocupado}
-                          motivo={motivo}
-                          consentimiento={consentimiento}
-                          terminado={
-                            datos.talleres.find((t) => t.id === r.tallerId)?.inscripcion?.estado !==
-                            'programado'
-                          }
-                          accion={accion}
-                        />
-                      ) : (
-                        <>
-                          <h4>{r.nombre}</h4>
-                          <p>{r.correo}</p>
-                          <p>{r.mensaje}</p>
-                          <p>
-                            Programa:{' '}
-                            {datos.programas.find((p) => p.id === r.programaId)?.nombre ??
-                              r.programaId}
-                          </p>
-                          <p>
-                            {new Date(r.momento).toLocaleString('es-MX', {
-                              timeZone: 'America/Mexico_City',
-                            })}{' '}
-                            · Aviso aceptado: {r.versionAviso}
-                          </p>
-                        </>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No hay solicitudes que coincidan con este filtro.</p>
-              )}
-            </>
-          )}
-        </>
+              </>
+            ) : (
+              <div className="cms-vacio cms-detalle-vacio">
+                <strong>Selecciona un registro</strong>
+                <p>El detalle y sus acciones se muestran en este espacio.</p>
+              </div>
+            )}
+          </section>
+        </div>
       )}
     </section>
   );

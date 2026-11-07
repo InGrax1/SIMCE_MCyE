@@ -47,6 +47,8 @@ Actualización de seguimiento de participantes: una consulta CT por correo y tal
 
 Mensajes de conexión: los formularios y el panel muestran un aviso en español cuando falla la comunicación, conservan los datos del formulario y mantienen los mensajes concretos del servidor para duplicados. El servidor local se restableció después de comprobar que el puerto 3080 no respondía. La verificación general alcanza 90 pruebas y el recorrido de Fase 2 añade la desconexión simulada y el reintento, con catorce flujos y quince controles de accesibilidad.
 
+Actualización de atención: el [panel reorganizado](atencion-solicitudes.md) separa Solicitudes, Participantes, Talleres, Contenido y Bitácora. Solicitudes tiene lista filtrable y detalle, cancelación y reapertura con motivo. Servicio social tiene folio SS, mensajes y respuestas privadas, almacenamiento en navegador y respaldo por correo. Los registros anteriores conservan sus datos y permiten enviar su primer enlace desde el panel. Aviso vigente v5. Se aprobaron 94 pruebas generales, cinco de MySQL, la compilación, dieciséis flujos de Fase 2 y dieciséis controles de accesibilidad sin incidencias graves o críticas. La regresión de Fase 1 aprobó sus trece flujos y nueve revisiones de accesibilidad. El correo se verificó con el buzón local de pruebas, sin enviar mensajes a solicitantes reales.
+
 ## Pendientes para aceptar la fase
 
 - DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.

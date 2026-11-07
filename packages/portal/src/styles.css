@@ -4446,6 +4446,20 @@ button:not(:disabled):active,
   border-top: 1px solid #b9aaaa;
   padding-top: 12px;
 }
+.solicitud-historial {
+  margin-block: 24px;
+  padding-block: 12px;
+  border-top: 1px solid #b9aaaa;
+}
+.solicitud-historial summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+}
+.solicitud-historial li {
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+}
 .consulta-acciones {
   display: flex;
   flex-wrap: wrap;

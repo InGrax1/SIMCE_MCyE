@@ -199,9 +199,13 @@ try {
   await pagina.getByLabel('Contraseña inicial', { exact: true }).fill(clave);
   await pagina.getByLabel('Nueva contraseña', { exact: true }).fill(nuevaClave);
   await pagina.getByRole('button', { name: 'Actualizar contraseña' }).click();
-  await pagina.getByRole('heading', { name: 'Gestión de contenido', exact: true }).waitFor();
+  await pagina.getByRole('heading', { name: 'Solicitudes', exact: true }).waitFor();
   await pagina.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   await entrar(nuevaClave);
+  await pagina
+    .getByRole('navigation', { name: 'Navegación del panel' })
+    .getByRole('button', { name: 'Contenido', exact: true })
+    .click();
   await pagina.getByLabel('Tipo de contenido').waitFor();
   reporte.flujo.push(
     'Volver al login desde el cambio inicial',
@@ -244,7 +248,10 @@ try {
     'Publicar y generar HTML legible sin JavaScript',
     'Despublicar y retirar del HTML',
   );
-  await pagina.getByLabel('Tipo de contenido').selectOption('taller');
+  await pagina
+    .getByRole('navigation', { name: 'Navegación del panel' })
+    .getByRole('button', { name: 'Talleres', exact: true })
+    .click();
   const taller = `Taller de prueba ${randomUUID().slice(0, 8)}`;
   await pagina.getByLabel('Nombre o título', { exact: true }).fill(taller);
   await pagina
@@ -298,6 +305,10 @@ try {
   await pagina.getByRole('button', { name: 'Guardar nueva contraseña', exact: true }).click();
   await pagina.getByRole('status').filter({ hasText: 'Contraseña actualizada' }).waitFor();
   await entrar(claveRestablecida);
+  await pagina
+    .getByRole('navigation', { name: 'Navegación del panel' })
+    .getByRole('button', { name: 'Contenido', exact: true })
+    .click();
   await pagina.getByLabel('Tipo de contenido').waitFor();
   reporte.flujo.push(
     'Recuperación mediante buzón local, enlace de un solo uso y acceso con contraseña restablecida',

@@ -25,13 +25,13 @@ El enlace contiene una clave aleatoria y es personal: quien lo tenga podrá leer
 
 ## Atención por la responsable
 
-Entrar al panel con rol responsable o administrador. En «Solicitudes y participantes», al inicio del gestor, pulsar «Consultas de talleres», leer la pregunta y los mensajes adicionales, escribir la respuesta y pulsar «Publicar respuesta». La respuesta aparece al visitante en su enlace privado. También están disponibles las consultas dentro de la edición del taller. Se conserva la fecha, la versión del registro y la auditoría de la cuenta que respondió. El apartado central permite buscar por nombre, correo o folio y filtrar por taller, junto con las categorías de inscripciones y servicio social.
+Entrar al panel con rol responsable o administrador. En **Solicitudes → Consultas de talleres**, seleccionar un registro para leer sus mensajes y publicar una respuesta. Se puede buscar por nombre, correo o folio y filtrar por taller o estado. La respuesta aparece en el enlace privado. El mismo detalle permite [cancelar y reabrir con motivo](atencion-solicitudes.md) y ver su historial. Las inscripciones y la edición del taller tienen vistas propias.
 
 La respuesta admite hasta 2000 caracteres y texto sin HTML. Los estados son pendiente y respondida. El control de versiones rechaza respuestas basadas en una versión anterior para que se recargue la consulta. Un taller con consultas no puede eliminarse; puede despublicarse y conservar su historial.
 
 ## Servicio social
 
-Los botones «Solicitar Información» de las tarjetas llevan al formulario de servicio social y seleccionan el programa elegido. Las solicitudes se envían desde la web y se consultan en el apartado de servicio social del gestor. El seguimiento privado con respuestas implementado aquí corresponde a consultas de talleres.
+Los botones «Solicitar Información» preseleccionan el programa. Las solicitudes de servicio social tienen [folio, conversación privada, respuesta y respaldo por correo](atencion-solicitudes.md), y se atienden desde **Solicitudes → Servicio social**.
 
 ## API y persistencia
 
@@ -44,7 +44,7 @@ Los botones «Solicitar Información» de las tarjetas llevan al formulario de s
 
 Los datos se guardan en el mismo estado transaccional del gestor, en archivos para la revisión de una sola instancia y en `cms_estado` con MySQL. La adaptación de estados anteriores añade la colección sin alterar cuentas, contenido ni inscripciones existentes. La prueba MySQL comprueba la conservación de una respuesta al recrear el repositorio. Los límites de tasa conservan el alcance de un único proceso.
 
-La versión de aviso `simce-2026-11-06-v4` incorpora el acceso privado de inscripción, su copia por correo, el historial y las acciones propias solicitados por el usuario. Los HTML v1, v2 y v3 se mantienen sin cambios para los registros históricos. La depuración de contactos y consultas a los plazos previstos continúa pendiente de implementación, como se documenta en el estado de la fase.
+La versión vigente `simce-2026-11-06-v5` incorpora seguimiento de servicio social y cancelación y reapertura de solicitudes con historial. Los HTML v1 a v4 se mantienen sin cambios para los registros históricos. La depuración a los plazos previstos continúa pendiente, como se documenta en el estado de la fase.
 
 ## Comprobaciones
 

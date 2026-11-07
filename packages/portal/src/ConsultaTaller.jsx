@@ -4,6 +4,7 @@ import { mensajeSolicitud } from './mensajesSolicitud.js';
 import {
   enlaceConsulta,
   eventoConsultas,
+  fragmentoSeguimiento,
   guardarConsulta,
   leerConsultasGuardadas,
   quitarConsulta,
@@ -135,13 +136,28 @@ export function ConsultaTaller({ taller }) {
 }
 
 const fecha = (valor) =>
-  new Intl.DateTimeFormat('es-MX', {
-    timeZone: 'America/Mexico_City',
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(valor));
+  valor
+    ? new Intl.DateTimeFormat('es-MX', {
+        timeZone: 'America/Mexico_City',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(valor))
+    : 'Sin fecha registrada';
 
-export function SeguimientoConsultaTaller() {
+const accionesSolicitud = {
+  REGISTRAR_SOLICITUD: 'Solicitud recibida',
+  RESPONDER_SOLICITUD: 'Respuesta publicada',
+  AGREGAR_MENSAJE: 'Mensaje del solicitante',
+  CANCELAR_SOLICITUD: 'Solicitud cancelada',
+  REABRIR_SOLICITUD: 'Solicitud reabierta',
+  HABILITAR_SEGUIMIENTO: 'Enlace de seguimiento preparado',
+};
+
+export function SeguimientoConsultaTaller({ tipo = 'CT' }) {
+  const social = tipo === 'SS';
+  const fragmento = fragmentoSeguimiento(tipo);
+  const ruta = social ? 'servicio-social' : 'consultas-talleres';
+  const tituloId = social ? 'titulo-seguimiento-social' : 'titulo-seguimiento';
   const [acceso, cambiarAcceso] = useState(null);
   const [consulta, cambiarConsulta] = useState(null);
   const [error, cambiarError] = useState('');
@@ -155,12 +171,12 @@ export function SeguimientoConsultaTaller() {
   useEffect(() => {
     const leer = () => {
       const datos = new URLSearchParams(location.hash.slice(1));
-      if (!datos.has('consulta-taller')) {
+      if (!datos.has(fragmento)) {
         cambiarAcceso(null);
         cambiarConsulta(null);
         return;
       }
-      cambiarAcceso({ folio: datos.get('consulta-taller'), acceso: datos.get('acceso') ?? '' });
+      cambiarAcceso({ folio: datos.get(fragmento), acceso: datos.get('acceso') ?? '' });
       requestAnimationFrame(() => {
         region.current?.focus();
         region.current?.scrollIntoView();
@@ -169,7 +185,7 @@ export function SeguimientoConsultaTaller() {
     leer();
     window.addEventListener('hashchange', leer);
     return () => window.removeEventListener('hashchange', leer);
-  }, []);
+  }, [fragmento]);
   useEffect(() => {
     if (!acceso) return;
     const controlador = new AbortController();
@@ -178,7 +194,7 @@ export function SeguimientoConsultaTaller() {
     cambiarConsulta(null);
     (async () => {
       try {
-        const respuesta = await fetch('/api/v1/publico/consultas-talleres/consultar', {
+        const respuesta = await fetch(`/api/v1/publico/${ruta}/consultar`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(acceso),
@@ -189,7 +205,7 @@ export function SeguimientoConsultaTaller() {
         if (!respuesta.ok) throw new Error(datos.mensaje ?? 'No pudimos consultar la respuesta.');
         if (!controlador.signal.aborted) {
           cambiarConsulta(datos);
-          guardarConsulta({ ...acceso, tallerNombre: datos.tallerNombre });
+          guardarConsulta({ ...acceso, tallerNombre: datos.programaNombre ?? datos.tallerNombre });
         }
       } catch (e) {
         if (!controlador.signal.aborted) cambiarError(mensajeSolicitud(e));
@@ -198,36 +214,43 @@ export function SeguimientoConsultaTaller() {
       }
     })();
     return () => controlador.abort();
-  }, [acceso, revision]);
+  }, [acceso, revision, ruta]);
   if (!acceso) return null;
   return (
     <section
-      id="consultar-solicitud"
+      id={social ? 'consultar-servicio-social' : 'consultar-solicitud'}
       className="seguimiento-consulta seccion"
-      aria-labelledby="titulo-seguimiento"
+      aria-labelledby={tituloId}
       ref={region}
       tabIndex={-1}
     >
       <div className="contenido contenido-estrecho">
-        <h2 id="titulo-seguimiento">Solicitud de información del taller</h2>
+        <h2 id={tituloId}>
+          {social ? 'Mi solicitud de servicio social' : 'Solicitud de información del taller'}
+        </h2>
         <p>
-          Este folio corresponde a tus preguntas sobre el taller. Para reservar un lugar, utiliza
-          «Inscribirme al taller».
+          {social
+            ? 'Consulta aquí tu conversación con el Módulo. La solicitud de información no constituye admisión al programa.'
+            : 'Este folio corresponde a tus preguntas sobre el taller. Para reservar un lugar, utiliza «Inscribirme al taller».'}
         </p>
         {error && <p role="alert">{error}</p>}
         {ocupado && <p role="status">Consultando tu solicitud…</p>}
         {consulta && (
           <>
-            <h3>{consulta.tallerNombre}</h3>
+            <h3>{consulta.programaNombre ?? consulta.tallerNombre}</h3>
             <p>
               Folio: <strong>{consulta.folio}</strong> · {fecha(consulta.creadoEn)}
             </p>
             <h4>Tu pregunta</h4>
-            <p className="consulta-mensaje">{consulta.mensaje}</p>
+            <p className="consulta-mensaje">
+              {consulta.mensaje || 'Solicitaste información sin agregar un mensaje inicial.'}
+            </p>
             <p role="status">
-              {consulta.estado === 'pendiente'
-                ? 'Tu consulta está pendiente de respuesta.'
-                : 'Tu consulta fue respondida.'}
+              {consulta.estado === 'cancelada'
+                ? 'La solicitud está cancelada.'
+                : consulta.estado === 'pendiente'
+                  ? 'Tu consulta está pendiente de respuesta.'
+                  : 'Tu consulta fue respondida.'}
             </p>
             <div className="consulta-respuestas">
               {mensajes.map((m, i) => (
@@ -238,45 +261,63 @@ export function SeguimientoConsultaTaller() {
                 </article>
               ))}
             </div>
-            <form
-              className="formulario-consulta"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (ocupado) return;
-                const formulario = e.currentTarget;
-                const texto = new FormData(formulario).get('texto');
-                cambiarOcupado(true);
-                cambiarError('');
-                try {
-                  const respuesta = await fetch('/api/v1/publico/consultas-talleres/mensajes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...acceso, texto, version: consulta.version }),
-                  });
-                  const datos = await respuesta.json();
-                  if (!respuesta.ok)
-                    throw new Error(datos.mensaje ?? 'No se pudo enviar el mensaje.');
-                  if (
-                    new URLSearchParams(location.hash.slice(1)).get('consulta-taller') ===
-                    acceso.folio
-                  )
-                    cambiarConsulta(datos);
-                  formulario.reset();
-                } catch (e) {
-                  cambiarError(mensajeSolicitud(e));
-                } finally {
-                  cambiarOcupado(false);
-                }
-              }}
-            >
-              <label>
-                Continuar esta consulta
-                <textarea name="texto" required maxLength={1000} rows={3} disabled={ocupado} />
-              </label>
-              <button className="boton" disabled={ocupado}>
-                Enviar mensaje de seguimiento
-              </button>
-            </form>
+            {consulta.historial?.length > 0 && (
+              <details className="solicitud-historial">
+                <summary>Historial de la solicitud</summary>
+                <ol>
+                  {consulta.historial.map((h, i) => (
+                    <li key={i}>
+                      <strong>{accionesSolicitud[h.accion] ?? h.accion}</strong> ·{' '}
+                      {fecha(h.momento)} · {h.origen}
+                      {h.motivo && <p className="consulta-mensaje">{h.motivo}</p>}
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            )}
+            {consulta.estado === 'cancelada' ? (
+              <p>
+                {consulta.historial?.findLast((h) => h.accion === 'CANCELAR_SOLICITUD')?.motivo &&
+                  `Motivo: ${consulta.historial.findLast((h) => h.accion === 'CANCELAR_SOLICITUD').motivo}`}
+              </p>
+            ) : (
+              <form
+                className="formulario-consulta"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (ocupado) return;
+                  const formulario = e.currentTarget;
+                  const texto = new FormData(formulario).get('texto');
+                  cambiarOcupado(true);
+                  cambiarError('');
+                  try {
+                    const respuesta = await fetch(`/api/v1/publico/${ruta}/mensajes`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ ...acceso, texto, version: consulta.version }),
+                    });
+                    const datos = await respuesta.json();
+                    if (!respuesta.ok)
+                      throw new Error(datos.mensaje ?? 'No se pudo enviar el mensaje.');
+                    if (new URLSearchParams(location.hash.slice(1)).get(fragmento) === acceso.folio)
+                      cambiarConsulta(datos);
+                    formulario.reset();
+                  } catch (e) {
+                    cambiarError(mensajeSolicitud(e));
+                  } finally {
+                    cambiarOcupado(false);
+                  }
+                }}
+              >
+                <label>
+                  Continuar esta consulta
+                  <textarea name="texto" required maxLength={1000} rows={3} disabled={ocupado} />
+                </label>
+                <button className="boton" disabled={ocupado}>
+                  Enviar mensaje de seguimiento
+                </button>
+              </form>
+            )}
           </>
         )}
         <div className="consulta-acciones">
@@ -288,7 +329,9 @@ export function SeguimientoConsultaTaller() {
           >
             Actualizar respuesta
           </button>
-          <a href="#talleres">Volver a talleres</a>
+          <a href={social ? '#interes-servicio-social' : '#talleres'}>
+            {social ? 'Volver a servicio social' : 'Volver a talleres'}
+          </a>
         </div>
       </div>
     </section>
@@ -311,9 +354,21 @@ export function MisConsultasTaller({ tipo = 'CT' }) {
   return (
     <div
       className="consultas-guardadas"
-      id={tipo === 'INS' ? 'mis-inscripciones-talleres' : 'mis-consultas-talleres'}
+      id={
+        tipo === 'INS'
+          ? 'mis-inscripciones-talleres'
+          : tipo === 'SS'
+            ? 'mis-solicitudes-social'
+            : 'mis-consultas-talleres'
+      }
     >
-      <h3>{tipo === 'INS' ? 'Mis inscripciones a talleres' : 'Mis consultas de talleres'}</h3>
+      <h3>
+        {tipo === 'INS'
+          ? 'Mis inscripciones a talleres'
+          : tipo === 'SS'
+            ? 'Mis solicitudes de servicio social'
+            : 'Mis consultas de talleres'}
+      </h3>
       <p>
         Estas solicitudes están guardadas en este navegador. Puedes quitar su acceso en un equipo
         compartido; tu consulta seguirá registrada en el Módulo.
@@ -342,11 +397,10 @@ export function MisConsultasTaller({ tipo = 'CT' }) {
                   }
                   cambiarError('');
                   if (
-                    new URLSearchParams(location.hash.slice(1)).get(
-                      tipo === 'INS' ? 'inscripcion-taller' : 'consulta-taller',
-                    ) === c.folio
+                    new URLSearchParams(location.hash.slice(1)).get(fragmentoSeguimiento(tipo)) ===
+                    c.folio
                   )
-                    location.hash = 'talleres';
+                    location.hash = tipo === 'SS' ? 'interes-servicio-social' : 'talleres';
                 }}
               >
                 Quitar de este navegador

@@ -15,6 +15,7 @@ import {
   listarConsultas,
   responderConsulta,
   agregarSeguimiento,
+  cambiarEstadoSolicitud,
 } from './consultas.js';
 import { sinAccesoPrivado } from './accesoPrivado.js';
 import { consultarInscripcion, gestionarInscripcionPropia } from './seguimientoInscripciones.js';
@@ -105,6 +106,13 @@ export function crearRutasTalleres({ almacen, auth, publicador, enviarReciboCons
     res.json(
       await almacen.cambiar((estado) =>
         responderConsulta(estado, req.params.id, req.body ?? {}, req.usuario),
+      ),
+    );
+  });
+  router.post('/consultas-talleres/:id/acciones', async (req, res) => {
+    res.json(
+      await almacen.cambiar((s) =>
+        cambiarEstadoSolicitud(s, req.params.id, req.body ?? {}, req.usuario),
       ),
     );
   });

@@ -16,9 +16,9 @@ La asistencia la registra la responsable o el administrador. El participante pue
 
 ## Panel de responsable y administrador
 
-Al entrar al gestor aparece «Solicitudes y participantes», antes del editor de contenido, con tres categorías y sus cantidades: consultas de talleres, inscripciones y servicio social. Pulsar una categoría carga los registros actuales. Se puede buscar por nombre, correo o folio y filtrar por taller. «Actualizar solicitudes» renueva los datos y «Cerrar solicitudes» recoge la lista para continuar editando.
+El menú separa **Participantes** de **Solicitudes**, **Talleres**, **Contenido** y **Bitácora**. En Participantes se puede buscar por nombre, correo o folio y filtrar por taller o estado. Seleccionar una inscripción abre su detalle; «Actualizar» renueva la lista. Las acciones requieren motivo en el registro seleccionado. El detalle de las consultas se describe en [Atención de solicitudes](atencion-solicitudes.md).
 
-Desde consultas se leen preguntas y seguimientos y se publican respuestas. Desde inscripciones se consultan datos e historial, se cancelan, se reactivan con consentimiento y se registra asistencia; todas las acciones requieren motivo. La categoría de servicio social reúne los intereses con programa, mensaje, correo y fecha. Los controles de edición y exportación de cada taller siguen disponibles. Editor y operador no tienen acceso a estas listas ni a su API.
+Desde el detalle de la inscripción se consultan datos e historial, se cancela, se reactiva con consentimiento y se registra asistencia. La edición y exportación de cada convocatoria están en **Talleres**. Editor y operador no tienen acceso a las listas privadas ni a su API.
 
 ## API
 
@@ -31,4 +31,4 @@ Desde consultas se leen preguntas y seguimientos y se publican respuestas. Desde
 
 Las respuestas usan `Cache-Control: no-store`; las mutaciones exigen origen autorizado. La lectura privada tiene límite de sesenta intentos por IP y hora compartido entre inscripciones y consultas. Los mensajes y acciones del visitante comparten quince intentos por IP y hora. La clave se guarda únicamente como huella SHA-256 en el estado; la copia del correo y el navegador guardan el acceso necesario. El modo de buzón de archivos continúa limitado a desarrollo.
 
-El aviso v4 describe este seguimiento, el respaldo por correo y el almacenamiento de accesos de inscripción. Los HTML v1, v2 y v3 se conservan intactos. Las inscripciones antiguas que no tuvieran clave no obtienen acceso público solamente por conocer su folio. No se envían correos retroactivos ni se regeneran las claves de consultas existentes.
+El aviso v5 conserva la descripción del seguimiento y del almacenamiento de accesos de inscripción. Los HTML v1 a v4 se conservan intactos. Las inscripciones antiguas que no tuvieran clave no obtienen acceso público solamente por conocer su folio. Los enlaces privados existentes se conservan.

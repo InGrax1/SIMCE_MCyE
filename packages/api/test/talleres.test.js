@@ -396,6 +396,109 @@ describe('talleres e inscripciones', () => {
     expect(s.consultasTalleres).toHaveLength(1);
     expect(s.consecutivoConsultaTaller).toBe(1);
   });
+  it('cancela y reabre una consulta con motivo, bloquea mensajes y conserva su conversación privada', async () => {
+    const recibo = (await preguntar()).body;
+    const c = (await almacen.leer()).consultasTalleres[0];
+    const ruta = `/consultas-talleres/${c.id}`;
+    await api('responsable', 'post', `${ruta}/respuestas`, {
+      texto: 'Material incluido.',
+      version: 1,
+    });
+    const cancelar = { accion: 'cancelar', motivo: 'Solicitud duplicada histórica', version: 2 };
+    expect((await api('editor', 'post', `${ruta}/acciones`, cancelar)).status).toBe(403);
+    expect(
+      (await api('admin', 'post', `${ruta}/acciones`, { ...cancelar, version: 1 })).status,
+    ).toBe(409);
+    expect(
+      (await api('admin', 'post', `${ruta}/acciones`, { ...cancelar, motivo: '' })).status,
+    ).toBe(422);
+    expect((await api('admin', 'post', `${ruta}/acciones`, cancelar)).body.estado).toBe(
+      'cancelada',
+    );
+    const cancelada = await seguimiento(recibo);
+    expect(cancelada.body).toMatchObject({
+      folio: recibo.folio,
+      estado: 'cancelada',
+      respuestas: [{ texto: 'Material incluido.' }],
+    });
+    expect(cancelada.body.historial.at(-1)).toMatchObject({
+      accion: 'CANCELAR_SOLICITUD',
+      motivo: cancelar.motivo,
+      origen: 'Personal del Módulo',
+    });
+    expect(JSON.stringify(cancelada.body)).not.toContain('usuarioId');
+    const mensaje = await request(app)
+      .post('/api/v1/publico/consultas-talleres/mensajes')
+      .set('Origin', origen)
+      .send({ ...recibo, version: 3, texto: 'Otro mensaje' });
+    expect(mensaje.body.error).toBe('SOLICITUD_CANCELADA');
+    expect(
+      (
+        await api('responsable', 'post', `${ruta}/respuestas`, {
+          texto: 'Otra respuesta',
+          version: 3,
+        })
+      ).body.error,
+    ).toBe('SOLICITUD_CANCELADA');
+    const reabierta = await api('responsable', 'post', `${ruta}/acciones`, {
+      accion: 'reabrir',
+      motivo: 'Atención retomada',
+      version: 3,
+    });
+    expect(reabierta.body).toMatchObject({ folio: recibo.folio, estado: 'pendiente' });
+    expect((await seguimiento(recibo)).body.respuestas).toHaveLength(1);
+    expect((await almacen.leer()).inscripciones).toHaveLength(0);
+  });
+  it('conserva solicitudes antiguas de servicio social y habilita su acceso por correo sin exponer la clave al panel', async () => {
+    const legado = {
+      id: randomUUID(),
+      nombre: 'Persona anterior',
+      correo: 'legado@example.test',
+      mensaje: 'Solicitud anterior',
+      versionAviso: 'anterior',
+      momento: '2026-09-01T18:00:00.000Z',
+    };
+    await almacen.cambiar((s) => {
+      legado.programaId = s.entradas.find((e) => e.tipo === 'programa').id;
+      s.intereses.push(legado);
+    });
+    const anterior = (await almacen.leer()).intereses[0];
+    expect(anterior).toMatchObject({ ...legado, folio: 'SS-2026-00000001', version: 1 });
+    const ruta = `/cms/intereses/${legado.id}/seguimiento`;
+    expect((await api('editor', 'post', ruta, { version: 1 })).status).toBe(403);
+    expect((await api('admin', 'post', ruta, { version: 1 })).body).toEqual({
+      correo: 'no_disponible',
+    });
+    expect((await almacen.leer()).intereses[0].accesoHash).toBeUndefined();
+    enviarReciboConsulta = crearCorreoConsultas({
+      almacen,
+      origenPublico: origen,
+      enviarCorreo: configurarCorreo(carpeta, { CORREO_MODO: 'archivo', NODE_ENV: 'test' }),
+    });
+    const activada = await api('admin', 'post', ruta, { version: 2 });
+    expect(activada.body).toEqual({ correo: 'archivo' });
+    const archivo = (await readdir(join(carpeta, 'correos')))[0];
+    const copia = JSON.parse(await readFile(join(carpeta, 'correos', archivo), 'utf8'));
+    expect(copia.para).toBe(legado.correo);
+    expect(copia.html).toContain('Programa:');
+    const enlace = new URL(copia.texto.split('\n').find((linea) => linea.startsWith(origen)));
+    const parametros = new URLSearchParams(enlace.hash.slice(1));
+    const consulta = await request(app)
+      .post('/api/v1/publico/servicio-social/consultar')
+      .set('Origin', origen)
+      .send({ folio: parametros.get('servicio-social'), acceso: parametros.get('acceso') });
+    expect(consulta.body).toMatchObject({
+      folio: anterior.folio,
+      mensaje: legado.mensaje,
+      creadoEn: legado.momento,
+    });
+    expect((await api('admin', 'post', ruta, { version: 3 })).body.error).toBe(
+      'SEGUIMIENTO_HABILITADO',
+    );
+    expect(JSON.stringify((await api('admin', 'get', '/cms/solicitudes')).body)).not.toContain(
+      'accesoHash',
+    );
+  });
   it('continúa una consulta con el mismo folio y reabre su atención sin revelar el acceso', async () => {
     const recibo = (await preguntar()).body;
     const c = (await almacen.leer()).consultasTalleres[0];

@@ -76,4 +76,16 @@ describe('acceso a consultas en el navegador', () => {
     expect(leerConsultasGuardadas('INS')).toEqual([]);
     expect(leerConsultasGuardadas()).toHaveLength(1);
   });
+  it('separa el acceso de servicio social de los otros folios', () => {
+    const social = {
+      ...consulta(1),
+      folio: 'SS-2026-00000001',
+      tallerNombre: 'Programa de prueba',
+    };
+    expect(guardarConsulta(social)).toBe(true);
+    expect(leerConsultasGuardadas('SS')).toEqual([social]);
+    expect(leerConsultasGuardadas()).toEqual([]);
+    expect(quitarConsulta(social.folio)).toBe(true);
+    expect(leerConsultasGuardadas('SS')).toEqual([]);
+  });
 });

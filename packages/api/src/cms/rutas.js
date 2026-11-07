@@ -2,6 +2,17 @@ import express from 'express';
 import { crearRutasTalleres } from '../talleres/rutas.js';
 import { validarPublicacionTaller } from '../talleres/reglas.js';
 import { sinAccesoPrivado } from '../talleres/accesoPrivado.js';
+import {
+  registrarSolicitudSocial,
+  prepararSeguimientoSocial,
+} from '../servicioSocial/solicitudes.js';
+import {
+  consultarRespuesta,
+  agregarSeguimiento,
+  responderConsulta,
+  cambiarEstadoSolicitud,
+  proyectarSolicitud,
+} from '../talleres/consultas.js';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile, unlink, readFile } from 'node:fs/promises';
@@ -43,6 +54,18 @@ export function crearRutasCms({
   const router = express.Router();
   const tasas = new Map();
   const tasasInteres = new Map();
+  const tasasSeguimiento = new Map();
+  function limitarSeguimiento(req, tipo, maximo) {
+    const ahora = Date.now();
+    for (const [id, cuota] of tasasSeguimiento)
+      if (cuota.hasta <= ahora) tasasSeguimiento.delete(id);
+    const clave = `${tipo}:${req.ip}`;
+    const cuota = tasasSeguimiento.get(clave) ?? { total: 0, hasta: ahora + 3600_000 };
+    if (cuota.total >= maximo || tasasSeguimiento.size >= 10000)
+      throw new ErrorApi(429, 'LIMITE_TASA', 'Espera unos minutos antes de volver a intentarlo.');
+    cuota.total++;
+    tasasSeguimiento.set(clave, cuota);
+  }
   router.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
@@ -60,59 +83,21 @@ export function crearRutasCms({
       throw new ErrorApi(429, 'LIMITE_TASA', 'Inténtalo más tarde o escribe al módulo.');
     cuota.total++;
     tasasInteres.set(req.ip, cuota);
-    await almacen.cambiar((estado) => {
-      if (!estado.avisoInteres)
-        throw new ErrorApi(
-          503,
-          'AVISO_PENDIENTE',
-          'El registro de interés todavía no está disponible. Contacta al módulo por correo.',
-        );
-      if (
-        ![true, 'on'].includes(req.body.aceptoAviso) ||
-        req.body.versionAviso !== estado.avisoInteres.version
-      )
-        throw new ErrorApi(
-          422,
-          'AVISO_NO_ACEPTADO',
-          'Lee y acepta el aviso de privacidad vigente.',
-        );
-      const programa = estado.entradas.find(
-        (e) =>
-          e.id === (req.params.id ?? req.body.programa) && e.tipo === 'programa' && e.publicado,
-      );
-      if (!programa) throw new ErrorApi(404, 'NO_ENCONTRADO', 'El programa no está publicado.');
-      const { nombre, correo, mensaje = '' } = req.body;
-      if (
-        typeof nombre !== 'string' ||
-        !nombre.trim() ||
-        nombre.length > 160 ||
-        typeof correo !== 'string' ||
-        correo.length > 160 ||
-        !/^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(correo) ||
-        typeof mensaje !== 'string' ||
-        mensaje.length > 1000 ||
-        /[<>]/.test(nombre + mensaje)
-      )
-        throw new ErrorApi(
-          422,
-          'DATOS_INVALIDOS',
-          'Revisa el nombre, el correo y el mensaje (máximo 1000 caracteres).',
-        );
-      const id = randomUUID();
-      (estado.intereses ??= []).push({
-        id,
-        programaId: programa.id,
-        nombre: nombre.trim(),
-        correo: correo.toLowerCase(),
-        mensaje,
-        versionAviso: estado.avisoInteres.version,
-        momento: new Date().toISOString(),
-      });
-      auditar(estado, { id: 'visitante' }, 'REGISTRAR_INTERES', id);
-    });
-    res.status(201).json({ recibido: true });
+    const resultado = await almacen.cambiar((s) =>
+      registrarSolicitudSocial(s, req.params.id ?? req.body.programa, req.body),
+    );
+    const correo = enviarReciboConsulta ? await enviarReciboConsulta(resultado) : 'no_disponible';
+    res.status(201).json({ ...resultado, correo });
   };
   router.post('/publico/programas/:id/intereses', auth.origen, registrarInteres);
+  router.post('/publico/servicio-social/consultar', auth.origen, async (req, res) => {
+    limitarSeguimiento(req, 'leer', 60);
+    res.json(consultarRespuesta(await almacen.leer(), req.body ?? {}, 'SS'));
+  });
+  router.post('/publico/servicio-social/mensajes', auth.origen, async (req, res) => {
+    limitarSeguimiento(req, 'escribir', 15);
+    res.json(await almacen.cambiar((s) => agregarSeguimiento(s, req.body ?? {}, new Date(), 'SS')));
+  });
   router.post(
     '/publico/intereses',
     express.urlencoded({ extended: false, limit: '8kb' }),
@@ -164,7 +149,7 @@ export function crearRutasCms({
   router.get('/cms/intereses', auth.permitir(responsables), async (req, res) => {
     const salida = await almacen.cambiar((estado) => {
       auditar(estado, req.usuario, 'CONSULTAR_INTERESES', 'intereses');
-      return estado.intereses ?? [];
+      return (estado.intereses ?? []).map(proyectarSolicitud);
     });
     res.json(salida);
   });
@@ -173,9 +158,9 @@ export function crearRutasCms({
       await almacen.cambiar((s) => {
         auditar(s, req.usuario, 'CONSULTAR_SOLICITUDES', 'solicitudes');
         return {
-          consultas: (s.consultasTalleres ?? []).map(sinAccesoPrivado).reverse(),
+          consultas: (s.consultasTalleres ?? []).map(proyectarSolicitud).reverse(),
           inscripciones: (s.inscripciones ?? []).map(sinAccesoPrivado).reverse(),
-          intereses: (s.intereses ?? []).toReversed(),
+          intereses: (s.intereses ?? []).map(proyectarSolicitud).reverse(),
           aviso: s.avisoTalleres,
           talleres: s.entradas
             .filter((e) => e.tipo === 'taller')
@@ -193,6 +178,32 @@ export function crearRutasCms({
         };
       }),
     );
+  });
+  router.post('/cms/intereses/:id/respuestas', auth.permitir(responsables), async (req, res) => {
+    res.json(
+      await almacen.cambiar((s) =>
+        responderConsulta(s, req.params.id, req.body, req.usuario, new Date(), 'SS'),
+      ),
+    );
+  });
+  router.post('/cms/intereses/:id/acciones', auth.permitir(responsables), async (req, res) => {
+    res.json(
+      await almacen.cambiar((s) =>
+        cambiarEstadoSolicitud(s, req.params.id, req.body, req.usuario, new Date(), 'SS'),
+      ),
+    );
+  });
+  router.post('/cms/intereses/:id/seguimiento', auth.permitir(responsables), async (req, res) => {
+    const recibo = await almacen.cambiar((s) =>
+      prepararSeguimientoSocial(s, req.params.id, req.body, req.usuario),
+    );
+    const correo = enviarReciboConsulta ? await enviarReciboConsulta(recibo) : 'no_disponible';
+    if (!['enviado', 'archivo'].includes(correo))
+      await almacen.cambiar((s) => {
+        const registro = s.intereses.find((r) => r.id === req.params.id);
+        if (registro?.accesoHash === recibo.accesoHash) delete registro.accesoHash;
+      });
+    res.json({ correo });
   });
   async function regenerar(res) {
     try {

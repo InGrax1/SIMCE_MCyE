@@ -1,4 +1,11 @@
-const claves = { CT: 'simce.consultas-talleres.v1', INS: 'simce.inscripciones-talleres.v1' };
+const claves = {
+  CT: 'simce.consultas-talleres.v1',
+  INS: 'simce.inscripciones-talleres.v1',
+  SS: 'simce.solicitudes-social.v1',
+};
+const fragmentos = { CT: 'consulta-taller', INS: 'inscripcion-taller', SS: 'servicio-social' };
+const tipoFolio = (folio) => (typeof folio === 'string' ? folio.split('-')[0] : '');
+export const fragmentoSeguimiento = (tipo) => fragmentos[tipo];
 export const eventoConsultas = 'simce:consultas-actualizadas';
 const valida = (dato, tipo = 'CT') =>
   dato &&
@@ -7,7 +14,7 @@ const valida = (dato, tipo = 'CT') =>
   typeof dato.acceso === 'string' &&
   /^[A-Za-z0-9_-]{43}$/.test(dato.acceso) &&
   typeof dato.tallerNombre === 'string' &&
-  dato.tallerNombre.length <= 160;
+  dato.tallerNombre.length <= 240;
 
 export function leerConsultasGuardadas(tipo = 'CT') {
   try {
@@ -30,8 +37,8 @@ function escribir(datos, tipo) {
 }
 
 export function guardarConsulta(dato) {
-  const tipo = dato?.folio?.startsWith('INS-') ? 'INS' : 'CT';
-  if (!valida(dato, tipo)) return false;
+  const tipo = tipoFolio(dato?.folio);
+  if (!Object.hasOwn(claves, tipo) || !valida(dato, tipo)) return false;
   const { folio, acceso, tallerNombre } = dato;
   return escribir(
     [
@@ -43,7 +50,8 @@ export function guardarConsulta(dato) {
 }
 
 export function quitarConsulta(folio) {
-  const tipo = folio.startsWith('INS-') ? 'INS' : 'CT';
+  const tipo = tipoFolio(folio);
+  if (!Object.hasOwn(claves, tipo)) return false;
   return escribir(
     leerConsultasGuardadas(tipo).filter((c) => c.folio !== folio),
     tipo,
@@ -51,5 +59,5 @@ export function quitarConsulta(folio) {
 }
 
 export function enlaceConsulta({ folio, acceso }) {
-  return `/#${folio.startsWith('INS-') ? 'inscripcion-taller' : 'consulta-taller'}=${encodeURIComponent(folio)}&acceso=${encodeURIComponent(acceso)}`;
+  return `/#${fragmentos[tipoFolio(folio)]}=${encodeURIComponent(folio)}&acceso=${encodeURIComponent(acceso)}`;
 }

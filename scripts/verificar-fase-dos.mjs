@@ -94,7 +94,8 @@ try {
   await panel.getByLabel('Correo', { exact: true }).fill('responsable@example.test');
   await panel.getByLabel('Contraseña', { exact: true }).fill(clave);
   await panel.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
-  await panel.getByLabel('Tipo de contenido').selectOption('taller');
+  const navegacionPanel = panel.getByRole('navigation', { name: 'Navegación del panel' });
+  await navegacionPanel.getByRole('button', { name: 'Talleres', exact: true }).click();
   await panel.getByLabel('Nombre o título').fill('Taller de elaboración de embutidos · prueba');
   await panel
     .getByLabel('Descripción', { exact: true })
@@ -226,9 +227,7 @@ try {
   await seguimiento
     .getByText('Tu consulta está pendiente de respuesta.', { exact: true })
     .waitFor();
-  await panel
-    .getByRole('button', { name: 'Consultar solicitudes de información', exact: true })
-    .click();
+  await navegacionPanel.getByRole('button', { name: 'Solicitudes', exact: true }).click();
   await panel
     .getByLabel(`Respuesta para ${consultaCreada.folio}`, { exact: true })
     .fill('El material está incluido. Puedes llevar una libreta.');
@@ -236,7 +235,6 @@ try {
   await panel
     .getByText(`Respuesta publicada para ${consultaCreada.folio}.`, { exact: true })
     .waitFor();
-  await panel.locator('.cms-consultas').scrollIntoViewIfNeeded();
   await panel.screenshot({ path: join(artefactos, 'consulta-panel-escritorio.png') });
   await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
   await seguimiento
@@ -253,9 +251,7 @@ try {
     .waitFor();
   const solicitudesPanel = panel.locator('#solicitudes-panel');
   await solicitudesPanel.getByRole('button', { name: /^Consultas de talleres/ }).click();
-  const fichaConsulta = solicitudesPanel
-    .locator('.cms-asistentes > li')
-    .filter({ hasText: consultaCreada.folio });
+  const fichaConsulta = solicitudesPanel.locator('.cms-bandeja-detalle');
   await fichaConsulta.getByText('¿A qué hora inicia el taller?', { exact: true }).waitFor();
   await fichaConsulta
     .getByLabel(`Respuesta para ${consultaCreada.folio}`, { exact: true })
@@ -264,12 +260,37 @@ try {
   await solicitudesPanel
     .getByText(`Respuesta publicada para ${consultaCreada.folio}.`, { exact: true })
     .waitFor();
-  await solicitudesPanel.getByRole('button', { name: 'Cerrar solicitudes', exact: true }).click();
   await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
   await seguimiento.getByText('El taller inicia a las nueve.', { exact: true }).waitFor();
   assert.equal((await almacen.leer()).consultasTalleres.length, 1);
   reporte.flujo.push(
     'Consulta duplicada bloqueada y mensajes adicionales atendidos desde el apartado central con el mismo folio',
+  );
+  await fichaConsulta.getByRole('button', { name: 'Cancelar solicitud', exact: true }).click();
+  await fichaConsulta
+    .getByLabel('Motivo', { exact: true })
+    .fill('Cierre solicitado por el visitante');
+  await fichaConsulta.getByRole('button', { name: 'Confirmar cancelación', exact: true }).click();
+  await fichaConsulta.getByRole('button', { name: 'Reabrir solicitud', exact: true }).waitFor();
+  await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
+  await seguimiento.getByText('La solicitud está cancelada.', { exact: true }).waitFor();
+  await seguimiento
+    .getByText('Motivo: Cierre solicitado por el visitante', { exact: true })
+    .waitFor();
+  assert.equal(
+    await seguimiento.getByRole('button', { name: 'Enviar mensaje de seguimiento' }).count(),
+    0,
+  );
+  await fichaConsulta.getByRole('button', { name: 'Reabrir solicitud', exact: true }).click();
+  await fichaConsulta
+    .getByLabel('Motivo', { exact: true })
+    .fill('La persona pidió retomar la atención');
+  await fichaConsulta.getByRole('button', { name: 'Confirmar reapertura', exact: true }).click();
+  await fichaConsulta.getByRole('button', { name: 'Cancelar solicitud', exact: true }).waitFor();
+  await seguimiento.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
+  await seguimiento.getByLabel('Continuar esta consulta', { exact: true }).waitFor();
+  reporte.flujo.push(
+    'La consulta de taller se cancela y reabre con el mismo folio e historial visible para la persona',
   );
   for (const ancho of [1440, 390]) {
     await seguimiento.setViewportSize({ width: ancho, height: 900 });
@@ -384,13 +405,82 @@ try {
   await formularioSocial.getByRole('checkbox').check();
   await formularioSocial.getByRole('button', { name: 'Enviar interés', exact: true }).click();
   await pagina
-    .getByText('Recibimos tu interés. El módulo podrá contactarte con más información.', {
-      exact: true,
-    })
+    .getByRole('heading', { name: 'Recibimos tu solicitud de servicio social' })
     .waitFor();
-  assert.equal((await almacen.leer()).intereses[0].programaId, programaElegido.id);
+  const solicitudSocial = (await almacen.leer()).intereses[0];
+  assert.equal(solicitudSocial.programaId, programaElegido.id);
+  const enlaceSocial = await pagina
+    .getByRole('link', { name: 'Consultar mi solicitud de servicio social' })
+    .getAttribute('href');
+  const contextoSocial = await browser.newContext({
+    reducedMotion: 'reduce',
+    viewport: { width: 390, height: 844 },
+  });
+  const seguimientoSocial = await contextoSocial.newPage();
+  seguimientoSocial.on('pageerror', (e) => reporte.errores.push(e.message));
+  await seguimientoSocial.goto(enlaceSocial);
+  const miSocial = seguimientoSocial.locator('#consultar-servicio-social');
+  await miSocial.getByRole('heading', { name: 'Mi solicitud de servicio social' }).waitFor();
+  await solicitudesPanel.getByRole('button', { name: /^Servicio social/ }).click();
+  const detalleSocial = solicitudesPanel.locator('.cms-bandeja-detalle');
+  await detalleSocial
+    .getByLabel(`Respuesta para ${solicitudSocial.folio}`, { exact: true })
+    .fill('Puedes presentar tu solicitud con tu historial académico.');
+  await detalleSocial.getByRole('button', { name: 'Publicar respuesta', exact: true }).click();
+  await detalleSocial
+    .getByText(`Respuesta publicada para ${solicitudSocial.folio}.`, { exact: true })
+    .waitFor();
+  await miSocial.getByRole('button', { name: 'Actualizar respuesta', exact: true }).click();
+  await miSocial
+    .getByText('Puedes presentar tu solicitud con tu historial académico.', { exact: true })
+    .waitFor();
+  await miSocial
+    .getByLabel('Continuar esta consulta', { exact: true })
+    .fill('¿Qué horarios están disponibles?');
+  await miSocial
+    .getByRole('button', { name: 'Enviar mensaje de seguimiento', exact: true })
+    .click();
+  await miSocial.getByText('¿Qué horarios están disponibles?', { exact: true }).waitFor();
+  await solicitudesPanel.getByRole('button', { name: 'Actualizar', exact: true }).click();
+  await detalleSocial.getByText('¿Qué horarios están disponibles?', { exact: true }).waitFor();
+  await axe(seguimientoSocial, 'Seguimiento privado de servicio social móvil');
+  await seguimientoSocial.screenshot({
+    path: join(artefactos, 'servicio-social-seguimiento-movil.png'),
+  });
+  await miSocial.getByRole('link', { name: 'Volver a servicio social', exact: true }).click();
+  await seguimientoSocial.reload();
+  await seguimientoSocial
+    .getByRole('link', { name: `Consultar estado de ${solicitudSocial.folio}`, exact: true })
+    .waitFor();
+  await contextoSocial.close();
   reporte.flujo.push(
-    'Solicitar información de servicio social selecciona su programa y envía dentro de la web',
+    'Servicio social conserva el programa, crea folio privado, recibe respuestas y permite continuar la conversación',
+  );
+  await almacen.cambiar((s) =>
+    s.intereses.push({
+      id: randomUUID(),
+      nombre: 'Registro anterior de prueba',
+      correo: 'anterior@example.test',
+      programaId: programaElegido.id,
+      mensaje: 'Consulta registrada antes del seguimiento',
+      momento: '2026-10-01T18:00:00.000Z',
+      versionAviso: 'aviso-previo',
+    }),
+  );
+  await solicitudesPanel.getByRole('button', { name: 'Actualizar', exact: true }).click();
+  await solicitudesPanel.getByRole('button', { name: /Registro anterior de prueba/ }).click();
+  await detalleSocial
+    .getByRole('button', { name: 'Enviar acceso de seguimiento', exact: true })
+    .click();
+  await detalleSocial
+    .getByText('Enlace preparado en el buzón local de prueba.', { exact: true })
+    .waitFor();
+  assert.equal(
+    (await almacen.leer()).intereses[1].mensaje,
+    'Consulta registrada antes del seguimiento',
+  );
+  reporte.flujo.push(
+    'El panel habilita acceso privado por correo en una solicitud de servicio social anterior',
   );
   await pagina.locator('.taller-inscripcion summary').click();
   const inscripcion = pagina.locator('.taller-inscripcion');
@@ -534,78 +624,73 @@ try {
   await pagina.locator('.taller-inscripcion summary').click();
   await pagina.getByText('Cupo agotado.', { exact: true }).waitFor();
   assert.equal(await pagina.locator('.formulario-inscripcion').count(), 0);
-  await panel.getByRole('button', { name: 'Consultar asistentes', exact: true }).click();
-  await panel
-    .locator('.cms-asistentes h4')
-    .getByText('María López de la Cruz', { exact: true })
-    .waitFor();
-  await axe(panel, 'Gestión de inscripciones escritorio');
-  await panel.locator('.cms-inscripciones').scrollIntoViewIfNeeded();
-  await panel.screenshot({ path: join(artefactos, 'asistentes-escritorio.png') });
-  await panel.setViewportSize({ width: 390, height: 844 });
-  assert.equal(
-    await panel.evaluate(() => document.documentElement.scrollWidth > innerWidth),
-    false,
-  );
-  await axe(panel, 'Gestión de inscripciones móvil');
-  await panel.locator('.cms-inscripciones .cms-asistentes').scrollIntoViewIfNeeded();
-  await panel.screenshot({ path: join(artefactos, 'asistentes-movil.png') });
+  await navegacionPanel.getByRole('button', { name: 'Talleres', exact: true }).click();
   for (const formato of ['CSV', 'PDF']) {
     const descarga = panel.waitForEvent('download');
     await panel.getByRole('button', { name: `Exportar ${formato}`, exact: true }).click();
     await (await descarga).saveAs(join(artefactos, `asistentes.${formato.toLowerCase()}`));
   }
   assert.ok((await readFile(join(artefactos, 'asistentes.csv'), 'utf8')).includes('María López'));
-  await panel
-    .getByLabel('Motivo de la acción sobre taller o inscripción')
-    .fill('Solicitud sintética del participante');
-  await panel.getByRole('button', { name: 'Cancelar inscripción', exact: true }).click();
-  await panel
-    .getByText(`${(await almacen.leer()).inscripciones[0].folio} · cancelada`, { exact: true })
+  await navegacionPanel.getByRole('button', { name: 'Participantes', exact: true }).click();
+  const fichaInscripcion = solicitudesPanel.locator('.cms-bandeja-detalle');
+  await fichaInscripcion
+    .getByRole('heading', { name: 'María López de la Cruz', exact: true })
     .waitFor();
+  await axe(panel, 'Gestión de inscripciones escritorio');
+  await panel.screenshot({ path: join(artefactos, 'asistentes-escritorio.png') });
+  await fichaInscripcion.getByRole('button', { name: 'Cancelar inscripción', exact: true }).click();
+  await fichaInscripcion
+    .getByLabel('Motivo', { exact: true })
+    .fill('Solicitud sintética del participante');
+  await fichaInscripcion
+    .getByRole('button', { name: 'Confirmar cancelación', exact: true })
+    .click();
+  await fichaInscripcion.locator('[data-estado="cancelada"]').waitFor();
   await pagina.reload();
   await pagina.locator('.taller-inscripcion summary').click();
   await pagina.getByRole('button', { name: 'Confirmar inscripción', exact: true }).waitFor();
   reporte.flujo.push('Cupo agotado, lista privada, CSV/PDF y reapertura al cancelar');
-  await solicitudesPanel.getByRole('button', { name: /^Inscripciones \(/ }).click();
   await solicitudesPanel
     .getByLabel('Buscar por nombre, correo o folio', { exact: true })
     .fill('PARTICIPANTE@example.test');
-  const fichaInscripcion = solicitudesPanel
-    .locator('.cms-asistentes > li')
-    .filter({ hasText: folioInscripcion });
-  await fichaInscripcion.getByText(`${folioInscripcion} · cancelada`, { exact: true }).waitFor();
-  await solicitudesPanel
-    .getByLabel('Motivo de la gestión de inscripción', { exact: true })
-    .fill('Reactivación revisada por la responsable');
-  await solicitudesPanel.getByRole('checkbox').check();
   await fichaInscripcion
     .getByRole('button', { name: 'Reactivar inscripción', exact: true })
     .click();
-  await fichaInscripcion.getByText(`${folioInscripcion} · confirmada`, { exact: true }).waitFor();
-  await solicitudesPanel
-    .getByLabel('Motivo de la gestión de inscripción', { exact: true })
-    .fill('Asistencia verificada en la sede');
+  await fichaInscripcion
+    .getByLabel('Motivo', { exact: true })
+    .fill('Reactivación revisada por la responsable');
+  await fichaInscripcion.getByRole('checkbox').check();
+  await fichaInscripcion
+    .getByRole('button', { name: 'Confirmar reactivación', exact: true })
+    .click();
+  await fichaInscripcion.locator('[data-estado="confirmada"]').waitFor();
   await fichaInscripcion.getByRole('button', { name: 'Registrar asistencia', exact: true }).click();
-  await fichaInscripcion.getByText(`${folioInscripcion} · asistio`, { exact: true }).waitFor();
-  for (const ancho of [1440, 390]) {
+  await fichaInscripcion
+    .getByLabel('Motivo', { exact: true })
+    .fill('Asistencia verificada en la sede');
+  await fichaInscripcion.getByRole('button', { name: 'Confirmar asistencia', exact: true }).click();
+  await fichaInscripcion.locator('[data-estado="asistio"]').waitFor();
+  for (const ancho of [1440, 1024, 768, 390, 320]) {
     await panel.setViewportSize({ width: ancho, height: 1000 });
     assert.equal(
       await panel.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,
     );
-    await axe(panel, `Solicitudes y participantes ${ancho}px`);
-    await solicitudesPanel.scrollIntoViewIfNeeded();
-    await solicitudesPanel.screenshot({ path: join(artefactos, `solicitudes-panel-${ancho}.png`) });
+    if (ancho === 1440 || ancho === 390) await axe(panel, `Bandeja de participantes ${ancho}px`);
+    await panel.screenshot({ path: join(artefactos, `participantes-panel-${ancho}.png`) });
   }
+  await panel.setViewportSize({ width: 390, height: 900 });
+  await solicitudesPanel.getByRole('button', { name: /María López de la Cruz/ }).click();
+  await fichaInscripcion.getByRole('heading', { name: 'Datos del participante' }).waitFor();
+  await axe(panel, 'Detalle de participante móvil');
+  await panel.screenshot({ path: join(artefactos, 'asistentes-movil.png') });
+  await fichaInscripcion.getByRole('button', { name: 'Volver a la lista' }).click();
+  await solicitudesPanel.getByRole('button', { name: /María López de la Cruz/ }).waitFor();
   await inscrito.getByRole('button', { name: 'Actualizar inscripción', exact: true }).click();
   await miInscripcion.getByText('Asistencia verificada en la sede', { exact: true }).waitFor();
-  await solicitudesPanel.getByRole('button', { name: /^Servicio social \(/ }).click();
-  await solicitudesPanel.getByText('Interés de servicio social', { exact: true }).waitFor();
-  await solicitudesPanel.getByRole('button', { name: 'Cerrar solicitudes', exact: true }).click();
   await contextoInscrito.close();
   reporte.flujo.push(
-    'Panel reúne talleres, inscritos y servicio social; registra asistencia y el participante ve el motivo en su historial',
+    'Participantes tiene su propia bandeja, conserva acciones e historial y funciona en móvil',
   );
   await almacen.cambiar((s) => {
     s.avisoTalleres = null;

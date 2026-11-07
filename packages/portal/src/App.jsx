@@ -12,6 +12,8 @@ import { ContenidoPortal, useContenidoPortal } from './contextoContenido.jsx';
 import { Decoraciones, Etiqueta, Flecha, Imagen, Marca, Separador } from './componentes.jsx';
 import { useGaleriaAnimada, useInteraccionesPortal, useTransicionFicha } from './animaciones.js';
 import { SelectorSuave } from './SelectorSuave.jsx';
+import { enlaceConsulta, guardarConsulta } from './consultasGuardadas.js';
+import { mensajeSolicitud } from './mensajesSolicitud.js';
 
 function SeccionSinEntradas({ id, titulo }) {
   return (
@@ -693,6 +695,15 @@ function InteresServicioSocial({ programaSeleccionado, seleccionarPrograma }) {
   const [estado, cambiarEstado] = useState('');
   const [ocupado, cambiarOcupado] = useState(false);
   const [error, cambiarError] = useState(false);
+  const [recibo, cambiarRecibo] = useState(null);
+  const confirmacion = useRef(null);
+  const bloqueo = useRef(false);
+  useEffect(() => {
+    cambiarRecibo(null);
+  }, [programaSeleccionado]);
+  useEffect(() => {
+    if (recibo) confirmacion.current?.focus();
+  }, [recibo]);
   if (!avisoInteres)
     return (
       <p id="interes-servicio-social" tabIndex={-1} className="interes-consulta">
@@ -707,80 +718,119 @@ function InteresServicioSocial({ programaSeleccionado, seleccionarPrograma }) {
       aria-labelledby="titulo-interes"
     >
       <h3 id="titulo-interes">Cuéntanos qué programa te interesa</h3>
-      <form
-        method="post"
-        action="/api/v1/publico/intereses"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const formulario = e.currentTarget;
-          const valores = Object.fromEntries(new FormData(formulario));
-          cambiarOcupado(true);
-          cambiarError(false);
-          cambiarEstado('');
-          try {
-            const respuesta = await fetch(
-              `/api/v1/publico/programas/${encodeURIComponent(valores.programa)}/intereses`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  ...valores,
-                  aceptoAviso: valores.aceptoAviso === 'on',
-                  versionAviso: avisoInteres.version,
-                }),
-              },
-            );
-            const datos = await respuesta.json();
-            if (!respuesta.ok) throw new Error(datos.mensaje);
-            cambiarEstado('Recibimos tu interés. El módulo podrá contactarte con más información.');
-            formulario.reset();
-          } catch (err) {
-            cambiarError(true);
-            cambiarEstado(
-              err.message || 'No se pudo enviar. Inténtalo de nuevo o escribe al módulo.',
-            );
-          } finally {
-            cambiarOcupado(false);
-          }
-        }}
-      >
-        <input type="hidden" name="versionAviso" value={avisoInteres.version} />
-        <div className="interes-campo">
-          <label htmlFor="programa-interes">Programa</label>
-          <SelectorSuave
-            id="programa-interes"
-            nombre="programa"
-            valor={programaSeleccionado}
-            alCambiar={seleccionarPrograma}
-            requerido
-            opciones={programas.map((p) => ({ value: p.id, label: p.nombre }))}
-          />
+      {recibo ? (
+        <div className="consulta-recibo" role="status" tabIndex={-1} ref={confirmacion}>
+          <h4>Recibimos tu solicitud de servicio social</h4>
+          <p>
+            Tu folio es <strong>{recibo.folio}</strong>. Podrás leer la respuesta del Módulo y
+            continuar la conversación aquí.
+          </p>
+          <p>
+            {recibo.guardado
+              ? 'El acceso quedó guardado en «Mis solicitudes de servicio social» en este navegador.'
+              : 'El navegador no pudo guardar el acceso. Conserva el enlace privado.'}
+          </p>
+          <p>
+            {recibo.correo === 'enviado'
+              ? 'Enviamos una copia a tu correo con un botón para consultar el estado.'
+              : recibo.correo === 'fallido'
+                ? 'Tu solicitud quedó registrada, pero no pudimos enviar la copia por correo.'
+                : 'La copia por correo todavía no está disponible.'}
+          </p>
+          <a href={recibo.enlace}>Consultar mi solicitud de servicio social</a>
+          {!recibo.guardado && (
+            <label>
+              Enlace privado
+              <input readOnly value={recibo.enlace} onFocus={(e) => e.currentTarget.select()} />
+            </label>
+          )}
         </div>
-        <label>
-          Nombre
-          <input name="nombre" autoComplete="name" required maxLength={160} />
-        </label>
-        <label>
-          Correo
-          <input name="correo" type="email" autoComplete="email" required maxLength={160} />
-        </label>
-        <label>
-          Mensaje (opcional)
-          <textarea name="mensaje" maxLength={1000} rows={3} />
-        </label>
-        <label className="interes-aceptacion">
-          <input type="checkbox" name="aceptoAviso" required />
-          Leí y acepto el{' '}
-          <a href={avisoInteres.url} target="_blank" rel="noreferrer">
-            aviso de privacidad
-          </a>
-          .
-        </label>
-        <button className="boton" disabled={ocupado}>
-          {ocupado ? 'Enviando…' : 'Enviar interés'}
-        </button>
-        <p role={error ? 'alert' : 'status'}>{estado}</p>
-      </form>
+      ) : (
+        <form
+          method="post"
+          action="/api/v1/publico/intereses"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (bloqueo.current) return;
+            bloqueo.current = true;
+            const formulario = e.currentTarget;
+            const valores = Object.fromEntries(new FormData(formulario));
+            cambiarOcupado(true);
+            cambiarError(false);
+            cambiarEstado('');
+            try {
+              const respuesta = await fetch(
+                `/api/v1/publico/programas/${encodeURIComponent(valores.programa)}/intereses`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...valores,
+                    aceptoAviso: valores.aceptoAviso === 'on',
+                    versionAviso: avisoInteres.version,
+                  }),
+                },
+              );
+              const datos = await respuesta.json();
+              if (!respuesta.ok) throw new Error(datos.mensaje);
+              const programa = programas.find((p) => p.id === valores.programa);
+              const guardado = guardarConsulta({
+                ...datos,
+                tallerNombre: programa?.nombre ?? 'Servicio social',
+              });
+              cambiarRecibo({
+                ...datos,
+                guardado,
+                enlace: `${location.origin}${enlaceConsulta(datos)}`,
+              });
+              formulario.reset();
+            } catch (err) {
+              cambiarError(true);
+              cambiarEstado(mensajeSolicitud(err));
+            } finally {
+              bloqueo.current = false;
+              cambiarOcupado(false);
+            }
+          }}
+        >
+          <input type="hidden" name="versionAviso" value={avisoInteres.version} />
+          <div className="interes-campo">
+            <label htmlFor="programa-interes">Programa</label>
+            <SelectorSuave
+              id="programa-interes"
+              nombre="programa"
+              valor={programaSeleccionado}
+              alCambiar={seleccionarPrograma}
+              requerido
+              opciones={programas.map((p) => ({ value: p.id, label: p.nombre }))}
+            />
+          </div>
+          <label>
+            Nombre
+            <input name="nombre" autoComplete="name" required maxLength={160} />
+          </label>
+          <label>
+            Correo
+            <input name="correo" type="email" autoComplete="email" required maxLength={160} />
+          </label>
+          <label>
+            Mensaje (opcional)
+            <textarea name="mensaje" maxLength={1000} rows={3} />
+          </label>
+          <label className="interes-aceptacion">
+            <input type="checkbox" name="aceptoAviso" required />
+            Leí y acepto el{' '}
+            <a href={avisoInteres.url} target="_blank" rel="noreferrer">
+              aviso de privacidad
+            </a>
+            .
+          </label>
+          <button className="boton" disabled={ocupado}>
+            {ocupado ? 'Enviando…' : 'Enviar interés'}
+          </button>
+          <p role={error ? 'alert' : 'status'}>{estado}</p>
+        </form>
+      )}
     </section>
   );
 }
@@ -838,6 +888,7 @@ function ServicioSocial() {
           programaSeleccionado={programaSeleccionado}
           seleccionarPrograma={seleccionarPrograma}
         />
+        <MisConsultasTaller tipo="SS" />
       </div>
     </section>
   );
@@ -1072,6 +1123,7 @@ function PaginaPortal() {
       <Encabezado />
       <main id="contenido-principal" tabIndex={-1} ref={contenido}>
         <SeguimientoConsultaTaller />
+        <SeguimientoConsultaTaller tipo="SS" />
         <SeguimientoInscripcion />
         <Inicio />
         <Separador

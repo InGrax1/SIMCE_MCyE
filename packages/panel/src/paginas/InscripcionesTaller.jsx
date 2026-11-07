@@ -19,28 +19,9 @@ const local = (iso) =>
 const utc = (valor) => new Date(`${valor}:00-06:00`).toISOString();
 
 export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) {
-  const [lista, cambiarLista] = useState(null);
   const [motivo, cambiarMotivo] = useState('');
-  const [consentimiento, cambiarConsentimiento] = useState(false);
   const configuracion = entrada.inscripcion;
   const terminado = configuracion && configuracion.estado !== 'programado';
-  async function cargar() {
-    cambiarLista(await consultarApi(`/talleres/${entrada.id}/inscripciones`));
-  }
-  async function accion(inscripcion, accion) {
-    await consultarApi(`/inscripciones/${inscripcion.id}/acciones`, {
-      metodo: 'POST',
-      datos: {
-        accion,
-        version: inscripcion.version,
-        motivo,
-        aceptoAviso: consentimiento,
-        versionAviso: lista.aviso?.version,
-      },
-    });
-    await cargar();
-    cambiarConsentimiento(false);
-  }
   async function descargar(formato) {
     const archivo = await consultarApi(`/talleres/${entrada.id}/inscripciones?formato=${formato}`);
     const url = URL.createObjectURL(archivo);
@@ -136,14 +117,6 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
         </p>
       )}
       <div className="cms-acciones">
-        <button
-          type="button"
-          className="secundario"
-          disabled={ocupado}
-          onClick={() => ejecutar(cargar)}
-        >
-          Consultar asistentes
-        </button>
         {['csv', 'pdf'].map((formato) => (
           <button
             type="button"
@@ -157,7 +130,7 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
         ))}
       </div>
       <label>
-        Motivo de la acción sobre taller o inscripción
+        Motivo de la acción del taller
         <input value={motivo} onChange={(e) => cambiarMotivo(e.target.value)} maxLength={500} />
       </label>
       {configuracion && !terminado && (
@@ -189,107 +162,6 @@ export function InscripcionesTaller({ entrada, ejecutar, ocupado, actualizar }) 
           ))}
         </div>
       )}
-      {lista && (
-        <>
-          <p role="status">
-            {lista.inscripciones.length} registros ·{' '}
-            {lista.inscripciones.filter((i) => ['confirmada', 'asistio'].includes(i.estado)).length}{' '}
-            plazas ocupadas.
-          </p>
-          {lista.aviso && (
-            <label className="cms-check">
-              <input
-                type="checkbox"
-                checked={consentimiento}
-                onChange={(e) => cambiarConsentimiento(e.target.checked)}
-              />
-              <span>
-                Confirmo que el participante aceptó el{' '}
-                <a href={lista.aviso.url} target="_blank" rel="noreferrer">
-                  aviso vigente
-                </a>{' '}
-                ({lista.aviso.version}) para reactivar su inscripción.
-              </span>
-            </label>
-          )}
-          <ul className="cms-asistentes">
-            {lista.inscripciones.map((i) => (
-              <li key={i.id}>
-                <FichaParticipante
-                  i={i}
-                  ejecutar={ejecutar}
-                  ocupado={ocupado}
-                  motivo={motivo}
-                  consentimiento={consentimiento}
-                  terminado={terminado}
-                  accion={accion}
-                />
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </section>
-  );
-}
-
-export function FichaParticipante({
-  i,
-  ejecutar,
-  ocupado,
-  motivo,
-  consentimiento,
-  terminado,
-  accion,
-}) {
-  return (
-    <>
-      <h4>{i.nombre}</h4>
-      <p>
-        {i.folio} · {i.estado}
-      </p>
-      <p>
-        {i.correo} · {i.telefono}
-      </p>
-      <p>
-        {i.procedencia}
-        {i.licenciatura && ` · ${i.licenciatura} · ${i.numeroCuenta}`}
-      </p>
-      <div className="cms-acciones">
-        {i.estado === 'confirmada' &&
-          ['asistencia', 'cancelar'].map((a) => (
-            <button
-              type="button"
-              className="secundario"
-              key={a}
-              disabled={ocupado || !motivo.trim()}
-              onClick={() => ejecutar(() => accion(i, a))}
-            >
-              {a === 'asistencia' ? 'Registrar asistencia' : 'Cancelar inscripción'}
-            </button>
-          ))}
-        {i.estado === 'cancelada' && !terminado && (
-          <button
-            type="button"
-            className="secundario"
-            disabled={ocupado || !consentimiento || !motivo.trim()}
-            onClick={() => ejecutar(() => accion(i, 'reactivar'))}
-          >
-            Reactivar inscripción
-          </button>
-        )}
-      </div>
-      <details>
-        <summary>Historial de inscripción</summary>
-        <ul>
-          {i.historial.map((h, indice) => (
-            <li key={indice}>
-              {h.momento} · {h.accion}
-              {h.motivo && ` · ${h.motivo}`}
-            </li>
-          ))}
-        </ul>
-      </details>
-    </>
   );
 }

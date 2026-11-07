@@ -236,6 +236,7 @@ export function crearEstadoInicial() {
     inscripciones: [],
     consultasTalleres: [],
     consecutivoConsultaTaller: 0,
+    consecutivoInteres: 0,
     consecutivoInscripcion: 0,
     sesiones: [],
     entradas,
@@ -252,6 +253,27 @@ export function actualizarEstado(estado) {
   estado.inscripciones ??= [];
   estado.consultasTalleres ??= [];
   estado.avisosTalleres ??= [];
+  estado.intereses ??= [];
+  estado.consecutivoInteres = estado.intereses.reduce(
+    (maximo, s) => Math.max(maximo, Number(/^SS-\d{4}-(\d{8})$/.exec(s.folio ?? '')?.[1] ?? 0)),
+    estado.consecutivoInteres ?? 0,
+  );
+  for (const solicitud of estado.intereses) {
+    if (!solicitud.folio) {
+      estado.consecutivoInteres++;
+      const anio = new Date(solicitud.momento ?? '').getUTCFullYear();
+      solicitud.folio = `SS-${Number.isInteger(anio) ? anio : new Date().getUTCFullYear()}-${String(estado.consecutivoInteres).padStart(8, '0')}`;
+    }
+    solicitud.creadoEn ??= solicitud.momento ?? null;
+    solicitud.programaNombre ??=
+      estado.entradas.find((e) => e.id === solicitud.programaId)?.publicado?.nombre ??
+      'Programa de servicio social';
+    solicitud.estado ??= 'pendiente';
+    solicitud.version ??= 1;
+    solicitud.respuestas ??= [];
+    solicitud.seguimientos ??= [];
+    solicitud.historial ??= [];
+  }
   if ((estado.versionEsquema ?? 1) < 2) {
     for (const entrada of estado.entradas.filter(
       (e) => e.tipo === 'galeria' && e.validacion === 'referencia',

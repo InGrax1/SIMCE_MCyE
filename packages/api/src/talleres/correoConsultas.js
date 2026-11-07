@@ -21,28 +21,36 @@ export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, pro
 
   return async ({ folio, acceso }) => {
     const inscripcion = folio.startsWith('INS-');
-    const coleccion = inscripcion ? 'inscripciones' : 'consultasTalleres';
+    const social = folio.startsWith('SS-');
+    const coleccion = inscripcion ? 'inscripciones' : social ? 'intereses' : 'consultasTalleres';
     const consulta = (await almacen.leer())[coleccion].find((c) => c.folio === folio);
-    const titulo = inscripcion ? 'Inscripción confirmada' : 'Recibimos tu consulta';
+    const titulo = inscripcion
+      ? 'Inscripción confirmada'
+      : social
+        ? 'Recibimos tu solicitud de servicio social'
+        : 'Recibimos tu consulta';
+    const actividad = `${social ? 'Programa' : 'Taller'}: ${consulta.programaNombre ?? consulta.tallerNombre}`;
     const detalleTexto = inscripcion
       ? 'Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.'
-      : `Tu pregunta:\n${consulta.mensaje}`;
+      : `Tu pregunta:\n${consulta.mensaje || 'Solicito información sobre este programa.'}`;
     const detalleHtml = inscripcion
       ? '<p>Tu inscripción está confirmada. Dentro del sitio puedes revisar tus datos, cancelar o reactivar cuando haya cupo y consultar tu historial y asistencia.</p>'
-      : `<h2>Tu pregunta</h2><p style="white-space:pre-wrap">${escapar(consulta.mensaje)}</p>`;
+      : `<h2>Tu pregunta</h2><p style="white-space:pre-wrap">${escapar(consulta.mensaje || 'Solicito información sobre este programa.')}</p>`;
     const nota = inscripcion
       ? 'La asistencia la registra el personal del Módulo.'
-      : 'Enviar una consulta no reserva una plaza del taller.';
+      : social
+        ? 'La solicitud no constituye admisión al programa de servicio social.'
+        : 'Enviar una consulta no reserva una plaza del taller.';
     const url = new URL('/', origen);
-    url.hash = `${inscripcion ? 'inscripcion-taller' : 'consulta-taller'}=${encodeURIComponent(folio)}&acceso=${encodeURIComponent(acceso)}`;
+    url.hash = `${inscripcion ? 'inscripcion-taller' : social ? 'servicio-social' : 'consulta-taller'}=${encodeURIComponent(folio)}&acceso=${encodeURIComponent(acceso)}`;
     let estado = 'no_disponible';
     if (enviarCorreo) {
       try {
         const resultado = await enviarCorreo({
           para: consulta.correo,
           asunto: `${titulo} ${folio} · SIMCE`,
-          texto: `Hola, ${consulta.nombre}.\n\n${titulo}\nTaller: ${consulta.tallerNombre}\nFolio: ${folio}\n\n${detalleTexto}\n\nConsulta tu estado:\n${url.href}\n\nEste enlace es personal. Puedes usarlo si cambias de equipo o borras los datos del navegador. ${nota}`,
-          html: `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tu solicitud en SIMCE</title></head><body style="font-family:Arial,sans-serif;color:#241d1d;line-height:1.6"><h1>${titulo}</h1><p>Hola, ${escapar(consulta.nombre)}.</p><p>Taller: <strong>${escapar(consulta.tallerNombre)}</strong><br>Folio: <strong>${escapar(folio)}</strong></p>${detalleHtml}<p><a href="${escapar(url.href)}" style="display:inline-block;background:#640e0e;color:#fff;padding:14px 22px;border-radius:6px;text-decoration:none">Consulta tu estado</a></p><p>El estado y seguimiento estarán disponibles dentro del sitio. Este enlace es personal y permite recuperar el acceso si cambias de equipo o borras los datos del navegador.</p><p>Si el botón no funciona, abre este enlace:<br><a href="${escapar(url.href)}">${escapar(url.href)}</a></p><p>${nota}</p><p>SIMCE · Módulo de Carnes y Embutidos · FES Cuautitlán · UNAM</p></body></html>`,
+          texto: `Hola, ${consulta.nombre}.\n\n${titulo}\n${actividad}\nFolio: ${folio}\n\n${detalleTexto}\n\nConsulta tu estado:\n${url.href}\n\nEste enlace es personal. Puedes usarlo si cambias de equipo o borras los datos del navegador. ${nota}`,
+          html: `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tu solicitud en SIMCE</title></head><body style="font-family:Arial,sans-serif;color:#241d1d;line-height:1.6"><h1>${titulo}</h1><p>Hola, ${escapar(consulta.nombre)}.</p><p><strong>${escapar(actividad)}</strong><br>Folio: <strong>${escapar(folio)}</strong></p>${detalleHtml}<p><a href="${escapar(url.href)}" style="display:inline-block;background:#640e0e;color:#fff;padding:14px 22px;border-radius:6px;text-decoration:none">Consulta tu estado</a></p><p>El estado y seguimiento estarán disponibles dentro del sitio. Este enlace es personal y permite recuperar el acceso si cambias de equipo o borras los datos del navegador.</p><p>Si el botón no funciona, abre este enlace:<br><a href="${escapar(url.href)}">${escapar(url.href)}</a></p><p>${nota}</p><p>SIMCE · Módulo de Carnes y Embutidos · FES Cuautitlán · UNAM</p></body></html>`,
         });
         estado = resultado?.modo === 'archivo' ? 'archivo' : 'enviado';
       } catch {
@@ -55,7 +63,7 @@ export function crearCorreoConsultas({ almacen, enviarCorreo, origenPublico, pro
       auditar(
         s,
         { id: 'sistema' },
-        `${inscripcion ? 'CORREO_INSCRIPCION' : 'CORREO_CONSULTA'}_${estado.toUpperCase()}`,
+        `${inscripcion ? 'CORREO_INSCRIPCION' : social ? 'CORREO_SERVICIO_SOCIAL' : 'CORREO_CONSULTA'}_${estado.toUpperCase()}`,
         registro.id,
       );
     });
