@@ -11,6 +11,7 @@ import { configurarAvisoTalleres } from '../talleres/aviso.js';
 import { validarAvisoConfigurado } from './avisoPrivacidad.js';
 import { avisosPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
 import { crearCorreoConsultas } from '../talleres/correoConsultas.js';
+import { crearAlmacenCatalogo } from '../catalogo/almacen.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
@@ -83,6 +84,7 @@ export async function configurarCms() {
     carpetaMedios,
     recuperacion,
     enviarReciboConsulta,
+    catalogo: crearAlmacenCatalogo(almacen, db),
   });
   return {
     almacen,

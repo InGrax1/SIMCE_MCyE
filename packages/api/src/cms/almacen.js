@@ -56,7 +56,7 @@ export class AlmacenCmsMysql {
       const estado = actualizarEstado(
         typeof fila.documento === 'string' ? JSON.parse(fila.documento) : fila.documento,
       );
-      const resultado = await funcion(estado);
+      const resultado = await funcion(estado, trx);
       await trx('cms_estado')
         .where({ id: 1 })
         .update({ documento: JSON.stringify(estado), actualizado_en: trx.fn.now() });

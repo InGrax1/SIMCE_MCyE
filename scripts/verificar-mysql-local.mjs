@@ -143,6 +143,7 @@ try {
       'run',
       'test/mysql.test.js',
       'test/cmsMysql.test.js',
+      'test/catalogo.test.js',
       '--no-file-parallelism',
     ],
     resolve(raiz, 'packages/api'),

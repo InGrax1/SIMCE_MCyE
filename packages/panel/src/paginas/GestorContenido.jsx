@@ -4,6 +4,7 @@ import { Prototipo } from './Prototipo.jsx';
 import { InscripcionesTaller, OperacionTaller } from './InscripcionesTaller.jsx';
 import { SolicitudesPanel } from './SolicitudesPanel.jsx';
 import { PanelMarco } from './PanelMarco.jsx';
+import { CatalogoOperativo } from './CatalogoOperativo.jsx';
 import { fechaPanel } from './DetalleAtencion.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
@@ -641,10 +642,16 @@ export function GestorContenido() {
     >
       {estado}
       {vistaActual === 'operacion' ? (
-        <p>
-          Tu cuenta tiene acceso a la operación.{' '}
-          <a href="/panel/prototipo">Abrir prototipo operativo</a>
-        </p>
+        <>
+          <CatalogoOperativo
+            administra={publica}
+            avisar={cambiarMensaje}
+            {...{ ejecutar, ocupado }}
+          />
+          <p>
+            <a href="/panel/prototipo">Abrir prototipo operativo</a>
+          </p>
+        </>
       ) : ['solicitudes', 'participantes'].includes(vistaActual) ? (
         <SolicitudesPanel
           key={vistaActual}

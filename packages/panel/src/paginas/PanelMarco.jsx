@@ -4,7 +4,7 @@ const vistas = {
   talleres: ['Talleres', 'Edita las convocatorias y configura fechas, sede y cupo.'],
   contenido: ['Contenido', 'Edita, revisa y publica la información del portal.'],
   bitacora: ['Bitácora', 'Consulta los últimos movimientos del panel.'],
-  operacion: ['Operación', 'Accede a las herramientas de operación del Módulo.'],
+  operacion: ['Operación', 'Consulta el catálogo operativo de productos y precios del Módulo.'],
 };
 const roles = {
   admin: 'Administrador',
@@ -32,6 +32,7 @@ const iconos = {
     </>
   ),
   contenido: <path d="M6 3h8l4 4v14H6zM14 3v5h4M9 13h6m-6 4h6" />,
+  operacion: <path d="m3 8 9-5 9 5v8l-9 5-9-5zm0 0 9 5 9-5m-9 5v8M7.5 5.5l9 5" />,
   bitacora: (
     <>
       <circle cx="12" cy="12" r="9" />
@@ -42,10 +43,10 @@ const iconos = {
 
 export function PanelMarco({ usuario, vista, navegar, ocupado, cerrarSesion, children }) {
   const secciones = ['responsable', 'admin'].includes(usuario.rol)
-    ? ['solicitudes', 'participantes', 'talleres', 'contenido', 'bitacora']
+    ? ['solicitudes', 'participantes', 'talleres', 'contenido', 'operacion', 'bitacora']
     : usuario.rol === 'editor'
       ? ['talleres', 'contenido']
-      : [];
+      : ['operacion'];
   return (
     <div className="cms cms-shell">
       <aside className="cms-menu">
