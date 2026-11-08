@@ -5,9 +5,10 @@ Estas reglas se aplican a toda modificación de este repositorio.
 ## Flujo de Git
 
 - Nunca trabajar ni crear commits directamente en `main` o `master`.
-- Crear una rama breve y descriptiva por tarea, con prefijos como `feature/`, `bugfix/`, `refactor/` o `docs/`.
+- Crear una rama breve y descriptiva desde el inicio de cada fase, funcionalidad importante o tarea, con prefijos como `feature/`, `bugfix/`, `refactor/` o `docs/`.
+- Durante una fase, abrir las ramas de funcionalidad y de tarea a partir de la rama de la fase e integrar en ella los cambios probados.
 - Sincronizar la rama principal con `git pull --ff-only` antes de iniciar trabajo y antes de integrar o subir cambios.
-- Integrar la rama cuando la tarea esté terminada, probada y estable.
+- Integrar en la rama principal cuando el alcance completo esté terminado, probado y estable y el usuario indique la integración.
 - No usar `git push --force` ni reescribir el historial de ramas compartidas.
 
 ## Commits
