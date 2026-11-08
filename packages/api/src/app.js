@@ -49,13 +49,15 @@ export function crearAplicacion({
       siguiente(error);
     }
   });
-  if (cms)
-    app.use(
-      '/api/v1/sync',
-      cms.auth.identificar,
-      cms.auth.permitir(['operador', 'responsable', 'admin']),
-    );
-  app.use('/api/v1/sync', crearRutasSincronizacion(sincronizacion));
+  if (!cms || process.env.NODE_ENV !== 'production') {
+    if (cms)
+      app.use(
+        '/api/v1/sync',
+        cms.auth.identificar,
+        cms.auth.permitir(['operador', 'responsable', 'admin']),
+      );
+    app.use('/api/v1/sync', crearRutasSincronizacion(sincronizacion));
+  }
 
   app.use((error, _solicitud, respuesta, _siguiente) => {
     if (error instanceof ErrorDominio)
