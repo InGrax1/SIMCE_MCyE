@@ -6,6 +6,12 @@ export function crearBaseDatosLocal(nombre = 'simce-fase-cero') {
     remisiones: 'remisionUuid, estado, fechaCreacion',
     operaciones: 'operacionUuid, estadoCola, agregadoId, fechaCreacion',
   });
+  baseDatos.version(2).stores({
+    dispositivo: 'id',
+    replica: 'usuarioId',
+    colaOperativa: '[usuarioId+operacionUuid], usuarioId, [usuarioId+estado]',
+    pdfOperativos: '[usuarioId+uuid], usuarioId',
+  });
   return baseDatos;
 }
 

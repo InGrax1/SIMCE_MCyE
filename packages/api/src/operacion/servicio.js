@@ -18,6 +18,24 @@ const huella = (valor) => createHash('sha256').update(serializarEstable(valor)).
 const permisos = () =>
   new ErrorApi(403, 'SIN_PERMISO', 'Tu cuenta no tiene permiso para realizar esta acción.');
 const errorPublico = (e) => ({ codigo: e.codigo, mensaje: e.message, detalles: e.detalles });
+const borrador = ['CREAR_REMISION', 'EDITAR_REMISION', 'AGREGAR_RENGLON', 'QUITAR_RENGLON'];
+
+function cambiosReplica(comando, cambios) {
+  if (!['AGREGAR_RENGLON', 'QUITAR_RENGLON'].includes(comando.tipo)) return cambios;
+  const {
+    tipo,
+    registro: { renglones, ...registro },
+  } = cambios[0];
+  return [
+    {
+      tipo,
+      registro,
+      ...(comando.tipo === 'AGREGAR_RENGLON'
+        ? { agregarRenglon: renglones.at(-1) }
+        : { quitarRenglon: comando.payload.renglonUuid }),
+    },
+  ];
+}
 
 export function crearServicioOperacion(
   almacen,
@@ -52,7 +70,9 @@ export function crearServicioOperacion(
         return { ...anterior.resultado, repetida: true };
       }
       const momento = reloj();
-      const registros = await tx.registros();
+      const registros = await tx.registros(
+        borrador.includes(comando.tipo) ? { tipo: 'remisiones', uuid: agregadoId } : undefined,
+      );
       const base = { operacionUuid, agregadoId, momento };
       let cambios;
       let resultado;
@@ -82,7 +102,7 @@ export function crearServicioOperacion(
           comando,
           { usuario: actual, momento, perfil },
         );
-        resultado = { ...base, estado: 'APLICADA', cambios };
+        resultado = { ...base, estado: 'APLICADA', cambios: cambiosReplica(comando, cambios) };
       } catch (error) {
         if (!(error instanceof ErrorDominio)) throw error;
         resultado = {
@@ -98,7 +118,7 @@ export function crearServicioOperacion(
       }
       if (cambios) {
         if (comando.tipo === 'CERRAR_REMISION') await emitirDocumentos(tx, cambios, momento);
-        await tx.guardarCambios(cambios);
+        await tx.guardarCambios(cambios, resultado.cambios);
       }
       await tx.guardarRecibo(
         operacionUuid,
@@ -122,6 +142,12 @@ export function crearServicioOperacion(
     descargar(cursor, revisionCatalogo) {
       return almacen.leer(async (tx) => {
         const eventos = await tx.pagina(cursor, 101);
+        if (cursor && !eventos.length && cursor > (await tx.cursorActual()))
+          throw new ErrorApi(
+            409,
+            'CURSOR_REQUIERE_REINICIO',
+            'La copia del servidor cambió. Reconstruye la réplica local conservando la cola.',
+          );
         const mas = eventos.length > 100;
         const pagina = eventos.slice(0, 100);
         const catalogo = await tx.catalogo();

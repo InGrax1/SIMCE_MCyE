@@ -28,11 +28,16 @@ function sesionDatos(estado, trx, catalogo) {
         ),
       };
     },
-    async registros() {
-      if (!trx) return local.registros;
+    async registros(filtro) {
+      if (!trx && !filtro) return local.registros;
       const salida = registrosVacios();
-      for (const fila of await trx('operacion_registros').select('tipo', 'documento'))
-        salida[fila.tipo].push(json(fila.documento));
+      if (!trx) {
+        salida[filtro.tipo] = local.registros[filtro.tipo].filter((r) => r.uuid === filtro.uuid);
+        return salida;
+      }
+      const consulta = trx('operacion_registros').select('tipo', 'documento');
+      if (filtro) consulta.where(filtro);
+      for (const fila of await consulta) salida[fila.tipo].push(json(fila.documento));
       return salida;
     },
     async recibo(uuid) {
@@ -58,10 +63,10 @@ function sesionDatos(estado, trx, catalogo) {
           documento: JSON.stringify(conflicto),
         });
     },
-    async guardarCambios(cambios) {
+    async guardarCambios(cambios, eventos) {
       if (!trx) {
         aplicarCambiosOperativos(local.registros, cambios);
-        local.eventos.push({ cursor: local.eventos.length + 1, cambios });
+        local.eventos.push({ cursor: local.eventos.length + 1, cambios: eventos });
         return;
       }
       for (const { tipo, registro } of cambios) {
@@ -73,7 +78,7 @@ function sesionDatos(estado, trx, catalogo) {
         const actualizado = await trx('operacion_registros').where(llave).update(datos);
         if (!actualizado) await trx('operacion_registros').insert({ ...llave, ...datos });
       }
-      await trx('operacion_eventos').insert({ cambios: JSON.stringify(cambios) });
+      await trx('operacion_eventos').insert({ cambios: JSON.stringify(eventos) });
     },
     async pagina(cursor, limite) {
       if (!trx) return local.eventos.slice(cursor, cursor + limite);
@@ -82,6 +87,12 @@ function sesionDatos(estado, trx, catalogo) {
         .orderBy('cursor')
         .limit(limite);
       return filas.map((fila) => ({ cursor: Number(fila.cursor), cambios: json(fila.cambios) }));
+    },
+    async cursorActual() {
+      if (!trx) return local.eventos.length;
+      return Number(
+        (await trx('operacion_eventos').max({ cursor: 'cursor' }).first())?.cursor ?? 0,
+      );
     },
     async conflictos(autorUuid) {
       if (!trx)

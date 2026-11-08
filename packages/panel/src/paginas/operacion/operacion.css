@@ -1,0 +1,65 @@
+.operacion {
+  overflow-wrap: anywhere;
+}
+.operacion-barra {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+}
+.operacion-barra small {
+  display: block;
+  margin-top: 4px;
+}
+.operacion-campos {
+  display: grid;
+  gap: 0 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+}
+.operacion-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 8px;
+}
+.operacion-lista {
+  list-style: none;
+  padding: 0;
+}
+.operacion-lista > li {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  border-top: 1px solid #e3dcd8;
+  padding: 10px 0;
+}
+.operacion-lista > li > button.cms-bandeja-fila {
+  width: 100%;
+}
+.operacion-video {
+  width: min(100%, 380px);
+  min-height: 120px;
+  border-radius: 8px;
+  background: #241d1d;
+}
+.operacion-datos {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 280px;
+  overflow: auto;
+  padding: 10px;
+  background: #faf7f5;
+}
+.operacion-aviso {
+  color: #5f3a00;
+  background: #fff0ce;
+  padding: 12px;
+  border-radius: 8px;
+}
+.cms .operacion button,
+.cms .operacion summary {
+  min-height: 44px;
+}
+.cms .operacion summary {
+  align-content: center;
+}

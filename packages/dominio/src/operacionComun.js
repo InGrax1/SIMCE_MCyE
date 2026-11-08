@@ -94,9 +94,23 @@ export function cambioOperativo(tipo, registro) {
 }
 
 export function aplicarCambiosOperativos(estado, cambios) {
-  for (const { tipo, registro } of cambios) {
+  for (const { tipo, registro, agregarRenglon, quitarRenglon } of cambios) {
     const lista = estado[tipo];
     const indice = lista.findIndex(({ uuid }) => uuid === registro.uuid);
+    if (agregarRenglon || quitarRenglon) {
+      const anterior = lista[indice];
+      if (anterior?.version >= registro.version) continue;
+      exigir(
+        anterior?.version === registro.version - 1,
+        'REPLICA_INCOMPLETA',
+        'Falta una versión de la remisión en la réplica.',
+      );
+      const renglones = agregarRenglon
+        ? [...anterior.renglones, agregarRenglon]
+        : anterior.renglones.filter((r) => r.uuid !== quitarRenglon);
+      lista[indice] = { ...registro, renglones };
+      continue;
+    }
     if (indice === -1) lista.push(registro);
     else if ((lista[indice].version ?? 1) <= (registro.version ?? 1)) lista[indice] = registro;
   }

@@ -4,7 +4,8 @@ import { Prototipo } from './Prototipo.jsx';
 import { InscripcionesTaller, OperacionTaller } from './InscripcionesTaller.jsx';
 import { SolicitudesPanel } from './SolicitudesPanel.jsx';
 import { PanelMarco } from './PanelMarco.jsx';
-import { CatalogoOperativo } from './CatalogoOperativo.jsx';
+import { OperacionesPanel } from './operacion/OperacionesPanel.jsx';
+import { operacionLocal } from '../local/operacion.js';
 import { fechaPanel } from './DetalleAtencion.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
@@ -325,6 +326,8 @@ export function GestorContenido() {
   function recibir(valor) {
     establecerSesion(valor?.token, recibir);
     cambiarSesion(valor);
+    if (valor?.local) cambiarVista('operacion');
+    if (valor && !valor.local) operacionLocal.actualizarAcceso(valor.usuario).catch(() => {});
     if (!valor) {
       editado.current = false;
       inscripcionEditada.current = false;
@@ -355,10 +358,31 @@ export function GestorContenido() {
   useEffect(() => {
     renovarSesion()
       .then(recibir)
-      .catch(() => cambiarSesion(null));
+      .catch(async (error) => {
+        if (error.codigo === 'SIN_CONEXION') {
+          const usuario = await operacionLocal.accesoLocal().catch(() => null);
+          if (usuario) return recibir({ usuario, local: true });
+        }
+        cambiarSesion(null);
+      });
   }, []);
   useEffect(() => {
-    if (!sesion) return;
+    if (!sesion?.local) return;
+    const reconectar = () =>
+      renovarSesion()
+        .then(recibir)
+        .catch(() => {});
+    window.addEventListener('online', reconectar);
+    const intervalo = setInterval(() => {
+      if (navigator.onLine) reconectar();
+    }, 30_000);
+    return () => {
+      window.removeEventListener('online', reconectar);
+      clearInterval(intervalo);
+    };
+  }, [sesion?.local]);
+  useEffect(() => {
+    if (!sesion || sesion.local) return;
     let actividad = Date.now();
     let comprobacion = Date.now();
     const actualizar = () => {
@@ -382,7 +406,7 @@ export function GestorContenido() {
       window.removeEventListener('keydown', actualizar);
       document.removeEventListener('scroll', actualizar);
     };
-  }, [sesion?.usuario?.id]);
+  }, [sesion?.usuario?.id, sesion?.local]);
   useEffect(() => {
     const avisar = (e) => {
       if (editado.current || inscripcionEditada.current) {
@@ -399,9 +423,9 @@ export function GestorContenido() {
     return valor;
   }
   useEffect(() => {
-    if (sesion && !sesion.usuario.debeCambiar && sesion.usuario.rol !== 'operador')
+    if (sesion && !sesion.local && !sesion.usuario.debeCambiar && sesion.usuario.rol !== 'operador')
       cargar().catch((e) => cambiarError(e.message));
-  }, [sesion?.usuario?.id, sesion?.usuario?.debeCambiar]);
+  }, [sesion?.usuario?.id, sesion?.usuario?.debeCambiar, sesion?.local]);
   async function ejecutar(accion) {
     if (bloqueo.current) return;
     bloqueo.current = true;
@@ -424,8 +448,12 @@ export function GestorContenido() {
         !window.confirm('¿Cerrar sesión y descartar los cambios sin guardar?')
       )
         return;
+      await operacionLocal.bloquear().catch((error) => {
+        if (sesion?.local) throw error;
+      });
       try {
-        await consultarApi('/auth/salir', { metodo: 'POST', reintentar: false });
+        if (!sesion?.local)
+          await consultarApi('/auth/salir', { metodo: 'POST', reintentar: false });
         cambiarMensaje('Inicia sesión para continuar.');
       } finally {
         recibir(null);
@@ -516,7 +544,7 @@ export function GestorContenido() {
     ['historial', 'Historial'],
   ];
   const vistaActual =
-    sesion?.usuario?.rol === 'operador'
+    sesion?.local || sesion?.usuario?.rol === 'operador'
       ? 'operacion'
       : publica
         ? (vista ?? 'solicitudes')
@@ -635,6 +663,7 @@ export function GestorContenido() {
   return (
     <PanelMarco
       usuario={sesion.usuario}
+      modoLocal={sesion.local}
       vista={vistaActual}
       navegar={navegar}
       ocupado={ocupado}
@@ -642,16 +671,14 @@ export function GestorContenido() {
     >
       {estado}
       {vistaActual === 'operacion' ? (
-        <>
-          <CatalogoOperativo
-            administra={publica}
-            avisar={cambiarMensaje}
-            {...{ ejecutar, ocupado }}
-          />
-          <p>
-            <a href="/panel/prototipo">Abrir prototipo operativo</a>
-          </p>
-        </>
+        <OperacionesPanel
+          key={sesion.usuario.id}
+          usuario={sesion.usuario}
+          modoLocal={sesion.local}
+          administra={publica}
+          avisar={cambiarMensaje}
+          {...{ ejecutar, ocupado }}
+        />
       ) : ['solicitudes', 'participantes'].includes(vistaActual) ? (
         <SolicitudesPanel
           key={vistaActual}

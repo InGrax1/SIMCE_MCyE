@@ -4,7 +4,7 @@ const vistas = {
   talleres: ['Talleres', 'Edita las convocatorias y configura fechas, sede y cupo.'],
   contenido: ['Contenido', 'Edita, revisa y publica la información del portal.'],
   bitacora: ['Bitácora', 'Consulta los últimos movimientos del panel.'],
-  operacion: ['Operación', 'Consulta el catálogo operativo de productos y precios del Módulo.'],
+  operacion: ['Operación', 'Registra producción y remisiones y consulta existencias del Módulo.'],
 };
 const roles = {
   admin: 'Administrador',
@@ -41,12 +41,22 @@ const iconos = {
   ),
 };
 
-export function PanelMarco({ usuario, vista, navegar, ocupado, cerrarSesion, children }) {
-  const secciones = ['responsable', 'admin'].includes(usuario.rol)
-    ? ['solicitudes', 'participantes', 'talleres', 'contenido', 'operacion', 'bitacora']
-    : usuario.rol === 'editor'
-      ? ['talleres', 'contenido']
-      : ['operacion'];
+export function PanelMarco({
+  usuario,
+  vista,
+  navegar,
+  ocupado,
+  cerrarSesion,
+  children,
+  modoLocal,
+}) {
+  const secciones = modoLocal
+    ? ['operacion']
+    : ['responsable', 'admin'].includes(usuario.rol)
+      ? ['solicitudes', 'participantes', 'talleres', 'contenido', 'operacion', 'bitacora']
+      : usuario.rol === 'editor'
+        ? ['talleres', 'contenido']
+        : ['operacion'];
   return (
     <div className="cms cms-shell">
       <aside className="cms-menu">

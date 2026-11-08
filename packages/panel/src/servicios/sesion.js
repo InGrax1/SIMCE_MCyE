@@ -5,7 +5,11 @@ async function conectar(url, opciones) {
   try {
     return await fetch(url, opciones);
   } catch {
-    throw new Error('No pudimos conectar con el sitio. Inténtalo de nuevo en unos momentos.');
+    const error = new Error(
+      'No pudimos conectar con el sitio. Inténtalo de nuevo en unos momentos.',
+    );
+    error.codigo = 'SIN_CONEXION';
+    throw error;
   }
 }
 export function establecerSesion(valor, notificar) {
