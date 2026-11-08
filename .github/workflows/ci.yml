@@ -71,6 +71,9 @@ jobs:
           path: artifacts/fase-2
           if-no-files-found: ignore
 
+      - name: Verifica operación sin conexión y reportes de Fase 3
+        run: npm run check:fase3
+
       - name: Revisa dependencias altas y críticas
         run: npm audit --audit-level=high
 
