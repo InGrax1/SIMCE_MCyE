@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { ErrorApi } from '../errores.js';
 
-function serializarEstable(valor) {
+export function serializarEstable(valor) {
   if (Array.isArray(valor)) {
     return `[${valor.map(serializarEstable).join(',')}]`;
   }

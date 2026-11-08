@@ -33,16 +33,18 @@ async function leerTablas(trx) {
 const catalogoVacio = () => Object.fromEntries(Object.keys(tablas).map((tipo) => [tipo, []]));
 
 export function crearAlmacenCatalogo(almacen, db) {
+  const leerEn = (estado, trx) =>
+    trx ? leerTablas(trx) : (estado.catalogoOperativo ?? catalogoVacio());
   return {
+    leerEn,
     async leer() {
       if (db) return db.transaction(leerTablas);
       return (await almacen.leer()).catalogoOperativo ?? catalogoVacio();
     },
     guardar(usuario, preparar) {
       return almacen.cambiar(async (estado, trx) => {
-        const catalogo = trx
-          ? await leerTablas(trx)
-          : (estado.catalogoOperativo ??= catalogoVacio());
+        const catalogo = await leerEn(estado, trx);
+        if (!trx) estado.catalogoOperativo = catalogo;
         const { tipo, fila, accion, anterior } = preparar(catalogo);
         if (trx) {
           const tabla = trx(tablas[tipo]);

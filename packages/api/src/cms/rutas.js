@@ -1,5 +1,6 @@
 import express from 'express';
 import { crearRutasCatalogo } from '../catalogo/rutas.js';
+import { crearRutasOperacion } from '../operacion/rutas.js';
 import { crearRutasTalleres } from '../talleres/rutas.js';
 import { validarPublicacionTaller } from '../talleres/reglas.js';
 import { sinAccesoPrivado } from '../talleres/accesoPrivado.js';
@@ -52,6 +53,7 @@ export function crearRutasCms({
   recuperacion,
   enviarReciboConsulta,
   catalogo,
+  operacion,
 }) {
   const router = express.Router();
   const tasas = new Map();
@@ -74,6 +76,7 @@ export function crearRutasCms({
   });
   router.use(crearRutasTalleres({ almacen, auth, publicador, enviarReciboConsulta }));
   if (catalogo) router.use(crearRutasCatalogo({ auth, catalogo }));
+  if (operacion) router.use(crearRutasOperacion({ auth, operacion }));
   router.get('/publico/contenido', async (_req, res) =>
     res.json(proyectarPortal(await almacen.leer())),
   );

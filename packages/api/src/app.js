@@ -5,6 +5,7 @@ import { ErrorApi } from './errores.js';
 import { RepositorioSincronizacionMemoria } from './repositorios/sincronizacionMemoria.js';
 import { crearRutasSincronizacion } from './rutas/sincronizacion.js';
 import { crearServicioSincronizacion } from './servicios/sincronizarOperacion.js';
+import { ErrorDominio } from '@simce/dominio';
 
 export function crearAplicacion({
   repositorio = new RepositorioSincronizacionMemoria(),
@@ -57,6 +58,8 @@ export function crearAplicacion({
   app.use('/api/v1/sync', crearRutasSincronizacion(sincronizacion));
 
   app.use((error, _solicitud, respuesta, _siguiente) => {
+    if (error instanceof ErrorDominio)
+      error = new ErrorApi(422, error.codigo, error.message, error.detalles);
     if (error.type === 'entity.too.large')
       return respuesta.status(413).json({
         error: 'CUERPO_DEMASIADO_GRANDE',

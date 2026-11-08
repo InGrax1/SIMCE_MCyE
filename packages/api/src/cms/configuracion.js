@@ -12,6 +12,8 @@ import { validarAvisoConfigurado } from './avisoPrivacidad.js';
 import { avisosPrivacidad } from '../../../portal/src/avisoPrivacidad.js';
 import { crearCorreoConsultas } from '../talleres/correoConsultas.js';
 import { crearAlmacenCatalogo } from '../catalogo/almacen.js';
+import { crearAlmacenOperacion } from '../operacion/almacen.js';
+import { crearServicioOperacion } from '../operacion/servicio.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
@@ -77,6 +79,7 @@ export async function configurarCms() {
     origenPublico: process.env.PORTAL_ORIGEN_PUBLICO || origenPanel,
     produccion: process.env.NODE_ENV === 'production',
   });
+  const catalogo = crearAlmacenCatalogo(almacen, db);
   const rutas = crearRutasCms({
     almacen,
     auth,
@@ -84,7 +87,8 @@ export async function configurarCms() {
     carpetaMedios,
     recuperacion,
     enviarReciboConsulta,
-    catalogo: crearAlmacenCatalogo(almacen, db),
+    catalogo,
+    operacion: crearServicioOperacion(crearAlmacenOperacion(almacen, catalogo, db)),
   });
   return {
     almacen,
