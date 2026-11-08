@@ -9,6 +9,7 @@ import {
   totalesRenglones,
 } from '@simce/dominio';
 import { Camara } from './Camara.jsx';
+import { BandejaOperacion } from './BandejaOperacion.jsx';
 import { Campo, FormularioOperacion, kg, Motivo, mxn, opciones, Selector } from './controles.jsx';
 
 const uuid = () => crypto.randomUUID();
@@ -18,6 +19,17 @@ const estados = [
   ['CANCELADA', 'Cancelada'],
 ];
 const folio = (r) => r.folioFinal ?? r.folioProvisional ?? 'Borrador';
+
+function EstadoRemision({ estado }) {
+  return (
+    <span
+      className="cms-estado-etiqueta"
+      data-estado={{ CERRADA: 'confirmada', CANCELADA: 'cancelada' }[estado]}
+    >
+      {estados.find(([e]) => e === estado)?.[1]}
+    </span>
+  );
+}
 
 function Cabecera({ destinos, remision, registrar, ocupado, abrir }) {
   return (
@@ -288,14 +300,18 @@ function Detalle({ remision, vista, registrar, ocupado, administra, usuario, des
     ? faltantesRemision(remision, vista.movimientos)
     : (remision.faltantes ?? []);
   return (
-    <article className="cms-bandeja-detalle" aria-labelledby="titulo-detalle-remision">
-      <h3 id="titulo-detalle-remision">
-        {folio(remision)} · {remision.destinoNombre}
-      </h3>
-      <p>
-        {remision.fecha} · {estados.find(([e]) => e === remision.estado)?.[1]}
-        {remision.folioPapel ? ` · Hoja en papel ${remision.folioPapel}` : ''}
-      </p>
+    <article aria-labelledby="titulo-detalle-remision">
+      <header className="cms-detalle-encabezado">
+        <div className="cms-detalle-folio">
+          <span>{folio(remision)}</span>
+          <EstadoRemision estado={remision.estado} />
+        </div>
+        <h2 id="titulo-detalle-remision">{remision.destinoNombre}</h2>
+        <p>
+          {remision.fecha}
+          {remision.folioPapel ? ` · Hoja en papel ${remision.folioPapel}` : ''}
+        </p>
+      </header>
       {borrador && (
         <>
           <details className="cms-medios">
@@ -436,7 +452,10 @@ export function Remisiones({
   usuario,
   descargar,
 }) {
-  const [seleccion, abrir] = useState(null);
+  const [seleccion, seleccionar] = useState(null);
+  const [nueva, cambiarNueva] = useState(false);
+  const [detalleMovil, mostrarDetalle] = useState(false);
+  const [busqueda, cambiarBusqueda] = useState('');
   const [filtros, cambiarFiltros] = useState({
     desde: '',
     hasta: '',
@@ -444,11 +463,14 @@ export function Remisiones({
     producto: '',
     estado: '',
   });
-  const remision = vista.remisiones.find((r) => r.uuid === seleccion);
   const { destinos, productos } = vista.catalogo;
+  const termino = busqueda.trim().toLocaleLowerCase('es-MX');
   const actualizar = (campo) => ({
     value: filtros[campo],
-    onChange: (e) => cambiarFiltros({ ...filtros, [campo]: e.target.value }),
+    onChange: (e) => {
+      cambiarFiltros({ ...filtros, [campo]: e.target.value });
+      seleccionar(null);
+    },
   });
   const filtradas = vista.remisiones
     .filter(
@@ -457,70 +479,147 @@ export function Remisiones({
         (!filtros.hasta || r.fecha <= filtros.hasta) &&
         (!filtros.destino || r.destinoUuid === filtros.destino) &&
         (!filtros.estado || r.estado === filtros.estado) &&
+        [r.folioFinal, r.folioProvisional, r.folioPapel, r.destinoNombre].some((valor) =>
+          valor?.toLocaleLowerCase('es-MX').includes(termino),
+        ) &&
         (!filtros.producto || r.renglones.some((fila) => fila.productoUuid === filtros.producto)),
     )
     .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.creadaEn.localeCompare(a.creadaEn));
+  const remision = vista.remisiones.find((r) => r.uuid === seleccion) ?? filtradas[0];
+  function abrir(uuid) {
+    seleccionar(uuid);
+    cambiarNueva(false);
+    mostrarDetalle(true);
+  }
   return (
-    <section aria-labelledby="titulo-remisiones">
-      <div className="cms-bandeja-detalle">
-        <h2 id="titulo-remisiones">Remisiones</h2>
-        <details className="cms-medios">
-          <summary>Nueva remisión</summary>
-          <Cabecera {...{ destinos, registrar, ocupado, abrir }} />
-        </details>
-      </div>
-      {remision && (
-        <Detalle
-          key={remision.uuid}
-          {...{ remision, vista, registrar, ocupado, administra, usuario, descargar, abrir }}
-        />
-      )}
-      <div className="cms-bandeja-detalle">
-        <h3>Histórico de remisiones</h3>
-        <div className="operacion-campos">
-          <Campo titulo="Envíos desde" type="date" {...actualizar('desde')} />
-          <Campo titulo="Envíos hasta" type="date" {...actualizar('hasta')} />
-          <Selector
-            titulo="Filtrar por destino"
-            valores={opciones(destinos)}
-            vacio="Todos"
-            {...actualizar('destino')}
-          />
-          <Selector
-            titulo="Filtrar por producto"
-            valores={opciones(productos)}
-            vacio="Todos"
-            {...actualizar('producto')}
-          />
-          <Selector
-            titulo="Filtrar por estado"
-            valores={estados}
-            vacio="Todos"
-            {...actualizar('estado')}
-          />
-        </div>
-        <ul className="operacion-lista">
-          {filtradas.map((r) => (
-            <li key={r.uuid}>
+    <BandejaOperacion
+      tituloLista="Histórico de remisiones"
+      mostrarDetalle={detalleMovil && (nueva || Boolean(remision))}
+      claveDetalle={nueva ? 'nueva' : remision?.uuid}
+      volver={() => {
+        cambiarNueva(false);
+        mostrarDetalle(false);
+      }}
+      ocupado={ocupado}
+      textoVolver="Volver a remisiones"
+      listado={
+        <>
+          <div className="cms-bandeja-filtros">
+            <div className="operacion-encabezado-lista">
+              <h2>Remisiones</h2>
               <button
                 type="button"
-                className="cms-bandeja-fila"
-                aria-pressed={seleccion === r.uuid}
-                onClick={() => abrir(r.uuid)}
+                disabled={ocupado}
+                onClick={() => {
+                  cambiarNueva(true);
+                  mostrarDetalle(true);
+                }}
               >
-                <strong>
-                  {folio(r)} · {r.destinoNombre}
-                </strong>
-                <span>
-                  {r.fecha} · {estados.find(([e]) => e === r.estado)?.[1]} · {r.renglones.length}{' '}
-                  renglones
-                </span>
+                Nueva remisión
               </button>
-            </li>
-          ))}
-        </ul>
-        {!filtradas.length && <p>Sin remisiones para esos filtros.</p>}
-      </div>
-    </section>
+            </div>
+            <Campo
+              titulo="Buscar por folio o destino"
+              type="search"
+              value={busqueda}
+              onChange={(e) => {
+                cambiarBusqueda(e.target.value);
+                seleccionar(null);
+              }}
+            />
+            <Selector titulo="Estado" valores={estados} vacio="Todos" {...actualizar('estado')} />
+            <details className="cms-medios operacion-filtros">
+              <summary>Más filtros</summary>
+              <div className="cms-filtros-fila">
+                <Campo titulo="Envíos desde" type="date" {...actualizar('desde')} />
+                <Campo titulo="Envíos hasta" type="date" {...actualizar('hasta')} />
+              </div>
+              <Selector
+                titulo="Destino"
+                valores={opciones(destinos)}
+                vacio="Todos"
+                {...actualizar('destino')}
+              />
+              <Selector
+                titulo="Producto"
+                valores={opciones(productos)}
+                vacio="Todos"
+                {...actualizar('producto')}
+              />
+            </details>
+            <p className="cms-resultado-cantidad">
+              {filtradas.length} {filtradas.length === 1 ? 'remisión' : 'remisiones'}
+            </p>
+          </div>
+          {filtradas.length ? (
+            <ul className="cms-bandeja-registros">
+              {filtradas.map((r) => (
+                <li key={r.uuid}>
+                  <button
+                    type="button"
+                    className="cms-bandeja-fila"
+                    aria-pressed={!nueva && remision?.uuid === r.uuid}
+                    disabled={ocupado}
+                    onClick={() => abrir(r.uuid)}
+                  >
+                    <span className="cms-bandeja-fila-cabecera">
+                      <strong>{r.destinoNombre}</strong>
+                      <EstadoRemision estado={r.estado} />
+                    </span>
+                    <span className="cms-bandeja-asunto">{folio(r)}</span>
+                    <span className="cms-bandeja-meta">
+                      {r.fecha} · {r.renglones.length}{' '}
+                      {r.renglones.length === 1 ? 'renglón' : 'renglones'}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="cms-vacio">
+              <strong>
+                {vista.remisiones.length ? 'Sin resultados' : 'Todavía no hay remisiones'}
+              </strong>
+              <p>
+                {vista.remisiones.length
+                  ? 'Cambia la búsqueda o los filtros.'
+                  : 'Crea una remisión para registrar un envío.'}
+              </p>
+            </div>
+          )}
+        </>
+      }
+      detalle={
+        nueva ? (
+          <>
+            <header className="cms-detalle-encabezado">
+              <h2>Nueva remisión</h2>
+              <p>Selecciona el destino y la fecha para empezar el borrador.</p>
+            </header>
+            <Cabecera {...{ destinos, registrar, ocupado, abrir }} />
+            <button
+              type="button"
+              className="secundario operacion-cancelar-formulario"
+              onClick={() => {
+                cambiarNueva(false);
+                mostrarDetalle(false);
+              }}
+            >
+              Cancelar alta
+            </button>
+          </>
+        ) : remision ? (
+          <Detalle
+            key={remision.uuid}
+            {...{ remision, vista, registrar, ocupado, administra, usuario, descargar, abrir }}
+          />
+        ) : (
+          <div className="cms-vacio cms-detalle-vacio">
+            <strong>Selecciona una remisión</strong>
+            <p>El detalle, la captura y los documentos se muestran en este espacio.</p>
+          </div>
+        )
+      }
+    />
   );
 }

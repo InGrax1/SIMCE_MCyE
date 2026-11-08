@@ -3,7 +3,7 @@ import { operacionLocal } from '../../local/operacion.js';
 import { sincronizarOperacionLocal } from '../../servicios/operacion.js';
 import { consultarApi } from '../../servicios/sesion.js';
 import { CatalogoOperativo } from '../CatalogoOperativo.jsx';
-import { CatalogoDescargado } from './CatalogoDescargado.jsx';
+import { CatalogoDescargado, ComprobarEtiqueta } from './CatalogoDescargado.jsx';
 import { Conflictos } from './Conflictos.jsx';
 import { Inventario } from './Inventario.jsx';
 import { Remisiones } from './Remisiones.jsx';
@@ -167,7 +167,7 @@ export function OperacionesPanel({
             disabled={sincronizando || modoLocal || !enLinea}
             onClick={sincronizar}
           >
-            {sincronizando ? 'Sincronizando…' : 'Sincronizar ahora'}
+            {sincronizando ? 'Sincronizando…' : 'Sincronizar'}
           </button>
           {puedePreparar && (
             <button
@@ -189,7 +189,7 @@ export function OperacionesPanel({
                 })
               }
             >
-              {preparado ? 'Renovar preparación sin conexión' : 'Preparar este dispositivo'}
+              {preparado ? 'Renovar preparación' : 'Preparar dispositivo'}
             </button>
           )}
         </div>
@@ -224,25 +224,27 @@ export function OperacionesPanel({
           {mensaje}
         </p>
       )}
-      <nav className="cms-bandeja-barra cms-categorias" aria-label="Herramientas de operación">
-        {secciones
-          .filter(([id]) => id !== 'reportes' || administra)
-          .map(([id, etiqueta]) => (
-            <button
-              type="button"
-              key={id}
-              aria-pressed={id === seccion}
-              disabled={ocupado || ocupadoGestor}
-              onClick={() => {
-                cambiarSeccion(id);
-                cambiarError('');
-                cambiarMensaje('');
-              }}
-            >
-              {etiqueta}
-            </button>
-          ))}
-      </nav>
+      <div className="cms-bandeja-barra">
+        <nav className="cms-categorias" aria-label="Herramientas de operación">
+          {secciones
+            .filter(([id]) => id !== 'reportes' || administra)
+            .map(([id, etiqueta]) => (
+              <button
+                type="button"
+                key={id}
+                aria-pressed={id === seccion}
+                disabled={ocupado || ocupadoGestor}
+                onClick={() => {
+                  cambiarSeccion(id);
+                  cambiarError('');
+                  cambiarMensaje('');
+                }}
+              >
+                {etiqueta}
+              </button>
+            ))}
+        </nav>
+      </div>
       {seccion === 'respaldo' ? (
         <Respaldo
           {...{ usuario, ocupado, intentar }}
@@ -268,10 +270,17 @@ export function OperacionesPanel({
             await refrescar();
           }}
         />
-      ) : (
+      ) : seccion === 'catalogo' && conectado && administra ? (
         <>
-          {seccion === 'catalogo' && conectado && administra && (
-            <div className="cms-bandeja-detalle">
+          <CatalogoOperativo
+            administra
+            avisar={(texto) => {
+              avisar(texto);
+              sincronizar();
+            }}
+            ocupado={ocupadoGestor}
+            ejecutar={ejecutar}
+            acciones={
               <button
                 type="button"
                 className="secundario"
@@ -287,35 +296,25 @@ export function OperacionesPanel({
               >
                 Descargar lista para programar la báscula
               </button>
-              <CatalogoOperativo
-                administra
-                avisar={(texto) => {
-                  avisar(texto);
-                  sincronizar();
-                }}
-                ocupado={ocupadoGestor}
-                ejecutar={ejecutar}
-              />
-            </div>
-          )}
-          {!vista?.catalogo ? (
-            <p className="cms-vacio" role="status">
-              {sincronizando
-                ? 'Descargando catálogo y movimientos…'
-                : 'Sincroniza para descargar el catálogo operativo.'}
-            </p>
-          ) : (
-            <>
-              {seccion === 'catalogo' && <CatalogoDescargado {...{ vista, ocupado, intentar }} />}
-              {seccion === 'remisiones' && (
-                <Remisiones {...{ vista, registra, ocupado, administra, usuario, descargar }} />
-              )}
-              {seccion === 'inventario' && (
-                <Inventario {...{ vista, ocupado, administra }} registrar={registra} />
-              )}
-            </>
-          )}
+            }
+          />
+          {vista?.catalogo && <ComprobarEtiqueta {...{ vista, ocupado, intentar }} />}
         </>
+      ) : !vista?.catalogo ? (
+        <p className="cms-vacio" role="status">
+          {sincronizando
+            ? 'Descargando catálogo y movimientos…'
+            : 'Sincroniza para descargar el catálogo operativo.'}
+        </p>
+      ) : seccion === 'catalogo' ? (
+        <>
+          <CatalogoDescargado {...{ vista, ocupado }} />
+          <ComprobarEtiqueta {...{ vista, ocupado, intentar }} />
+        </>
+      ) : seccion === 'inventario' ? (
+        <Inventario {...{ vista, ocupado, administra }} registrar={registra} />
+      ) : (
+        <Remisiones {...{ vista, registra, ocupado, administra, usuario, descargar }} />
       )}
     </section>
   );

@@ -150,16 +150,20 @@ try {
   await pagina.getByLabel('Correo', { exact: true }).fill(usuario.correo);
   await pagina.getByLabel('Contraseña', { exact: true }).fill(clave);
   await pagina.getByRole('button', { name: 'Iniciar sesión' }).click();
-  await pagina.getByRole('button', { name: 'Operación', exact: true }).click();
+  await pagina.getByRole('heading', { name: 'Solicitudes', exact: true }).waitFor();
+  const navegacion = pagina.getByRole('navigation', { name: 'Navegación del panel' });
+  for (const nombre of ['Participantes', 'Talleres', 'Contenido', 'Bitácora'])
+    await navegacion.getByRole('button', { name: nombre, exact: true }).waitFor();
+  await navegacion.getByRole('button', { name: 'Operación', exact: true }).click();
   await pagina.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-  await pagina.getByRole('button', { name: 'Preparar este dispositivo' }).click();
+  await pagina.getByRole('button', { name: 'Preparar dispositivo' }).click();
   await pagina.getByText(/Dispositivo preparado para continuar/).waitFor();
   await contexto.setOffline(true);
   await pagina.reload();
   await pagina.getByRole('heading', { name: 'Remisiones', exact: true }).waitFor();
   await pagina.getByText(/Sin conexión · 0 pendientes/).waitFor();
   await pagina.getByRole('button', { name: 'Inventario', exact: true }).click();
-  await pagina.getByText('Registrar lote de producción', { exact: true }).click();
+  await pagina.getByRole('button', { name: 'Registrar lote de producción', exact: true }).click();
   await pagina.getByRole('combobox', { name: 'Producto del lote' }).selectOption(producto.uuid);
   await pagina.getByLabel('Área', { exact: true }).fill('Prueba local');
   await pagina.getByLabel('Persona responsable').fill('Responsable de ensayo');
@@ -168,7 +172,7 @@ try {
   await pagina.getByRole('button', { name: 'Registrar lote', exact: true }).click();
   await pagina.getByText('Existencia 2.500 kg', { exact: true }).waitFor();
   await pagina.getByRole('button', { name: 'Remisiones', exact: true }).click();
-  await pagina.getByText('Nueva remisión', { exact: true }).click();
+  await pagina.getByRole('button', { name: 'Nueva remisión', exact: true }).click();
   await pagina.getByRole('combobox', { name: 'Destino del envío' }).selectOption(destino.uuid);
   await pagina.getByLabel('Folio de la hoja en papel (opcional)').fill('P-01');
   await pagina.getByRole('button', { name: 'Crear borrador' }).click();
@@ -206,16 +210,33 @@ try {
   await pagina.getByRole('button', { name: 'Restaurar operaciones' }).click();
   await pagina.getByText(/0 recuperadas · 5 duplicadas/).waitFor();
   await pagina.reload();
-  await pagina.getByRole('button', { name: /^PROV-.*Destino sintético/ }).click();
+  const listado = pagina.getByRole('region', {
+    name: 'Histórico de remisiones',
+    includeHidden: true,
+  });
+  const detalle = pagina.getByRole('region', { name: 'Detalle y acciones', includeHidden: true });
+  const fila = listado.getByRole('button', { name: /Destino sintético.*PROV-/ });
+  await fila.click();
+  assert.equal(await listado.isVisible(), false);
+  await detalle.getByRole('button', { name: 'Volver a remisiones' }).click();
+  await fila.waitFor();
+  await fila.evaluate(() => new Promise((ok) => requestAnimationFrame(ok)));
+  assert.equal(await fila.evaluate((boton) => boton === document.activeElement), true);
+  await fila.click();
   const provisional = await descargar('Descargar PDF provisional');
   assert.match(provisional.nombre, /^PROV-.+\.pdf$/);
   assert.equal((await operacion.datos()).remisiones.length, 0);
   await contexto.setOffline(false);
-  await pagina
-    .getByRole('heading', { name: /^REM-\d{4}-\d+ · Destino sintético/ })
-    .waitFor({ timeout: 35_000 });
+  await detalle.getByText(/^REM-\d{4}-\d+$/).waitFor({ timeout: 35_000 });
   await pagina.getByText(/Con conexión · 0 pendientes/).waitFor();
   assert.match((await descargar('Descargar PDF definitivo')).nombre, /^REM-\d{4}-\d+\.pdf$/);
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  const [columnaLista, columnaDetalle] = await Promise.all([
+    listado.boundingBox(),
+    detalle.boundingBox(),
+  ]);
+  assert.ok(columnaLista && columnaDetalle && columnaLista.x < columnaDetalle.x);
+  assert.equal(columnaLista.y, columnaDetalle.y);
   const estado = await operacion.datos();
   assert.equal(estado.remisiones.length, 1);
   assert.equal(estado.remisiones[0].renglones[0].gramos, 470);

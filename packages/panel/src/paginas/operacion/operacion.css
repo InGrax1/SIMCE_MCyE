@@ -6,10 +6,14 @@
   top: 0;
   z-index: 2;
   background: #fff;
+  border-radius: 14px 14px 0 0;
 }
 .operacion-barra small {
   display: block;
   margin-top: 4px;
+}
+.operacion-barra .operacion-acciones {
+  margin-block: 0;
 }
 .operacion-campos {
   display: grid;
@@ -21,6 +25,37 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-block: 8px;
+}
+.operacion-encabezado-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.cms .operacion-encabezado-lista h2 {
+  margin: 0;
+}
+.operacion .cms-bandeja-listado,
+.operacion .cms-bandeja-detalle {
+  scroll-margin-top: min(36vh, 13rem);
+}
+.operacion-cancelar-formulario,
+.operacion-seccion {
+  margin-top: 20px;
+}
+.operacion-filtros.cms-medios {
+  margin-block: 12px;
+  padding: 0 12px;
+}
+.operacion-existencia {
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+}
+.operacion-verificacion {
+  border-top: 1px solid #e3dcd8;
+  padding: 14px 18px;
 }
 .operacion-lista {
   list-style: none;
@@ -78,4 +113,32 @@
 }
 .cms .operacion summary {
   align-content: center;
+}
+@media (max-width: 760px) {
+  .operacion-barra {
+    gap: 8px;
+  }
+  .operacion-barra strong {
+    font-size: 0.875rem;
+  }
+  .operacion > .cms-bandeja-barra > .cms-categorias {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .cms .operacion > .cms-bandeja-barra > .cms-categorias button {
+    justify-content: center;
+    padding-inline: 4px;
+    font-size: 0.875rem;
+  }
+}
+@media (max-width: 420px) {
+  .operacion-filtros .cms-filtros-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 360px) {
+  .operacion > .cms-bandeja-barra > .cms-categorias {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

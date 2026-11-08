@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { centavosDesdeDecimal, formatearDinero } from '@simce/dominio';
 import { consultarApi } from '../servicios/sesion.js';
+import { BandejaOperacion } from './operacion/BandejaOperacion.jsx';
 
 const tipos = [
   ['lineas', 'Líneas'],
@@ -191,15 +192,16 @@ function DetalleProducto({
   }, [ruta, producto]);
   return (
     <section aria-labelledby="titulo-producto-operativo">
-      <h2 id="titulo-producto-operativo">{producto.nombre}</h2>
-      <p>
-        PLU {producto.plu} · {producto.presentacion} · Unidad kg
-      </p>
-      <p>
-        {clasificaciones.lineas.find((item) => item.uuid === producto.linea_uuid)?.nombre}
-        {' · '}
-        {clasificaciones.especies.find((item) => item.uuid === producto.especie_uuid)?.nombre}
-      </p>
+      <header className="cms-detalle-encabezado">
+        <p className="cms-detalle-folio">PLU {producto.plu}</p>
+        <h2 id="titulo-producto-operativo">{producto.nombre}</h2>
+        <p>{producto.presentacion} · Unidad kg</p>
+        <p>
+          {clasificaciones.lineas.find((item) => item.uuid === producto.linea_uuid)?.nombre}
+          {' · '}
+          {clasificaciones.especies.find((item) => item.uuid === producto.especie_uuid)?.nombre}
+        </p>
+      </header>
       <h3>Historial de precios</h3>
       {error ? (
         <p role="alert">{error}</p>
@@ -300,11 +302,13 @@ async function consultarCatalogo() {
   return { clasificaciones, ...productos };
 }
 
-export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar }) {
+export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar, acciones }) {
   const [catalogo, cambiarCatalogo] = useState(null);
   const [error, cambiarError] = useState('');
   const [filtro, cambiarFiltro] = useState('');
   const [seleccion, elegir] = useState(null);
+  const [herramienta, cambiarHerramienta] = useState(null);
+  const [detalleMovil, mostrarDetalle] = useState(false);
   useEffect(() => {
     let vigente = true;
     consultarCatalogo().then(
@@ -328,16 +332,24 @@ export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar }) {
     avisar('Cambios guardados en el catálogo operativo.');
     await actualizar();
   }
-  const producto = catalogo?.productos.find((item) => item.uuid === seleccion);
   const busqueda = filtro.trim().toLocaleLowerCase('es-MX');
   const resultados = catalogo?.productos.filter(
     (item) =>
       item.plu.includes(busqueda) || item.nombre.toLocaleLowerCase('es-MX').includes(busqueda),
   );
+  const producto = resultados?.find((item) => item.uuid === seleccion) ?? resultados?.[0];
+  function volver() {
+    cambiarHerramienta(null);
+    mostrarDetalle(false);
+  }
+  function abrirHerramienta(destino) {
+    cambiarHerramienta(destino);
+    mostrarDetalle(true);
+  }
   return (
-    <section className="cms-bandeja" aria-labelledby="titulo-catalogo">
-      <header className="cms-bandeja-barra">
-        <h2 id="titulo-catalogo">Catálogo operativo</h2>
+    <section aria-label="Catálogo operativo">
+      <div className="cms-bandeja-barra">
+        {acciones}
         <button
           type="button"
           className="secundario"
@@ -346,7 +358,7 @@ export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar }) {
         >
           Actualizar catálogo
         </button>
-      </header>
+      </div>
       {error && (
         <p className="cms-bandeja-detalle" role="alert">
           {error}
@@ -359,39 +371,52 @@ export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar }) {
           </p>
         )
       ) : (
-        <>
-          {administra && (
-            <div className="cms-bandeja-detalle">
-              <details className="cms-medios">
-                <summary>Administrar líneas, especies y destinos</summary>
-                {tipos.map(([tipo, titulo]) => (
-                  <Clasificacion
-                    key={tipo}
-                    registros={catalogo.clasificaciones[tipo]}
-                    {...{ tipo, titulo, ocupado, ejecutar, guardar }}
-                  />
-                ))}
-              </details>
-              <details className="cms-medios">
-                <summary>Dar de alta un producto</summary>
-                <FichaProducto
-                  clasificaciones={catalogo.clasificaciones}
-                  {...{ ocupado, ejecutar, guardar }}
-                />
-              </details>
-            </div>
-          )}
-          <div className="cms-bandeja-columnas" data-detalle={Boolean(producto)}>
-            <div className="cms-bandeja-listado">
+        <BandejaOperacion
+          tituloLista="Productos del catálogo operativo"
+          claveDetalle={herramienta ?? producto?.uuid}
+          mostrarDetalle={detalleMovil && Boolean(herramienta || producto)}
+          volver={volver}
+          textoVolver="Volver a productos"
+          ocupado={ocupado}
+          listado={
+            <>
               <div className="cms-bandeja-filtros">
+                <div className="operacion-encabezado-lista">
+                  <h2>Catálogo operativo</h2>
+                </div>
+                {administra && (
+                  <div className="operacion-acciones">
+                    <button
+                      type="button"
+                      disabled={ocupado}
+                      onClick={() => abrirHerramienta('alta')}
+                    >
+                      Dar de alta un producto
+                    </button>
+                    <button
+                      type="button"
+                      className="secundario"
+                      disabled={ocupado}
+                      onClick={() => abrirHerramienta('clasificaciones')}
+                    >
+                      Líneas, especies y destinos
+                    </button>
+                  </div>
+                )}
                 <label>
                   Buscar por nombre o PLU
                   <input
                     type="search"
                     value={filtro}
-                    onChange={(e) => cambiarFiltro(e.target.value)}
+                    onChange={(e) => {
+                      cambiarFiltro(e.target.value);
+                      elegir(null);
+                    }}
                   />
                 </label>
+                <p className="cms-resultado-cantidad">
+                  {resultados.length} {resultados.length === 1 ? 'producto' : 'productos'}
+                </p>
               </div>
               {!resultados.length ? (
                 <p className="cms-vacio">No se encontraron productos.</p>
@@ -403,15 +428,19 @@ export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar }) {
                         type="button"
                         className="cms-bandeja-fila"
                         disabled={ocupado}
-                        aria-pressed={seleccion === item.uuid}
-                        onClick={() => elegir(item.uuid)}
+                        aria-pressed={!herramienta && producto?.uuid === item.uuid}
+                        onClick={() => {
+                          elegir(item.uuid);
+                          cambiarHerramienta(null);
+                          mostrarDetalle(true);
+                        }}
                       >
                         <strong>{item.nombre}</strong>
-                        <span>
+                        <span className="cms-bandeja-meta">
                           PLU {item.plu} · {item.activo ? 'Activo' : 'Inactivo'}
                         </span>
                         {item.precio ? (
-                          <span>{dinero(item.precio)}</span>
+                          <span className="cms-bandeja-asunto">{dinero(item.precio)}</span>
                         ) : (
                           item.activo && <span>Sin precio vigente</span>
                         )}
@@ -420,27 +449,61 @@ export function CatalogoOperativo({ administra, ocupado, ejecutar, avisar }) {
                   ))}
                 </ul>
               )}
-            </div>
-            {producto && (
-              <div className="cms-bandeja-detalle">
+            </>
+          }
+          detalle={
+            herramienta ? (
+              <>
+                <header className="cms-detalle-encabezado">
+                  <h2>
+                    {herramienta === 'alta'
+                      ? 'Dar de alta un producto'
+                      : 'Líneas, especies y destinos'}
+                  </h2>
+                  <p>
+                    {herramienta === 'alta'
+                      ? 'Registra la ficha operativa y su clave PLU.'
+                      : 'Gestiona las clasificaciones y los destinos de envío.'}
+                  </p>
+                </header>
+                {herramienta === 'alta' ? (
+                  <FichaProducto
+                    clasificaciones={catalogo.clasificaciones}
+                    {...{ ocupado, ejecutar, guardar }}
+                  />
+                ) : (
+                  tipos.map(([tipo, titulo]) => (
+                    <Clasificacion
+                      key={tipo}
+                      registros={catalogo.clasificaciones[tipo]}
+                      {...{ tipo, titulo, ocupado, ejecutar, guardar }}
+                    />
+                  ))
+                )}
                 <button
                   type="button"
-                  className="secundario cms-volver-lista"
+                  className="secundario operacion-cancelar-formulario"
                   disabled={ocupado}
-                  onClick={() => elegir(null)}
+                  onClick={volver}
                 >
-                  Volver a productos
+                  Cerrar formulario
                 </button>
-                <DetalleProducto
-                  key={producto.uuid}
-                  clasificaciones={catalogo.clasificaciones}
-                  fecha={catalogo.fecha}
-                  {...{ producto, administra, ocupado, ejecutar, guardar }}
-                />
+              </>
+            ) : producto ? (
+              <DetalleProducto
+                key={producto.uuid}
+                clasificaciones={catalogo.clasificaciones}
+                fecha={catalogo.fecha}
+                {...{ producto, administra, ocupado, ejecutar, guardar }}
+              />
+            ) : (
+              <div className="cms-vacio cms-detalle-vacio">
+                <strong>Selecciona un producto</strong>
+                <p>Consulta y actualiza sus datos y el historial de precios.</p>
               </div>
-            )}
-          </div>
-        </>
+            )
+          }
+        />
       )}
     </section>
   );
