@@ -51,6 +51,8 @@ Actualización de atención: el [panel reorganizado](atencion-solicitudes.md) se
 
 El 7 de noviembre de 2026, el usuario reporta que se probó la publicación en local y confirma el funcionamiento en teléfono y de los correos. El [registro de publicación](../fase-1/registro-publicacion-responsable.md) distingue el resultado comunicado de la evidencia del ensayo. Las comprobaciones en el alojamiento institucional quedan pendientes.
 
+En el cierre de la revisión local, el usuario confirma el funcionamiento de «Aceptar», «Rechazar» y el correo de contestación de las solicitudes. La compilación aprobó junto con 97 pruebas generales, cinco pruebas de integración MySQL, 18 recorridos de Fase 2 y 18 controles de accesibilidad. El despliegue a producción queda para cuando se complete el proyecto.
+
 ## Pendientes para aceptar la fase
 
 - DE-06 queda autorizado por el usuario para la versión `simce-2026-11-06-v1`, disponible en `/privacidad/simce-2026-11-06-v1.html`. La consulta del aviso y su enlace desde el formulario se verifican localmente; el origen institucional HTTPS depende del alojamiento.
@@ -58,4 +60,4 @@ El 7 de noviembre de 2026, el usuario reporta que se probó la publicación en l
 - Implementar y verificar la depuración correspondiente a los plazos del aviso autorizado, junto con el tratamiento de exportaciones y respaldos y los instrumentos archivísticos aplicables, antes de operar con datos reales.
 - Continuar RF-3.7 con notificaciones de cambios de estado operativo. Las decisiones y respuestas de solicitudes de taller y servicio social generan su correo de contestación. Queda por decidir si se incluye RF-3.10 (lista de espera).
 
-El avance técnico inicia la fase; no acredita su aceptación institucional ni su disponibilidad en producción. La operación local se explica en [la guía de talleres e inscripciones](talleres-inscripciones.md).
+El alcance implementado queda validado en local. La operación se explica en [la guía de talleres e inscripciones](talleres-inscripciones.md).
