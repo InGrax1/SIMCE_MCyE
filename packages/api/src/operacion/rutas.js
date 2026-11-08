@@ -1,9 +1,13 @@
 import { Router } from 'express';
+import { randomUUID } from 'node:crypto';
 import {
+  calcularRenglon,
   fechaOperativa,
+  identificarEtiqueta,
   rolesOperativos,
   rolesResponsables,
   saldoPorProducto,
+  uuidOperativo,
 } from '@simce/dominio';
 import { ErrorApi } from '../errores.js';
 
@@ -33,6 +37,55 @@ export function crearRutasOperacion({ auth, operacion }) {
     res.json(await operacion.descargar(Number(cursor), req.query.catalogo));
   });
   rutas.use('/operacion', autenticar);
+  rutas.post('/escaneos/decodificar', autenticar, auth.origen, async (req, res) => {
+    const estado = await operacion.datos();
+    const datos = req.body ?? {};
+    if (datos.soloIdentificar === true)
+      return res.json(identificarEtiqueta(datos.codigo, estado.catalogo, estado.perfil));
+    res.json(
+      calcularRenglon(
+        estado,
+        { ...datos, origen: 'ESCANEO', renglonUuid: randomUUID(), partidaUuid: randomUUID() },
+        {
+          usuario: req.usuario,
+          momento: new Date().toISOString(),
+          perfil: estado.perfil,
+        },
+      ),
+    );
+  });
+  rutas.get('/remisiones', autenticar, async (req, res) => {
+    const { desde, hasta, destino, producto, estado } = req.query;
+    if (desde !== undefined) fechaOperativa(desde);
+    if (hasta !== undefined) fechaOperativa(hasta);
+    if (desde && hasta && hasta < desde)
+      throw new ErrorApi(
+        422,
+        'RANGO_INVALIDO',
+        'La fecha final debe ser igual o posterior a la inicial.',
+      );
+    if (destino !== undefined) uuidOperativo(destino);
+    if (producto !== undefined) uuidOperativo(producto);
+    if (estado !== undefined && !['BORRADOR', 'CERRADA', 'CANCELADA'].includes(estado))
+      throw new ErrorApi(422, 'ESTADO_INVALIDO', 'El estado de remisión no es válido.');
+    const { remisiones } = await operacion.datos();
+    res.json(
+      remisiones
+        .filter(
+          (r) =>
+            (!desde || r.fecha >= desde) &&
+            (!hasta || r.fecha <= hasta) &&
+            (!destino || r.destinoUuid === destino) &&
+            (!estado || r.estado === estado) &&
+            (!producto || r.renglones.some((fila) => fila.productoUuid === producto)),
+        )
+        .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.creadaEn.localeCompare(a.creadaEn)),
+    );
+  });
+  rutas.get('/operacion/documentos/:uuid/pdf', async (req, res) => {
+    const uuid = uuidOperativo(req.params.uuid);
+    res.attachment(`remision-${uuid}.pdf`).send(await operacion.pdf(uuid));
+  });
   rutas.get('/operacion/inventario', async (req, res) => {
     const fecha = req.query.fecha === undefined ? undefined : fechaOperativa(req.query.fecha);
     const { catalogo, movimientos, lotes } = await operacion.datos();

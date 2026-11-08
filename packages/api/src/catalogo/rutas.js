@@ -1,15 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
-import { PERFIL_EAN13_POR_IMPORTE } from '@simce/dominio';
+import { formatearDinero, perfilOperativoInicial } from '@simce/dominio';
+import { csvTabular } from '../formatos/csv.js';
 import { ErrorApi } from '../errores.js';
 
 const tiposCatalogo = ['lineas', 'especies', 'destinos'];
 const ordenarNombre = (a, b) => a.nombre.localeCompare(b.nombre, 'es-MX');
 const compararNombre = new Intl.Collator('es-MX', { sensitivity: 'base' });
 const fechaMexico = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Mexico_City' });
-const longitudPlu = PERFIL_EAN13_POR_IMPORTE.longitudPlu;
-const formatoPlu = new RegExp(`^\\d{${longitudPlu}}$`);
-const pluGenerico = '0'.repeat(longitudPlu);
 const administran = ['responsable', 'admin'];
 const operan = ['operador', ...administran];
 const rolesInternos = ['editor', ...operan];
@@ -94,17 +92,20 @@ function cambioCatalogo(catalogo, tipo, datos, uuid) {
   };
 }
 
-function cambioProducto(catalogo, datos, uuid) {
+function cambioProducto(catalogo, datos, perfil, uuid) {
   const anterior = uuid ? buscarPorUuid(catalogo.productos, uuid) : null;
   const campos = anterior ? camposEdicion(anterior, datos) : { activo: true, version: 1 };
   const plu = anterior?.plu ?? datos.plu;
+  const { longitudPlu } = perfil;
+  const pluGenerico = '0'.repeat(longitudPlu);
   if (anterior && datos.plu !== undefined && datos.plu !== plu)
     throw new ErrorApi(422, 'PLU_INMUTABLE', 'El PLU asignado al producto se conserva.');
   if (
-    typeof plu !== 'string' ||
-    plu.length !== longitudPlu ||
-    !formatoPlu.test(plu) ||
-    plu === pluGenerico
+    !anterior &&
+    (typeof plu !== 'string' ||
+      plu.length !== longitudPlu ||
+      !/^\d+$/.test(plu) ||
+      plu === pluGenerico)
   )
     throw new ErrorApi(
       422,
@@ -179,7 +180,7 @@ function nuevoPrecio(catalogo, uuid, datos) {
   };
 }
 
-export function crearRutasCatalogo({ auth, catalogo }) {
+export function crearRutasCatalogo({ auth, catalogo, perfil = perfilOperativoInicial }) {
   const router = Router();
   const escribir = [auth.permitir(administran), auth.origen];
   router.use(
@@ -190,9 +191,10 @@ export function crearRutasCatalogo({ auth, catalogo }) {
 
   router.get('/catalogos-operativos', async (_req, res) => {
     const estado = await catalogo.leer();
-    res.json(
-      Object.fromEntries(tiposCatalogo.map((tipo) => [tipo, estado[tipo].sort(ordenarNombre)])),
-    );
+    res.json({
+      ...Object.fromEntries(tiposCatalogo.map((tipo) => [tipo, estado[tipo].sort(ordenarNombre)])),
+      perfil,
+    });
   });
   router.post('/catalogos-operativos/:tipo', escribir, async (req, res) => {
     res
@@ -222,6 +224,38 @@ export function crearRutasCatalogo({ auth, catalogo }) {
       })),
     });
   });
+  router.get('/productos/exportar-bascula', auth.permitir(administran), async (_req, res) => {
+    const estado = await catalogo.leer();
+    const fecha = fechaMexico.format();
+    const filas = estado.productos
+      .filter((p) => p.activo && p.plu.length === perfil.longitudPlu)
+      .sort((a, b) => a.plu.localeCompare(b.plu))
+      .map((p) => {
+        const precio = precioAplicable(estado, p.uuid, fecha);
+        return [
+          perfil.version,
+          p.plu,
+          p.nombre,
+          precio ? formatearDinero(precio.precio_kg_centavos) : '',
+          '',
+        ];
+      });
+    res
+      .attachment('programacion-manual-bascula.csv')
+      .type('text/csv; charset=utf-8')
+      .send(
+        csvTabular([
+          [
+            'Perfil',
+            'PLU (importar como texto)',
+            'Producto',
+            'Precio sugerido MXN/kg',
+            'Etiqueta de comprobación',
+          ],
+          ...filas,
+        ]),
+      );
+  });
   router.get('/productos/plu/:plu', auth.permitir(operan), async (req, res) => {
     const estado = await catalogo.leer();
     const producto = estado.productos.find((p) => p.plu === req.params.plu);
@@ -236,13 +270,13 @@ export function crearRutasCatalogo({ auth, catalogo }) {
   });
   router.post('/productos', escribir, async (req, res) => {
     const producto = await catalogo.guardar(req.usuario, (estado) =>
-      cambioProducto(estado, req.body ?? {}),
+      cambioProducto(estado, req.body ?? {}, perfil),
     );
     res.status(201).json({ ...producto, unidad: 'kg' });
   });
   router.patch('/productos/:uuid', escribir, async (req, res) => {
     const producto = await catalogo.guardar(req.usuario, (estado) =>
-      cambioProducto(estado, req.body ?? {}, req.params.uuid),
+      cambioProducto(estado, req.body ?? {}, perfil, req.params.uuid),
     );
     res.json({ ...producto, unidad: 'kg' });
   });
@@ -250,6 +284,14 @@ export function crearRutasCatalogo({ auth, catalogo }) {
     const estado = await catalogo.leer();
     buscarPorUuid(estado.productos, req.params.uuid);
     res.json(preciosProducto(estado, req.params.uuid));
+  });
+  router.get('/productos/:uuid/precios/:precioUuid', async (req, res) => {
+    const estado = await catalogo.leer();
+    const precio = preciosProducto(estado, req.params.uuid).find(
+      (p) => p.uuid === req.params.precioUuid,
+    );
+    if (!precio) throw new ErrorApi(404, 'NO_ENCONTRADO', 'No se encontró la vigencia solicitada.');
+    res.json(precio);
   });
   router.post('/productos/:uuid/precios', escribir, async (req, res) => {
     res

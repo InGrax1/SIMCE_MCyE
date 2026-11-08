@@ -14,6 +14,7 @@ import { crearCorreoConsultas } from '../talleres/correoConsultas.js';
 import { crearAlmacenCatalogo } from '../catalogo/almacen.js';
 import { crearAlmacenOperacion } from '../operacion/almacen.js';
 import { crearServicioOperacion } from '../operacion/servicio.js';
+import { configurarPerfil } from '../operacion/perfil.js';
 
 export async function configurarCms() {
   const raiz = resolve(import.meta.dirname, '../../../..');
@@ -80,6 +81,7 @@ export async function configurarCms() {
     produccion: process.env.NODE_ENV === 'production',
   });
   const catalogo = crearAlmacenCatalogo(almacen, db);
+  const perfil = configurarPerfil();
   const rutas = crearRutasCms({
     almacen,
     auth,
@@ -88,7 +90,12 @@ export async function configurarCms() {
     recuperacion,
     enviarReciboConsulta,
     catalogo,
-    operacion: crearServicioOperacion(crearAlmacenOperacion(almacen, catalogo, db)),
+    perfil,
+    operacion: crearServicioOperacion(
+      crearAlmacenOperacion(almacen, catalogo, db),
+      undefined,
+      perfil,
+    ),
   });
   return {
     almacen,

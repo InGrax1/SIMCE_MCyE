@@ -3,6 +3,7 @@ import { mkdtemp, rm, rmdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import request from 'supertest';
+import { calcularDigitoControlEan13 } from '@simce/dominio';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { crearAplicacion } from '../src/app.js';
 import { crearAlmacenCatalogo } from '../src/catalogo/almacen.js';
@@ -22,6 +23,10 @@ describe.each(modos)('operación persistente en %s', (modo) => {
   const operador = { id: randomUUID(), rol: 'operador' };
   const dispositivoUuid = randomUUID();
   const productoUuid = randomUUID();
+  const destinoUuid = randomUUID();
+  const precioUuid = randomUUID();
+  const precioNuevoUuid = randomUUID();
+  const plu = String(randomInt(1, 999_999)).padStart(6, '0');
   let app, db, carpeta, almacen, servicio, catalogo;
   const tokens = new Map();
   let secuencia = 0;
@@ -89,11 +94,28 @@ describe.each(modos)('operación persistente en %s', (modo) => {
       nombre: 'Producto de prueba',
       activo: true,
       version: 1,
-      plu: String(randomInt(1, 999_999)).padStart(6, '0'),
+      plu,
       linea_uuid: linea.uuid,
       especie_uuid: especie.uuid,
       presentacion: 'Estándar',
     });
+    await guardar('destinos', {
+      uuid: destinoUuid,
+      nombre: 'Destino de prueba',
+      activo: true,
+      version: 1,
+    });
+    for (const [uuid, precio_kg_centavos, vigente_desde] of [
+      [precioUuid, 18500, '2025-01-01'],
+      [precioNuevoUuid, 20000, '2026-01-01'],
+    ])
+      await guardar('precios', {
+        uuid,
+        producto_uuid: productoUuid,
+        precio_kg_centavos,
+        vigente_desde,
+        revision_documentos: false,
+      });
     servicio = crearServicioOperacion(crearAlmacenOperacion(almacen, catalogo, db), () => momento);
     const auth = await crearAutenticacion({
       almacen,
@@ -203,5 +225,112 @@ describe.each(modos)('operación persistente en %s', (modo) => {
     ).body;
     expect(siguiente.eventos).toEqual([]);
     expect(siguiente.catalogo).toBeUndefined();
+  });
+
+  it('valida etiquetas, congela precios y conserva PDF, folio y reversiones al reenviar', async () => {
+    const crear = comando('CREAR_REMISION', operador, {
+      fecha: '2025-12-31',
+      destinoUuid,
+      folioPapel: 'P-20',
+    });
+    const codigo = (importe) => {
+      const cuerpo = `2${plu}${importe}`;
+      return cuerpo + calcularDigitoControlEan13(cuerpo);
+    };
+    const agregar = (versionBase, importe, precio) =>
+      comando(
+        'AGREGAR_RENGLON',
+        operador,
+        {
+          origen: 'ESCANEO',
+          codigo: codigo(importe),
+          precioUuid: precio,
+          fuentePrecio: 'Registro de etiquetado',
+          renglonUuid: randomUUID(),
+          partidaUuid: randomUUID(),
+        },
+        { agregadoId: crear.agregadoId, versionBase },
+      );
+    const uno = agregar(1, '08695', precioUuid);
+    const dos = agregar(2, '08700', precioNuevoUuid);
+    const cerrar = comando(
+      'CERRAR_REMISION',
+      operador,
+      { documentoUuid: randomUUID() },
+      { agregadoId: crear.agregadoId, versionBase: 3 },
+    );
+    const etiqueta = await peticion('post', '/escaneos/decodificar', operador)
+      .send(uno.payload)
+      .expect(200);
+    expect(etiqueta.body).toMatchObject({ gramos: 470, centavos: 8695, precioUuid });
+    await peticion('post', '/escaneos/decodificar', operador)
+      .send({ ...uno.payload, precioUuid: undefined })
+      .expect(422);
+    const respuestas = await enviar(operador, crear, uno, dos, cerrar);
+    expect(respuestas.map((r) => r.estado)).toEqual([
+      'APLICADA',
+      'APLICADA',
+      'APLICADA',
+      'APLICADA',
+    ]);
+    const cierre = respuestas.at(-1);
+    const remision = cierre.cambios.find((c) => c.tipo === 'remisiones').registro;
+    expect(remision.folioFinal).toMatch(/^REM-2025-\d{6,}$/);
+    expect(remision.renglones.map((r) => [r.gramos, r.centavos, r.precioUuid])).toEqual([
+      [470, 8695, precioUuid],
+      [435, 8700, precioNuevoUuid],
+    ]);
+    expect((await enviar(operador, cerrar))[0]).toEqual({ ...cierre, repetida: true });
+    expect(
+      (
+        await enviar(
+          operador,
+          comando('EDITAR_REMISION', operador, crear.payload, {
+            agregadoId: crear.agregadoId,
+            versionBase: 4,
+          }),
+        )
+      )[0].codigo,
+    ).toBe('REMISION_CERRADA');
+    const { body: filtradas } = await peticion(
+      'get',
+      `/remisiones?desde=2025-12-31&destino=${destinoUuid}&estado=CERRADA`,
+      operador,
+    ).expect(200);
+    expect(filtradas.map((r) => r.uuid)).toContain(crear.agregadoId);
+    const descargar = (uuid) =>
+      peticion('get', `/operacion/documentos/${uuid}/pdf`, operador)
+        .buffer(true)
+        .parse((res, listo) => {
+          const partes = [];
+          res.on('data', (parte) => partes.push(parte));
+          res.on('end', () => listo(null, Buffer.concat(partes)));
+        })
+        .expect(200)
+        .expect('Content-Type', /application\/pdf/);
+    const pdf = await descargar(remision.definitivoUuid);
+    expect(pdf.body.subarray(0, 4).toString()).toBe('%PDF');
+    const provisional = cierre.cambios.find(
+      (c) => c.tipo === 'documentos' && c.registro.tipo === 'PROVISIONAL',
+    ).registro;
+    expect(provisional.sha256).toMatch(/^[a-f0-9]{64}$/);
+    expect((await descargar(provisional.uuid)).body.equals(pdf.body)).toBe(false);
+    const cancelar = comando(
+      'CANCELAR_REMISION',
+      admin,
+      { motivo: 'Devolución completa', reversiones: [randomUUID(), randomUUID()] },
+      { agregadoId: crear.agregadoId, versionBase: 4 },
+    );
+    const cancelada = (await enviar(admin, cancelar))[0];
+    expect(cancelada.cambios[0].registro).toMatchObject({
+      estado: 'CANCELADA',
+      folioFinal: remision.folioFinal,
+    });
+    expect((await enviar(admin, cancelar))[0]).toEqual({ ...cancelada, repetida: true });
+    expect((await descargar(remision.definitivoUuid)).body.equals(pdf.body)).toBe(true);
+    const movimientos = (await servicio.datos()).movimientos.filter(
+      (m) => m.remisionUuid === crear.agregadoId,
+    );
+    expect(movimientos.map((m) => m.direccion).sort()).toEqual([-1, -1, 1, 1]);
   });
 });

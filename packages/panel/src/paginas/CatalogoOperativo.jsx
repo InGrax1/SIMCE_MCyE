@@ -97,6 +97,7 @@ function CampoCatalogo({ nombre, etiqueta, registros, actual }) {
 }
 
 function FichaProducto({ producto, clasificaciones, ocupado, ejecutar, guardar }) {
+  const longitudPlu = clasificaciones.perfil?.longitudPlu ?? 6;
   const faltanCatalogos =
     !producto &&
     !['lineas', 'especies'].every((tipo) => clasificaciones[tipo].some((item) => item.activo));
@@ -141,8 +142,14 @@ function FichaProducto({ producto, clasificaciones, ocupado, ejecutar, guardar }
       </label>
       {!producto && (
         <label>
-          PLU de seis dígitos
-          <input name="plu" required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} />
+          PLU ({longitudPlu} dígitos)
+          <input
+            name="plu"
+            required
+            inputMode="numeric"
+            pattern={`[0-9]{${longitudPlu}}`}
+            maxLength={longitudPlu}
+          />
         </label>
       )}
       {producto && <Activo activo={producto.activo} />}

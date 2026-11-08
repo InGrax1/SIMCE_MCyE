@@ -1,5 +1,6 @@
 import { exigir } from './errores.js';
 import { accionesInventario, aplicarInventario } from './inventarioOperativo.js';
+import { accionesRemision, aplicarRemision } from './remisionOperativa.js';
 import { enteroOperativo, rolesOperativos, uuidOperativo } from './operacionComun.js';
 
 export function validarComandoOperativo(comando) {
@@ -25,7 +26,7 @@ export function validarComandoOperativo(comando) {
     'Se requieren los datos de la operación.',
   );
   exigir(
-    accionesInventario.includes(comando.tipo),
+    accionesInventario.includes(comando.tipo) || accionesRemision.includes(comando.tipo),
     'OPERACION_TIPO',
     'La operación no está habilitada.',
   );
@@ -38,5 +39,7 @@ export function aplicarComandoOperativo(estado, comando, contexto) {
     'SIN_PERMISO',
     'La sesión actual debe corresponder a la persona que capturó la operación.',
   );
-  return aplicarInventario(estado, comando, contexto);
+  return accionesRemision.includes(comando.tipo)
+    ? aplicarRemision(estado, comando, contexto)
+    : aplicarInventario(estado, comando, contexto);
 }

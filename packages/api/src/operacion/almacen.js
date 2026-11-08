@@ -99,6 +99,14 @@ function sesionDatos(estado, trx, catalogo) {
           .where({ uuid: conflicto.uuid })
           .update({ documento: JSON.stringify(conflicto) });
     },
+    async guardarPdf(uuid, archivo) {
+      if (!trx) (local.pdf ??= {})[uuid] = Buffer.from(archivo).toString('base64');
+      else await trx('operacion_pdf').insert({ uuid, archivo: Buffer.from(archivo) });
+    },
+    async obtenerPdf(uuid) {
+      if (!trx) return local.pdf?.[uuid] ? Buffer.from(local.pdf[uuid], 'base64') : null;
+      return (await trx('operacion_pdf').where({ uuid }).first())?.archivo ?? null;
+    },
     async siguienteFolio(serie, momento) {
       if (!trx) {
         const numero = (local.series[serie] ?? 0) + 1;

@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { csvTabular } from '../formatos/csv.js';
 
 const columnas = [
   ['folio', 'Folio', 99],
@@ -12,18 +13,10 @@ const columnas = [
 ];
 
 export function exportarCsv(inscripciones) {
-  const celda = (valor) => {
-    const texto = String(valor ?? '');
-    return `"${(/^[\s]*[=+\-@]/u.test(texto) ? "'" + texto : texto).replaceAll('"', '""')}"`;
-  };
-  return (
-    '\ufeff' +
-    [
-      columnas.map(([, titulo]) => celda(titulo)).join(','),
-      ...inscripciones.map((i) => columnas.map(([campo]) => celda(i[campo])).join(',')),
-    ].join('\r\n') +
-    '\r\n'
-  );
+  return csvTabular([
+    columnas.map(([, titulo]) => titulo),
+    ...inscripciones.map((i) => columnas.map(([campo]) => i[campo])),
+  ]);
 }
 
 export function exportarPdf(taller, inscripciones) {

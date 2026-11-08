@@ -54,6 +54,7 @@ export function crearRutasCms({
   enviarReciboConsulta,
   catalogo,
   operacion,
+  perfil,
 }) {
   const router = express.Router();
   const tasas = new Map();
@@ -75,7 +76,7 @@ export function crearRutasCms({
     next();
   });
   router.use(crearRutasTalleres({ almacen, auth, publicador, enviarReciboConsulta }));
-  if (catalogo) router.use(crearRutasCatalogo({ auth, catalogo }));
+  if (catalogo) router.use(crearRutasCatalogo({ auth, catalogo, perfil }));
   if (operacion) router.use(crearRutasOperacion({ auth, operacion }));
   router.get('/publico/contenido', async (_req, res) =>
     res.json(proyectarPortal(await almacen.leer())),

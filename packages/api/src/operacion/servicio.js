@@ -5,19 +5,25 @@ import {
   motivoOperativo,
   rolesOperativos,
   rolesResponsables,
+  perfilOperativoInicial,
   validarComandoOperativo,
   uuidOperativo,
 } from '@simce/dominio';
 import { ErrorApi } from '../errores.js';
 import { auditar } from '../cms/contenido.js';
 import { serializarEstable } from '../servicios/sincronizarOperacion.js';
+import { emitirDocumentos } from './documentos.js';
 
 const huella = (valor) => createHash('sha256').update(serializarEstable(valor)).digest('hex');
 const permisos = () =>
   new ErrorApi(403, 'SIN_PERMISO', 'Tu cuenta no tiene permiso para realizar esta acción.');
 const errorPublico = (e) => ({ codigo: e.codigo, mensaje: e.message, detalles: e.detalles });
 
-export function crearServicioOperacion(almacen, reloj = () => new Date().toISOString()) {
+export function crearServicioOperacion(
+  almacen,
+  reloj = () => new Date().toISOString(),
+  perfil = perfilOperativoInicial,
+) {
   async function procesar(comando, usuario) {
     try {
       validarComandoOperativo(comando);
@@ -74,7 +80,7 @@ export function crearServicioOperacion(almacen, reloj = () => new Date().toISOSt
         cambios = aplicarComandoOperativo(
           { ...registros, catalogo: await tx.catalogo() },
           comando,
-          { usuario: actual, momento },
+          { usuario: actual, momento, perfil },
         );
         resultado = { ...base, estado: 'APLICADA', cambios };
       } catch (error) {
@@ -90,7 +96,10 @@ export function crearServicioOperacion(almacen, reloj = () => new Date().toISOSt
           ) ?? null;
         conflicto = { uuid: operacionUuid, comando, servidor, resultado, resolucion: null };
       }
-      if (cambios) await tx.guardarCambios(cambios);
+      if (cambios) {
+        if (comando.tipo === 'CERRAR_REMISION') await emitirDocumentos(tx, cambios, momento);
+        await tx.guardarCambios(cambios);
+      }
       await tx.guardarRecibo(
         operacionUuid,
         { autor_uuid: autorUuid, huella: hash, resultado },
@@ -118,13 +127,13 @@ export function crearServicioOperacion(almacen, reloj = () => new Date().toISOSt
         const catalogo = await tx.catalogo();
         for (const lista of Object.values(catalogo))
           lista.sort((a, b) => a.uuid.localeCompare(b.uuid));
-        const revision = huella(catalogo);
+        const revision = huella({ catalogo, perfil });
         return {
           cursor: pagina.at(-1)?.cursor ?? cursor,
           mas,
           eventos: pagina,
           revisionCatalogo: revision,
-          ...(revisionCatalogo === revision ? {} : { catalogo }),
+          ...(revisionCatalogo === revision ? {} : { catalogo, perfil }),
         };
       });
     },
@@ -132,7 +141,16 @@ export function crearServicioOperacion(almacen, reloj = () => new Date().toISOSt
       return almacen.leer(async (tx) => ({
         ...(await tx.registros()),
         catalogo: await tx.catalogo(),
+        perfil,
       }));
+    },
+    pdf(uuid) {
+      return almacen.leer(async (tx) => {
+        const archivo = await tx.obtenerPdf(uuid);
+        if (!archivo)
+          throw new ErrorApi(404, 'NO_ENCONTRADO', 'El PDF no se encuentra disponible.');
+        return archivo;
+      });
     },
     conflictos(usuario) {
       return almacen.leer((tx) =>
