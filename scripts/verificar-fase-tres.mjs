@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { randomBytes, randomUUID } from 'node:crypto';
-import { mkdtemp, rm, rmdir } from 'node:fs/promises';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { mkdtemp, readFile, rm, rmdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
@@ -139,20 +139,33 @@ try {
     await pagina.getByRole('button', { name: nombre }).click();
     const archivo = await descarga;
     assert.equal(await archivo.failure(), null);
-    return archivo.suggestedFilename();
+    return { nombre: archivo.suggestedFilename(), bytes: await readFile(await archivo.path()) };
   };
-  assert.match(await descargar('Descargar PDF provisional'), /^PROV-.+\.pdf$/);
+  const provisional = await descargar('Descargar PDF provisional');
+  assert.match(provisional.nombre, /^PROV-.+\.pdf$/);
   assert.equal((await operacion.datos()).remisiones.length, 0);
   await contexto.setOffline(false);
   await pagina
     .getByRole('heading', { name: /^REM-\d{4}-\d+ · Destino sintético/ })
     .waitFor({ timeout: 35_000 });
   await pagina.getByText(/Con conexión · 0 pendientes/).waitFor();
-  assert.match(await descargar('Descargar PDF definitivo'), /^REM-\d{4}-\d+\.pdf$/);
+  assert.match((await descargar('Descargar PDF definitivo')).nombre, /^REM-\d{4}-\d+\.pdf$/);
   const estado = await operacion.datos();
   assert.equal(estado.remisiones.length, 1);
   assert.equal(estado.remisiones[0].renglones[0].gramos, 470);
   assert.equal(estado.movimientos.filter((m) => m.tipo === 'SALIDA').length, 1);
+  assert.equal(
+    createHash('sha256').update(provisional.bytes).digest('hex'),
+    estado.documentos.find((d) => d.tipo === 'PROVISIONAL').sha256,
+  );
+  await pagina.getByRole('button', { name: 'Reportes', exact: true }).click();
+  await pagina.getByRole('combobox', { name: 'Tipo de reporte' }).selectOption('salidas');
+  await pagina.getByRole('button', { name: 'Consultar reporte' }).click();
+  await pagina.getByRole('table').waitFor();
+  await pagina.getByRole('cell', { name: '86.95', exact: true }).first().waitFor();
+  const csv = await descargar('Descargar reporte CSV');
+  assert.match(csv.bytes.toString('utf8'), /86\.95/);
+  assert.equal((await descargar('Descargar reporte PDF')).bytes.subarray(0, 4).toString(), '%PDF');
   for (const ancho of [320, 1366]) {
     await pagina.setViewportSize({ width: ancho, height: 900 });
     assert.ok(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -166,7 +179,7 @@ try {
   }
   assert.deepEqual(errores, []);
   console.log(
-    'Fase 3: preparación PWA, lote y cierre sin conexión, recarga, PDF y recuperación automática validados.',
+    'Fase 3: PWA, lote y cierre sin conexión, recarga, PDF, recuperación automática y reportes CSV/PDF validados.',
   );
 } finally {
   await browser?.close();

@@ -7,6 +7,7 @@ import { CatalogoDescargado } from './CatalogoDescargado.jsx';
 import { Conflictos } from './Conflictos.jsx';
 import { Inventario } from './Inventario.jsx';
 import { Remisiones } from './Remisiones.jsx';
+import { Reportes } from './Reportes.jsx';
 import { descargarBlob } from './controles.jsx';
 import './operacion.css';
 
@@ -14,6 +15,7 @@ const secciones = [
   ['remisiones', 'Remisiones'],
   ['inventario', 'Inventario'],
   ['catalogo', 'Catálogo'],
+  ['reportes', 'Reportes'],
   ['conflictos', 'Por revisar'],
 ];
 const fechaHora = new Intl.DateTimeFormat('es-MX', {
@@ -221,23 +223,33 @@ export function OperacionesPanel({
         </p>
       )}
       <nav className="cms-bandeja-barra cms-categorias" aria-label="Herramientas de operación">
-        {secciones.map(([id, etiqueta]) => (
-          <button
-            type="button"
-            key={id}
-            aria-pressed={id === seccion}
-            disabled={ocupado || ocupadoGestor}
-            onClick={() => {
-              cambiarSeccion(id);
-              cambiarError('');
-              cambiarMensaje('');
-            }}
-          >
-            {etiqueta}
-          </button>
-        ))}
+        {secciones
+          .filter(([id]) => id !== 'reportes' || administra)
+          .map(([id, etiqueta]) => (
+            <button
+              type="button"
+              key={id}
+              aria-pressed={id === seccion}
+              disabled={ocupado || ocupadoGestor}
+              onClick={() => {
+                cambiarSeccion(id);
+                cambiarError('');
+                cambiarMensaje('');
+              }}
+            >
+              {etiqueta}
+            </button>
+          ))}
       </nav>
-      {seccion === 'conflictos' ? (
+      {seccion === 'reportes' ? (
+        conectado && administra ? (
+          <Reportes {...{ ocupado, intentar }} />
+        ) : (
+          <p className="cms-vacio">
+            Conéctate para consultar y exportar los reportes del servidor.
+          </p>
+        )
+      ) : seccion === 'conflictos' ? (
         <Conflictos
           {...{ cola, conectado, administra, ocupado, intentar }}
           reconciliar={async (datos) => {

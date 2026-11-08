@@ -56,6 +56,22 @@
   padding: 12px;
   border-radius: 8px;
 }
+.operacion-tabla {
+  overflow-x: auto;
+}
+.operacion-tabla table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.operacion-tabla :is(th, td) {
+  padding: 9px 12px;
+  border-bottom: 1px solid #e3dcd8;
+  text-align: left;
+}
+.operacion-tabla :is(thead, tfoot) {
+  background: #f8f0ed;
+  font-weight: 700;
+}
 .cms .operacion button,
 .cms .operacion summary {
   min-height: 44px;

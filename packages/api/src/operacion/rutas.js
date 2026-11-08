@@ -10,6 +10,7 @@ import {
   uuidOperativo,
 } from '@simce/dominio';
 import { ErrorApi } from '../errores.js';
+import { construirReporte, reporteCsv, reportePdf } from './reportes.js';
 
 export function crearRutasOperacion({ auth, operacion }) {
   const rutas = Router();
@@ -37,6 +38,22 @@ export function crearRutasOperacion({ auth, operacion }) {
     res.json(await operacion.descargar(Number(cursor), req.query.catalogo));
   });
   rutas.use('/operacion', autenticar);
+  rutas.get(
+    '/reportes/:tipo',
+    auth.identificar,
+    auth.permitir(rolesResponsables),
+    async (req, res) => {
+      const formato = req.query.formato ?? 'json';
+      if (!['json', 'pdf', 'csv'].includes(formato))
+        throw new ErrorApi(422, 'FORMATO_INVALIDO', 'Selecciona PDF, CSV o consulta en pantalla.');
+      const reporte = construirReporte(req.params.tipo, req.query, await operacion.datos());
+      if (formato === 'json') return res.json(reporte);
+      const nombre = `simce-${reporte.tipo}-${reporte.hasta}.${formato}`;
+      if (formato === 'csv')
+        return res.attachment(nombre).type('text/csv; charset=utf-8').send(reporteCsv(reporte));
+      return res.attachment(nombre).send(reportePdf(reporte));
+    },
+  );
   rutas.post('/escaneos/decodificar', autenticar, auth.origen, async (req, res) => {
     const estado = await operacion.datos();
     const datos = req.body ?? {};

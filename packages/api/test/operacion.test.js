@@ -332,5 +332,20 @@ describe.each(modos)('operación persistente en %s', (modo) => {
       (m) => m.remisionUuid === crear.agregadoId,
     );
     expect(movimientos.map((m) => m.direccion).sort()).toEqual([-1, -1, 1, 1]);
+    await peticion('get', '/reportes/salidas?hasta=2025-12-31', operador).expect(403);
+    const salidas = (
+      await peticion('get', '/reportes/salidas?hasta=2025-12-31&agrupar=destino', admin).expect(200)
+    ).body;
+    expect(salidas.filas).toContainEqual(['Destino de prueba', '0.905', '173.95', 2, 0]);
+    const csv = await peticion(
+      'get',
+      '/reportes/canceladas?desde=2026-11-01&hasta=2026-11-30&formato=csv',
+      admin,
+    ).expect(200);
+    expect(csv.text).toContain(remision.folioFinal);
+    expect(csv.text).toContain('Devolución completa');
+    await peticion('get', '/reportes/existencias?hasta=2025-12-31&formato=pdf', admin)
+      .expect(200)
+      .expect('Content-Type', /application\/pdf/);
   });
 });
