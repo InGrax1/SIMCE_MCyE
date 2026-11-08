@@ -135,6 +135,12 @@ try {
   reporte.pasos.push('Contenido e imagen conservados al reiniciar la API con MySQL');
   const publico = proyectarPortal(await almacen.leer());
   const remisiones = await db('remisiones').select('remision_uuid', 'folio_final');
+  const registros = (conexion) =>
+    conexion('operacion_registros').select('*').orderBy(['tipo', 'uuid']);
+  const archivosPdf = (conexion) =>
+    conexion('operacion_pdf').select('uuid', 'archivo').orderBy('uuid');
+  const nucleo = await registros(db);
+  const documentos = await archivosPdf(db);
   const archivo = join(carpeta, 'copia.simcebk');
   const manifiesto = await crearRespaldoMysql({ db, base, carpetaMedios: medios, archivo, clave });
   assert.ok(!(await readFile(archivo)).includes(Buffer.from('respaldo@example.test')));
@@ -151,6 +157,8 @@ try {
     await dbDestino('remisiones').select('remision_uuid', 'folio_final'),
     remisiones,
   );
+  assert.deepEqual(await registros(dbDestino), nucleo);
+  assert.deepEqual(await archivosPdf(dbDestino), documentos);
   assert.equal(sha256(await readFile(join(mediosRestaurados, nombre))), sha256(imagen));
   assert.ok(recuperado.sesiones.every((s) => s.revocado));
   assert.ok(recuperado.recuperaciones.every((s) => s.usado));

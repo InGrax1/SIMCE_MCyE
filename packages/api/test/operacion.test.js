@@ -347,5 +347,20 @@ describe.each(modos)('operación persistente en %s', (modo) => {
     await peticion('get', '/reportes/existencias?hasta=2025-12-31&formato=pdf', admin)
       .expect(200)
       .expect('Content-Type', /application\/pdf/);
+    await almacen.cambiar((s) => {
+      s.usuarios.find((u) => u.id === operador.id).rol = 'editor';
+    });
+    const merma = comando('REGISTRAR_MERMA', operador, {
+      productoUuid,
+      fecha: '2026-11-07',
+      motivo: 'Prueba de revocación',
+      gramos: 100,
+    });
+    await peticion('post', '/sync/push', operador)
+      .send({ operaciones: [merma] })
+      .expect(403);
+    expect((await servicio.datos()).movimientos.some((m) => m.uuid === merma.agregadoId)).toBe(
+      false,
+    );
   });
 });

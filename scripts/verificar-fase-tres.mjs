@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { mkdtemp, readFile, rm, rmdir } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, rmdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
@@ -13,8 +13,44 @@ import { crearRutasCms } from '../packages/api/src/cms/rutas.js';
 import { crearAlmacenOperacion } from '../packages/api/src/operacion/almacen.js';
 import { crearServicioOperacion } from '../packages/api/src/operacion/servicio.js';
 
+function videoDePrueba() {
+  const codigos = [
+    '0001101',
+    '0011001',
+    '0010011',
+    '0111101',
+    '0100011',
+    '0110001',
+    '0101111',
+    '0111011',
+    '0110111',
+    '0001011',
+  ];
+  const invertir = (bits) => [...bits].map((b) => (b === '0' ? '1' : '0')).join('');
+  const izquierda = [...'010101']
+    .map((d, i) =>
+      'LLGGLG'[i] === 'L' ? codigos[d] : [...invertir(codigos[d])].reverse().join(''),
+    )
+    .join('');
+  const barras =
+    '101' + izquierda + '01010' + [...'086955'].map((d) => invertir(codigos[d])).join('') + '101';
+  const ancho = 640;
+  const alto = 480;
+  const cuadro = Buffer.alloc(ancho * alto * 1.5, 128);
+  cuadro.fill(235, 0, ancho * alto);
+  for (let y = 126; y < 354; y++)
+    for (const [i, barra] of [...barras].entries())
+      if (barra === '1') cuadro.fill(16, y * ancho + 82 + i * 5, y * ancho + 87 + i * 5);
+  const fotograma = Buffer.concat([Buffer.from('FRAME\n'), cuadro]);
+  return Buffer.concat([
+    Buffer.from('YUV4MPEG2 W640 H480 F15:1 Ip A1:1 C420jpeg\n'),
+    ...Array(8).fill(fotograma),
+  ]);
+}
+
 const carpeta = await mkdtemp(join(tmpdir(), 'simce-fase-tres-'));
 const archivo = join(carpeta, 'estado.json');
+const video = join(carpeta, 'ean-13.y4m');
 const almacen = new AlmacenCmsArchivo(archivo);
 const clave = randomBytes(18).toString('base64url');
 const usuario = {
@@ -86,13 +122,28 @@ origenes.push(origen);
 let browser;
 const errores = [];
 try {
-  browser = await chromium.launch({ headless: true });
+  await writeFile(video, videoDePrueba());
+  browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--use-fake-device-for-media-stream',
+      '--use-fake-ui-for-media-stream',
+      `--use-file-for-fake-video-capture=${video}`,
+    ],
+  });
   const contexto = await browser.newContext({
     viewport: { width: 390, height: 844 },
     reducedMotion: 'reduce',
     acceptDownloads: true,
   });
   const pagina = await contexto.newPage();
+  const descargar = async (nombre) => {
+    const descarga = pagina.waitForEvent('download');
+    await pagina.getByRole('button', { name: nombre }).click();
+    const archivo = await descarga;
+    assert.equal(await archivo.failure(), null);
+    return { nombre: archivo.suggestedFilename(), bytes: await readFile(await archivo.path()) };
+  };
   pagina.setDefaultTimeout(12_000);
   pagina.on('pageerror', (error) => errores.push(error.message));
   await pagina.goto(`${origen}/panel/`);
@@ -124,23 +175,38 @@ try {
   const ean = pagina.getByLabel('Código EAN-13', { exact: true });
   await ean.fill('2010101086955');
   await ean.press('Enter');
+  await pagina.getByText(/Verifica el precio aplicado/).waitFor();
+  await ean.fill('');
+  await pagina.getByRole('button', { name: 'Leer con cámara' }).click();
+  await pagina.getByText(/Verifica el precio aplicado/).waitFor();
   await pagina
     .getByRole('combobox', { name: 'Precio de etiquetado por kg' })
     .selectOption({ label: '$185.00 MXN · desde 2025-01-01' });
   await pagina.getByLabel('Fuente de verificación del precio').fill('Etiqueta sintética');
   await pagina.getByRole('button', { name: 'Agregar renglón', exact: true }).click();
   await pagina.getByText('Total de remisión 0.470 kg · $86.95 MXN').waitFor();
+  await pagina.getByRole('button', { name: 'Captura manual', exact: true }).click();
+  await pagina
+    .getByRole('combobox', { name: 'Producto de la captura' })
+    .selectOption(producto.uuid);
+  await pagina
+    .getByRole('combobox', { name: 'Precio de etiquetado por kg' })
+    .selectOption({ label: '$185.00 MXN · desde 2025-01-01' });
+  await pagina.getByLabel('Fuente de verificación del precio').fill('Registro de etiquetado');
+  await pagina.getByLabel('Peso capturado (kg)').fill('0.530');
+  await pagina.getByRole('button', { name: 'Agregar renglón', exact: true }).click();
+  await pagina.getByText('Total de remisión 1.000 kg · $185.00 MXN').waitFor();
   await pagina.getByRole('button', { name: 'Cerrar remisión', exact: true }).click();
-  await pagina.getByText(/Sin conexión · 4 pendientes/).waitFor();
+  await pagina.getByText(/Sin conexión · 5 pendientes/).waitFor();
+  await pagina.getByRole('button', { name: 'Respaldo', exact: true }).click();
+  const copia = await descargar('Exportar respaldo local');
+  await pagina
+    .getByLabel('Seleccionar respaldo local')
+    .setInputFiles({ name: copia.nombre, mimeType: 'application/json', buffer: copia.bytes });
+  await pagina.getByRole('button', { name: 'Restaurar operaciones' }).click();
+  await pagina.getByText(/0 recuperadas · 5 duplicadas/).waitFor();
   await pagina.reload();
   await pagina.getByRole('button', { name: /^PROV-.*Destino sintético/ }).click();
-  const descargar = async (nombre) => {
-    const descarga = pagina.waitForEvent('download');
-    await pagina.getByRole('button', { name: nombre }).click();
-    const archivo = await descarga;
-    assert.equal(await archivo.failure(), null);
-    return { nombre: archivo.suggestedFilename(), bytes: await readFile(await archivo.path()) };
-  };
   const provisional = await descargar('Descargar PDF provisional');
   assert.match(provisional.nombre, /^PROV-.+\.pdf$/);
   assert.equal((await operacion.datos()).remisiones.length, 0);
@@ -153,7 +219,7 @@ try {
   const estado = await operacion.datos();
   assert.equal(estado.remisiones.length, 1);
   assert.equal(estado.remisiones[0].renglones[0].gramos, 470);
-  assert.equal(estado.movimientos.filter((m) => m.tipo === 'SALIDA').length, 1);
+  assert.equal(estado.movimientos.filter((m) => m.tipo === 'SALIDA').length, 2);
   assert.equal(
     createHash('sha256').update(provisional.bytes).digest('hex'),
     estado.documentos.find((d) => d.tipo === 'PROVISIONAL').sha256,
@@ -162,9 +228,9 @@ try {
   await pagina.getByRole('combobox', { name: 'Tipo de reporte' }).selectOption('salidas');
   await pagina.getByRole('button', { name: 'Consultar reporte' }).click();
   await pagina.getByRole('table').waitFor();
-  await pagina.getByRole('cell', { name: '86.95', exact: true }).first().waitFor();
+  await pagina.getByRole('cell', { name: '185.00', exact: true }).first().waitFor();
   const csv = await descargar('Descargar reporte CSV');
-  assert.match(csv.bytes.toString('utf8'), /86\.95/);
+  assert.match(csv.bytes.toString('utf8'), /185\.00/);
   assert.equal((await descargar('Descargar reporte PDF')).bytes.subarray(0, 4).toString(), '%PDF');
   for (const ancho of [320, 1366]) {
     await pagina.setViewportSize({ width: ancho, height: 900 });
@@ -179,11 +245,12 @@ try {
   }
   assert.deepEqual(errores, []);
   console.log(
-    'Fase 3: PWA, lote y cierre sin conexión, recarga, PDF, recuperación automática y reportes CSV/PDF validados.',
+    'Fase 3: PWA, escaneo por teclado y cámara sintética, captura manual, lote y cierre sin conexión, respaldo, recarga, recuperación y reportes validados.',
   );
 } finally {
   await browser?.close();
   await new Promise((ok) => servidor.close(ok));
   await rm(archivo, { force: true });
+  await rm(video, { force: true });
   await rmdir(carpeta);
 }

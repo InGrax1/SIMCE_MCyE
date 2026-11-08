@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { rolesOperativos } from '@simce/dominio';
 import { consultarApi, establecerSesion, renovarSesion } from '../servicios/sesion.js';
 import { Prototipo } from './Prototipo.jsx';
 import { InscripcionesTaller, OperacionTaller } from './InscripcionesTaller.jsx';
@@ -6,6 +7,7 @@ import { SolicitudesPanel } from './SolicitudesPanel.jsx';
 import { PanelMarco } from './PanelMarco.jsx';
 import { OperacionesPanel } from './operacion/OperacionesPanel.jsx';
 import { operacionLocal } from '../local/operacion.js';
+import { sincronizarOperacionLocal } from '../servicios/operacion.js';
 import { fechaPanel } from './DetalleAtencion.jsx';
 import { RecuperarAcceso, RestablecerAcceso } from './RecuperarAcceso.jsx';
 import './gestor.css';
@@ -323,11 +325,31 @@ export function GestorContenido() {
   const editado = useRef(false);
   const inscripcionEditada = useRef(false);
   const tituloEditor = useRef(null);
+  const ultimaSesion = useRef(null);
   function recibir(valor) {
+    const previa = ultimaSesion.current;
+    ultimaSesion.current = valor;
     establecerSesion(valor?.token, recibir);
     cambiarSesion(valor);
     if (valor?.local) cambiarVista('operacion');
     if (valor && !valor.local) operacionLocal.actualizarAcceso(valor.usuario).catch(() => {});
+    if (
+      previa?.local &&
+      valor &&
+      !valor.local &&
+      previa.usuario.id === valor.usuario.id &&
+      !rolesOperativos.includes(valor.usuario.rol)
+    ) {
+      operacionLocal
+        .pendientes(previa.usuario)
+        .then((cola) => {
+          if (cola.length)
+            cambiarError(
+              `La cuenta perdió el permiso de operación. Se conservaron ${cola.length} operaciones en este dispositivo para revisión.`,
+            );
+        })
+        .catch(() => {});
+    }
     if (!valor) {
       editado.current = false;
       inscripcionEditada.current = false;
@@ -551,6 +573,31 @@ export function GestorContenido() {
         : vista === 'talleres'
           ? 'talleres'
           : 'contenido';
+  useEffect(() => {
+    const usuario = sesion?.usuario;
+    if (
+      !usuario ||
+      sesion.local ||
+      usuario.debeCambiar ||
+      !rolesOperativos.includes(usuario.rol) ||
+      vistaActual === 'operacion'
+    )
+      return;
+    async function sincronizarSiPendiente() {
+      if (navigator.onLine && (await operacionLocal.pendientes(usuario)).length)
+        await sincronizarOperacionLocal(operacionLocal, usuario);
+    }
+    const conectar = () => sincronizarSiPendiente().catch(() => {});
+    conectar();
+    window.addEventListener('online', conectar);
+    return () => window.removeEventListener('online', conectar);
+  }, [
+    sesion?.usuario?.id,
+    sesion?.usuario?.rol,
+    sesion?.usuario?.debeCambiar,
+    sesion?.local,
+    vistaActual,
+  ]);
   function navegar(destino) {
     if (destino === vistaActual) return;
     if (destino === 'talleres' && tipo !== 'taller') {

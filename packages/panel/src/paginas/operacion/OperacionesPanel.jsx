@@ -8,6 +8,7 @@ import { Conflictos } from './Conflictos.jsx';
 import { Inventario } from './Inventario.jsx';
 import { Remisiones } from './Remisiones.jsx';
 import { Reportes } from './Reportes.jsx';
+import { Respaldo } from './Respaldo.jsx';
 import { descargarBlob } from './controles.jsx';
 import './operacion.css';
 
@@ -17,6 +18,7 @@ const secciones = [
   ['catalogo', 'Catálogo'],
   ['reportes', 'Reportes'],
   ['conflictos', 'Por revisar'],
+  ['respaldo', 'Respaldo'],
 ];
 const fechaHora = new Intl.DateTimeFormat('es-MX', {
   dateStyle: 'short',
@@ -241,7 +243,16 @@ export function OperacionesPanel({
             </button>
           ))}
       </nav>
-      {seccion === 'reportes' ? (
+      {seccion === 'respaldo' ? (
+        <Respaldo
+          {...{ usuario, ocupado, intentar }}
+          incidencias={modelo?.replica.incidenciasRespaldo ?? []}
+          alRestaurar={async () => {
+            await refrescar();
+            sincronizar();
+          }}
+        />
+      ) : seccion === 'reportes' ? (
         conectado && administra ? (
           <Reportes {...{ ocupado, intentar }} />
         ) : (

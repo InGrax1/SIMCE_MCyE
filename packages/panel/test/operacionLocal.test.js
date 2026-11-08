@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 import { perfilOperativoInicial } from '@simce/dominio';
 import { crearBaseDatosLocal } from '../src/local/baseDatos.js';
 import { crearOperacionLocal } from '../src/local/operacion.js';
+import { crearRespaldoOperacion, leerRespaldoOperacion } from '../src/local/respaldoOperacion.js';
 
 it('migra IndexedDB, guarda operaciones y PDF en conjunto y aísla cuentas', async () => {
   const nombre = `simce-operacion-${crypto.randomUUID()}`;
@@ -94,6 +95,29 @@ it('migra IndexedDB, guarda operaciones y PDF en conjunto y aísla cuentas', asy
     ).toBe('%PDF');
     expect(await recargado.obtenerPdf(otro, documentoUuid)).toBeUndefined();
     expect(await recargado.pendientes(otro)).toHaveLength(0);
+    const respaldo = await crearRespaldoOperacion(
+      usuario,
+      await recargado.exportarRespaldo(usuario),
+    );
+    await expect(leerRespaldoOperacion(respaldo, otro)).rejects.toThrow(/otra cuenta/);
+    await expect(
+      leerRespaldoOperacion(respaldo.replace('CREAR_REMISION', 'EDITAR_REMISION'), usuario),
+    ).rejects.toThrow(/integridad/);
+    const leido = await leerRespaldoOperacion(respaldo, usuario);
+    expect(leido.documentos).toHaveLength(1);
+    expect(await recargado.restaurarRespaldo(usuario, leido)).toEqual({
+      recuperadas: 0,
+      duplicadas: 3,
+      conflictos: 0,
+    });
+    leido.cola[0].comando.payload.fecha = '2026-11-08';
+    expect(await recargado.restaurarRespaldo(usuario, leido)).toEqual({
+      recuperadas: 0,
+      duplicadas: 2,
+      conflictos: 1,
+    });
+    expect((await recargado.modelo(usuario)).vista.remisiones[0].fecha).toBe('2026-11-07');
+    expect((await recargado.cursor(usuario.id)).incidenciasRespaldo).toHaveLength(1);
     expect(await base.operaciones.get('demo')).toMatchObject({ estadoCola: 'PENDIENTE' });
     await recargado.actualizarAcceso({ ...usuario, rol: 'editor' });
     expect(await recargado.accesoLocal()).toBeNull();

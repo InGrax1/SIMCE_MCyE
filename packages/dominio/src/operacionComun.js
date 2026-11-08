@@ -97,6 +97,14 @@ export function aplicarCambiosOperativos(estado, cambios) {
   for (const { tipo, registro, agregarRenglon, quitarRenglon } of cambios) {
     const lista = estado[tipo];
     const indice = lista.findIndex(({ uuid }) => uuid === registro.uuid);
+    if ((estado.bajas?.[tipo]?.[registro.uuid] ?? 0) >= (registro.version ?? 1)) continue;
+    if (registro.eliminado === true) {
+      if ((lista[indice]?.version ?? 0) > registro.version) continue;
+      estado.bajas ??= {};
+      (estado.bajas[tipo] ??= {})[registro.uuid] = registro.version;
+      if (indice !== -1) lista.splice(indice, 1);
+      continue;
+    }
     if (agregarRenglon || quitarRenglon) {
       const anterior = lista[indice];
       if (anterior?.version >= registro.version) continue;

@@ -6,6 +6,7 @@ import {
   tablasOperativas,
 } from '@simce/dominio';
 import { baseDatosLocal } from './baseDatos.js';
+import { estadosRecuperables, mismoComando } from './respaldoOperacion.js';
 
 const uuid = () => crypto.randomUUID();
 const vigenciaDispositivo = 72 * 3600_000;
@@ -204,8 +205,8 @@ export function crearOperacionLocal(db = baseDatosLocal) {
     },
     reiniciarReplica(usuario) {
       return db.transaction('rw', db.replica, async () => {
-        const { secuencia } = await leerReplica(usuario.id);
-        await db.replica.put({ ...replicaVacia(usuario.id), secuencia });
+        const { secuencia, incidenciasRespaldo } = await leerReplica(usuario.id);
+        await db.replica.put({ ...replicaVacia(usuario.id), secuencia, incidenciasRespaldo });
       });
     },
     async reconciliar(usuario, conflictos) {
@@ -217,6 +218,64 @@ export function crearOperacionLocal(db = baseDatosLocal) {
               resolucion: conflicto.resolucion,
             });
         }
+      });
+    },
+    exportarRespaldo(usuario) {
+      return db.transaction('r', db.colaOperativa, db.pdfOperativos, async () => {
+        const cola = (await colaPorUsuario(usuario.id).toArray())
+          .filter(({ estado }) => estadosRecuperables.includes(estado))
+          .map(({ comando, estado, resultado }) => ({ comando, estado, resultado }));
+        const ids = new Set(
+          cola
+            .filter((e) => e.comando.tipo === 'CERRAR_REMISION')
+            .map((e) => e.comando.payload.documentoUuid),
+        );
+        const documentos = await db.pdfOperativos.bulkGet([...ids].map((id) => [usuario.id, id]));
+        return { cola, documentos: documentos.filter(Boolean) };
+      });
+    },
+    restaurarRespaldo(usuario, datos) {
+      return db.transaction('rw', db.replica, db.colaOperativa, db.pdfOperativos, async () => {
+        const replica = await leerReplica(usuario.id);
+        if (!replica.datos.catalogo) throw new Error('Descarga primero la réplica de la cuenta.');
+        const resumen = { recuperadas: 0, duplicadas: 0, conflictos: 0 };
+        const incidencias = replica.incidenciasRespaldo ?? [];
+        const guardarIncidencia = (tipo, uuid, alternativa) => {
+          if (
+            !incidencias.some(
+              (i) => i.tipo === tipo && i.uuid === uuid && mismoComando(i.alternativa, alternativa),
+            )
+          )
+            incidencias.push({ tipo, uuid, alternativa, momento: new Date().toISOString() });
+          resumen.conflictos++;
+        };
+        for (const { comando, estado, resultado } of datos.cola) {
+          const { operacionUuid, secuencia } = comando;
+          const actual = await db.colaOperativa.get([usuario.id, operacionUuid]);
+          if (!actual) {
+            await db.colaOperativa.add({
+              usuarioId: usuario.id,
+              operacionUuid,
+              comando,
+              estado,
+              resultado,
+            });
+            replica.secuencia = Math.max(replica.secuencia, secuencia);
+            resumen.recuperadas++;
+          } else if (mismoComando(actual.comando, comando)) resumen.duplicadas++;
+          else guardarIncidencia('Operación', operacionUuid, comando);
+        }
+        for (const { uuid, bytes } of datos.documentos) {
+          const actual = await db.pdfOperativos.get([usuario.id, uuid]);
+          if (!actual) await db.pdfOperativos.add({ usuarioId: usuario.id, uuid, bytes });
+          else if (
+            actual.bytes.length !== bytes.length ||
+            !actual.bytes.every((b, i) => b === bytes[i])
+          )
+            guardarIncidencia('Documento', uuid, { bytes });
+        }
+        await db.replica.put({ ...replica, incidenciasRespaldo: incidencias });
+        return resumen;
       });
     },
     obtenerPdf: (usuario, uuidDocumento) => db.pdfOperativos.get([usuario.id, uuidDocumento]),
