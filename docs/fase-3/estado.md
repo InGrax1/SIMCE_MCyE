@@ -39,7 +39,15 @@ El perfil de prueba usa EAN-13 con prefijo `2`, seis dígitos de PLU, cinco de i
 - `npm run check:mysql-local` pasó 13 pruebas del conjunto de integración y restauró un respaldo cifrado verificando también los registros y archivos PDF operativos. La prueba de cola reanudó 511 operaciones simuladas después de perder una respuesta.
 - Se revisaron las tres hojas de una remisión de prueba con partidas de 60, 40 y 20 renglones. Pasaron el prototipo y las regresiones de Fase 1 y 2, con 13 y 18 recorridos respectivamente.
 
+## Prueba de operación del 11 de noviembre de 2026
+
+- La instalación limpia, la compilación y el arranque con `npm run dev:fase1` pasaron en una instancia aislada. Se creó el catálogo sintético desde el panel. La etiqueta `2010101086955` produjo `0.470 kg` y `$86.95` con un precio de `$185.00/kg`.
+- El lote de `2.500 kg` y el cierre de una remisión de `1.000 kg` se guardaron sin conexión. Al reconectar, la cola se vació, el servidor asignó el folio `REM-2026-000001` y el kardex mostró `1.500 kg`. El PDF provisional coincidió por SHA-256 con la copia del servidor.
+- Se resolvió un conflicto de versión desde **Por revisar** y se descargaron reportes CSV y PDF. Un perfil nuevo recuperó cinco operaciones y un PDF provisional desde el respaldo. Al repetir la importación, el panel identificó las cinco operaciones duplicadas.
+
 ## Aceptación institucional pendiente
+
+El trabajo continúa en desarrollo local con datos de prueba. La validación del formato y del equipo, la carga de datos reales y la jornada de aceptación quedan pendientes para cuando el Módulo pueda probar la operación en su entorno.
 
 - Recibir y validar el formato oficial de Lista de Envío y el procedimiento de firma durante la transición con el papel. El PDF actual usa una plantilla de prueba identificada en el documento.
 - Confirmar la báscula, su perfil y resolución con etiquetas reales, y probar el lector, la cámara y la impresora del dispositivo de trabajo.
